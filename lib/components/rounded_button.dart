@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sinema_uygulamasi/constant/app_text_style.dart';
+import 'package:cinema_automation/constant/app_text_style.dart';
 
 class RoundedButton extends StatelessWidget {
   final String text;

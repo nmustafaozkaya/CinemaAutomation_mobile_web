@@ -58,7 +58,7 @@
         <!-- Step 1: Film Seçimi -->
         <div id="ticketStep1" class="ticket-step">
             <h3 class="text-2xl font-bold text-white mb-6 text-center">
-                <i class="fas fa-film mr-2 text-yellow-400"></i>Film Seçiniz
+                <i class="fas fa-film mr-2 text-green-400"></i>Film Seçiniz
             </h3>
             <div id="ticketMovieGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Movie selection will be loaded here -->
@@ -69,7 +69,7 @@
         <div id="ticketStep2" class="ticket-step hidden">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-building mr-2 text-blue-400"></i>Sinema Seçiniz
+                    <i class="fas fa-building mr-2 text-green-400"></i>Sinema Seçiniz
                 </h3>
                 <button onclick="goBackToStep(1)"
                     class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -84,7 +84,7 @@
         <div id="ticketStep3" class="ticket-step hidden">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-clock mr-2 text-purple-400"></i>Seans Seçiniz
+                    <i class="fas fa-clock mr-2 text-green-400"></i>Seans Seçiniz
                 </h3>
                 <button onclick="goBackToStep(2)"
                     class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -124,7 +124,7 @@
                         <span class="text-white">Dolu</span>
                     </div>
                     <div class="flex items-center">
-                        <div class="w-6 h-6 bg-blue-500 rounded-lg mr-2"></div>
+                        <div class="w-6 h-6 bg-green-500 rounded-lg mr-2"></div>
                         <span class="text-white">Seçili</span>
                     </div>
                 </div>
@@ -142,7 +142,7 @@
         <div id="ticketStep5" class="ticket-step hidden">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-users mr-2 text-orange-400"></i>Bilet Tiplerini Seçiniz
+                    <i class="fas fa-users mr-2 text-green-400"></i>Bilet Tiplerini Seçiniz
                 </h3>
                 <button onclick="goBackToStep(4)"
                     class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -193,7 +193,7 @@
         <div id="ticketStep6" class="ticket-step hidden">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-credit-card mr-2 text-yellow-400"></i>Müşteri Bilgileri ve Ödeme
+                    <i class="fas fa-credit-card mr-2 text-green-400"></i>Müşteri Bilgileri ve Ödeme
                 </h3>
                 <button onclick="goBackToStep(5)"
                     class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -362,8 +362,8 @@
             } catch (error) {
                 console.error('Sinemalar yüklenemedi:', error);
                 const mockCinemas = [
-                    { id: 1, name: "CinemaMax Gaziantep", address: "Forum AVM", hall_count: 8 },
-                    { id: 2, name: "CinemaMax Forum", address: "Sanko Park", hall_count: 6 },
+                    { id: 1, name: "Cinema Automation Gaziantep", address: "Forum AVM", hall_count: 8 },
+                    { id: 2, name: "Cinema Automation Forum", address: "Sanko Park", hall_count: 6 },
                     { id: 3, name: "CineBonus Anteplioğlu", address: "Anteplioğlu AVM", hall_count: 4 }
                 ];
                 renderCinemas(mockCinemas);

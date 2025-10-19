@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
-import 'package:sinema_uygulamasi/components/movies.dart';
-import 'package:sinema_uygulamasi/constant/app_color_style.dart';
-import 'package:sinema_uygulamasi/constant/app_text_style.dart';
-import 'package:sinema_uygulamasi/screens/movie_details.dart';
+import 'package:cinema_automation/api_connection/api_connection.dart';
+import 'package:cinema_automation/components/movies.dart';
+import 'package:cinema_automation/constant/app_color_style.dart';
+import 'package:cinema_automation/constant/app_text_style.dart';
+import 'package:cinema_automation/screens/movie_details.dart';
 
 Widget buildMoviePoster(String posterUrl) {
   if (posterUrl.isEmpty || posterUrl == 'N/A') {
@@ -65,7 +65,7 @@ Widget _buildMovieGridSliver(
         return const SliverFillRemaining(
           child: Center(
             child: Text(
-              "Film bulunamadı.",
+              "Otomatik film bulunamadı.",
               style: TextStyle(color: AppColorStyle.textPrimary),
             ),
           ),

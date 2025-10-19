@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:sinema_uygulamasi/components/user_preferences.dart';
-import 'package:sinema_uygulamasi/components/user.dart';
-import 'package:sinema_uygulamasi/screens/home.dart';
-import 'package:sinema_uygulamasi/screens/login_screen.dart';
+import 'package:cinema_automation/components/user_preferences.dart';
+import 'package:cinema_automation/components/user.dart';
+import 'package:cinema_automation/screens/home.dart';
+import 'package:cinema_automation/screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Sinema Uygulaması',
+      title: 'Cinema Automation',
       theme: ThemeData(primarySwatch: Colors.teal),
       home: currentUser != null
           ? HomePage(currentUser: currentUser!)

@@ -92,7 +92,7 @@
         }
 
         .admin-tab-btn.active {
-            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white;
         }
 
@@ -109,54 +109,54 @@
     </style>
 </head>
 
-<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen">
+<body class="bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 min-h-screen">
     <!-- Navigation -->
     <nav class="glass-effect sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
                         <i class="fas fa-film text-white text-lg"></i>
                     </div>
-                    <h1 class="text-xl font-bold text-white">CinemaMax</h1>
+                    <h1 class="text-xl font-bold text-white">Cinema Automation</h1>
                 </div>
                 <!-- ✅ Role-based navigation -->
                 <div class="hidden md:flex space-x-8">
-                    <a href="/" class="nav-link text-white hover:text-purple-300 transition-colors">
+                    <a href="/" class="nav-link text-white hover:text-green-300 transition-colors">
                         <i class="fas fa-home mr-2"></i>Ana Sayfa
                     </a>
-                    <a href="/movies" class="nav-link text-white hover:text-purple-300 transition-colors">
+                    <a href="/movies" class="nav-link text-white hover:text-green-300 transition-colors">
                         <i class="fas fa-play mr-2"></i>Filmler
                     </a>
                     @auth
                         @if(auth()->user()->isCustomer())
                             <!-- Customer sadece bilet alabilir -->
-                            <a href="/buy-tickets" class="nav-link text-white hover:text-purple-300 transition-colors">
+                            <a href="/buy-tickets" class="nav-link text-white hover:text-green-300 transition-colors">
                                 <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
                             </a>
-                            <a href="/my-tickets" class="nav-link text-white hover:text-purple-300 transition-colors">
+                            <a href="/my-tickets" class="nav-link text-white hover:text-green-300 transition-colors">
                                 <i class="fas fa-history mr-2"></i>Biletlerim
                             </a>
                         @else
                             <!-- Admin'ler bilet satışı ve yönetim görebilir -->
-                            <a href="/tickets" class="nav-link text-white hover:text-purple-300 transition-colors">
+                            <a href="/tickets" class="nav-link text-white hover:text-green-300 transition-colors">
                                 <i class="fas fa-ticket-alt mr-2"></i>Bilet Satış
                             </a>
-                            <a href="/admin" class="nav-link text-white hover:text-purple-300 transition-colors">
+                            <a href="/admin" class="nav-link text-white hover:text-green-300 transition-colors">
                                 <i class="fas fa-cog mr-2"></i>Yönetim
                             </a>
                         @endif
 
                         <!-- Çıkış -->
-                        <a href="/logout" class="nav-link text-white hover:text-purple-300 transition-colors">
+                        <a href="/logout" class="nav-link text-white hover:text-green-300 transition-colors">
                             <i class="fas fa-sign-out-alt mr-2"></i>Çıkış
                         </a>
                     @else
                         <!-- Giriş yapmamış kullanıcılar -->
-                        <a href="/login" class="nav-link text-white hover:text-purple-300 transition-colors">
+                        <a href="/login" class="nav-link text-white hover:text-green-300 transition-colors">
                             <i class="fas fa-sign-in-alt mr-2"></i>Giriş
                         </a>
-                        <a href="/register" class="nav-link text-white hover:text-purple-300 transition-colors">
+                        <a href="/register" class="nav-link text-white hover:text-green-300 transition-colors">
                             <i class="fas fa-user-plus mr-2"></i>Kayıt Ol
                         </a>
                     @endauth
@@ -192,7 +192,7 @@
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-2xl p-8 text-center">
-            <div class="loading w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4">
+            <div class="loading w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-4">
             </div>
             <p class="text-gray-600 font-medium">Yükleniyor...</p>
         </div>

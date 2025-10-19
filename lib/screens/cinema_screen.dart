@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:sinema_uygulamasi/constant/app_color_style.dart';
-import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
-import 'package:sinema_uygulamasi/components/cinemas.dart';
+import 'package:cinema_automation/constant/app_color_style.dart';
+import 'package:cinema_automation/api_connection/api_connection.dart';
+import 'package:cinema_automation/components/cinemas.dart';
 
 class CinemaScreen extends StatefulWidget {
   const CinemaScreen({super.key});

@@ -1,6 +1,6 @@
-## Sinema Uygulaması Dokümantasyonu
+## Cinema Automation System Dokümantasyonu
 
-Bu doküman, Flutter ile geliştirilmiş Sinema Uygulaması'nın mimarisini, kurulum adımlarını, ekran akışlarını, veri modellerini, ağ/HTTP entegrasyonunu, oturum/persistans yönetimini ve ödeme/koltuk rezervasyonu süreçlerini özetler. Son bölümde Word (.docx) çıktısı alma talimatları yer alır.
+Bu doküman, Flutter ile geliştirilmiş Cinema Automation System'in mimarisini, kurulum adımlarını, ekran akışlarını, veri modellerini, ağ/HTTP entegrasyonunu, oturum/persistans yönetimini ve ödeme/koltuk rezervasyonu süreçlerini özetler. Son bölümde Word (.docx) çıktısı alma talimatları yer alır.
 
 ### Genel Bakış
 - **Platform**: Flutter (Dart)
@@ -123,7 +123,7 @@ Bu dosya Markdown formatındadır. Word'e aktarmak için aşağıdaki yöntemler
 2. Pandoc ile dönüştürme:
    - Pandoc kurun, sonra proje kökünde çalıştırın:
    - Windows PowerShell:
-     - `pandoc -f markdown -t docx -o SinemaUygulamasi.docx DOCUMENTATION.md`
+     - `pandoc -f markdown -t docx -o CinemaAutomation.docx DOCUMENTATION.md`
 3. Online dönüştürücü kullanın: Markdown'dan Word'e çeviren güvenilir bir araçla `DOCUMENTATION.md` yükleyip `.docx` indirin.
 
 —

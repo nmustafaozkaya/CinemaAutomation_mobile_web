@@ -7,7 +7,7 @@
             <div class="glass-effect p-8 rounded-2xl shadow-2xl">
                 <div class="text-center mb-8">
                     <div
-                        class="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        class="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-sign-in-alt text-white text-2xl"></i>
                     </div>
                     <h2 class="text-3xl font-bold text-white mb-2">Hoş Geldiniz</h2>
@@ -20,7 +20,7 @@
                             <i class="fas fa-envelope mr-2"></i>Email
                         </label>
                         <input type="email" id="email" value="admin@cinema.com"
-                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-purple-400 transition-all"
+                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all"
                             placeholder="Email adresinizi girin">
                     </div>
 
@@ -29,16 +29,16 @@
                             <i class="fas fa-lock mr-2"></i>Şifre
                         </label>
                         <input type="password" id="password" value="password"
-                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-purple-400 transition-all"
+                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all"
                             placeholder="Şifrenizi girin">
                     </div>
 
                     <div class="flex items-center justify-between">
                         <label class="flex items-center">
-                            <input type="checkbox" class="w-4 h-4 text-purple-600 bg-transparent border-white/20 rounded focus:ring-purple-500">
+                            <input type="checkbox" class="w-4 h-4 text-green-600 bg-transparent border-white/20 rounded focus:ring-green-500">
                             <span class="ml-2 text-sm text-gray-300">Beni hatırla</span>
                             </label>
-                            <a href="#" class="text-sm text-purple-400 hover:text-purple-300 transition-colors">
+                            <a href="#" class="text-sm text-green-400 hover:text-green-300 transition-colors">
                                 Şifremi unuttum
                             </a>
                             </div>

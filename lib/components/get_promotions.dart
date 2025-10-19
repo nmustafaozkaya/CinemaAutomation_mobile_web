@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sinema_uygulamasi/components/promotions_screen.dart';
+import 'package:cinema_automation/components/promotions_screen.dart';
 
 class Promotion {
   final String title;

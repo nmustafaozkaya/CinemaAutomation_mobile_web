@@ -4,7 +4,7 @@
 <div class="glass-effect p-8 rounded-2xl mb-8">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-3xl font-bold text-white flex items-center">
-            <i class="fas fa-play mr-3 text-purple-400"></i>
+            <i class="fas fa-play mr-3 text-green-400"></i>
             Film Listesi
         </h2>
         <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -15,9 +15,9 @@
     <div class="flex flex-col md:flex-row gap-4 mb-8">
         <div class="flex-1">
             <input type="text" id="movieSearch" placeholder="Film adı ile ara..." 
-                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-purple-400 transition-all">
+                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all">
         </div>
-        <button onclick="searchMovies()" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 rounded-xl font-semibold transition-all">
+        <button onclick="searchMovies()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold transition-all">
             <i class="fas fa-search mr-2"></i>Ara
         </button>
     </div>
@@ -68,7 +68,7 @@ function renderMovies(movies) {
         
         html += `
             <div class="glass-effect rounded-2xl overflow-hidden card-hover">
-                <div class="h-64 bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center relative overflow-hidden">
+                <div class="h-64 bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center relative overflow-hidden">
                     ${posterUrl ? `
                         <img src="${posterUrl}" alt="${movie.title}" 
                              class="w-full h-full object-cover"

@@ -2,7 +2,7 @@
 <div id="ticketStep2" class="ticket-step hidden">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-2xl font-bold text-white text-center flex-1">
-            <i class="fas fa-building mr-2 text-blue-400"></i>Sinema Seçiniz
+            <i class="fas fa-building mr-2 text-green-400"></i>Sinema Seçiniz
         </h3>
         <button onclick="goBackToStep(1)" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
             <i class="fas fa-arrow-left mr-2"></i>Film Değiştir
@@ -21,7 +21,7 @@
                 <i class="fas fa-map-marker-alt mr-1"></i>Şehir Filtresi (İsteğe Bağlı)
             </label>
             <select id="cityFilter" onchange="window.cinemaSelection.filterByCity(this.value)"
-                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-blue-400 transition-all">
+                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-green-400 transition-all">
                 <option value="">Tüm Şehirler</option>
                 <!-- Cities will be loaded here -->
             </select>
@@ -30,7 +30,7 @@
     
     <!-- Cinema Count Info -->
     <div id="cinemaCountInfo" class="text-center mb-4">
-        <span class="text-blue-300 text-sm">
+        <span class="text-green-300 text-sm">
             <i class="fas fa-info-circle mr-1"></i>
             <span id="filteredCinemaCount">0</span> sinema bulundu
         </span>
@@ -38,7 +38,7 @@
 
     <!-- Loading State -->
     <div id="cinemaLoadingState" class="text-center py-12 hidden">
-        <div class="loading w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <div class="loading w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full mx-auto mb-4"></div>
         <p class="text-white">Sinemalar yükleniyor...</p>
     </div>
 
@@ -55,7 +55,7 @@
         <h4 class="text-xl font-bold text-white mb-2">Sinema Bulunamadı</h4>
         <p class="text-gray-400">Bu film için seçilen şehirde sinema bulunmuyor.</p>
         <button onclick="window.cinemaSelection.clearFilters()"
-            class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+            class="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium">
             <i class="fas fa-refresh mr-2"></i>Tüm Sinemalar
         </button>
     </div>
@@ -206,7 +206,7 @@ class CinemaSelection {
         const mockCinemas = [
             { 
                 id: 1, 
-                name: "CinemaMax Gaziantep", 
+                name: "Cinema Automation Gaziantep", 
                 address: "Forum AVM, Şehitkamil",
                 city: { id: 1, name: "Gaziantep" },
                 halls: [{ showtimes: [1, 2, 3] }, { showtimes: [4, 5] }],
@@ -214,7 +214,7 @@ class CinemaSelection {
             },
             { 
                 id: 2, 
-                name: "CinemaMax Ankara", 
+                name: "Cinema Automation Ankara", 
                 address: "Ankamall AVM",
                 city: { id: 2, name: "Ankara" },
                 halls: [{ showtimes: [1, 2] }, { showtimes: [3, 4] }],
@@ -230,7 +230,7 @@ class CinemaSelection {
             },
             { 
                 id: 4, 
-                name: "CinemaMax Adana", 
+                name: "Cinema Automation Adana", 
                 address: "M1 AVM",
                 city: { id: 4, name: "Adana" },
                 halls: [{ showtimes: [1, 2] }],

@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
-import 'package:sinema_uygulamasi/components/cinemas.dart';
-import 'package:sinema_uygulamasi/components/movies.dart';
-import 'package:sinema_uygulamasi/components/seat.dart';
-import 'package:sinema_uygulamasi/components/showtimes.dart';
-import 'package:sinema_uygulamasi/components/taxes.dart';
-import 'package:sinema_uygulamasi/components/user.dart';
-import 'package:sinema_uygulamasi/components/user_preferences.dart';
-import 'package:sinema_uygulamasi/screens/home.dart';
-import 'package:sinema_uygulamasi/constant/app_color_style.dart';
+import 'package:cinema_automation/api_connection/api_connection.dart';
+import 'package:cinema_automation/components/cinemas.dart';
+import 'package:cinema_automation/components/movies.dart';
+import 'package:cinema_automation/components/seat.dart';
+import 'package:cinema_automation/components/showtimes.dart';
+import 'package:cinema_automation/components/taxes.dart';
+import 'package:cinema_automation/components/user.dart';
+import 'package:cinema_automation/components/user_preferences.dart';
+import 'package:cinema_automation/screens/home.dart';
+import 'package:cinema_automation/constant/app_color_style.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Cinema cinema;
@@ -247,7 +247,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Film ve Seans Bilgileri',
+              'Otomatik Film ve Seans Bilgileri',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -256,11 +256,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Film: ${widget.movie.title}',
+              'Otomatik Film: ${widget.movie.title}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
             Text(
-              'Sinema: ${widget.cinema.cinemaName}',
+              'Otomatik Sinema: ${widget.cinema.cinemaName}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
             Text(

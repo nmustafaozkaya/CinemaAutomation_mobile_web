@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:sinema_uygulamasi/components/rounded_button.dart';
-import 'package:sinema_uygulamasi/components/rounded_input_field.dart';
+import 'package:cinema_automation/components/rounded_button.dart';
+import 'package:cinema_automation/components/rounded_input_field.dart';
 import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
-import 'package:sinema_uygulamasi/components/user.dart';
-import 'package:sinema_uygulamasi/components/user_preferences.dart';
-import 'package:sinema_uygulamasi/screens/login_screen.dart';
+import 'package:cinema_automation/api_connection/api_connection.dart';
+import 'package:cinema_automation/components/user.dart';
+import 'package:cinema_automation/components/user_preferences.dart';
+import 'package:cinema_automation/screens/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -29,6 +29,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    // Loading göster
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
     var body = jsonEncode({
       'name': nameController.text.trim(),
       'email': emailController.text.trim(),
@@ -38,14 +47,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      print('Register API URL: ${ApiConnection.signUp}'); // Debug için
+      print('Register Body: $body'); // Debug için
+
       var res = await http.post(
         Uri.parse(ApiConnection.signUp),
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json', // Bu satır önemlidir
+          'Accept': 'application/json',
         },
         body: body,
       );
+
+      print('Register Response Status: ${res.statusCode}'); // Debug için
+      print('Register Response Body: ${res.body}'); // Debug için
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
 
       var resBodyOfSignUp = jsonDecode(res.body);
 
@@ -69,6 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Fluttertoast.showToast(
             msg:
                 'Hata: ${resBodyOfSignUp['message'] ?? 'Bilinmeyen bir hata oluştu.'}',
+            toastLength: Toast.LENGTH_LONG,
           );
         }
       } else if (res.statusCode == 422) {
@@ -83,14 +102,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           toastLength: Toast.LENGTH_LONG,
         );
       } else {
-        Fluttertoast.showToast(msg: 'Sunucu hatası: ${res.statusCode}');
+        Fluttertoast.showToast(
+          msg:
+              'Sunucu hatası: ${res.statusCode} - ${resBodyOfSignUp['message'] ?? 'Bilinmeyen hata'}',
+          toastLength: Toast.LENGTH_LONG,
+        );
       }
     } catch (e) {
-      print(
-        "Hata Detayı: ${e.toString()}",
-      ); // Hatanın detayını konsolda görmek için
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      print("Register Error: ${e.toString()}"); // Debug için
       Fluttertoast.showToast(
-        msg: "İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.",
+        msg: "Bağlantı hatası: $e",
+        toastLength: Toast.LENGTH_LONG,
       );
     }
   }

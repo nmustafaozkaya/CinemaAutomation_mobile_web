@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:sinema_uygulamasi/components/user.dart';
-import 'package:sinema_uygulamasi/components/user_preferences.dart';
-import 'package:sinema_uygulamasi/screens/login_screen.dart';
+import 'package:cinema_automation/components/user.dart';
+import 'package:cinema_automation/components/user_preferences.dart';
+import 'package:cinema_automation/screens/login_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:sinema_uygulamasi/constant/app_color_style.dart';
-import 'package:sinema_uygulamasi/screens/my_ticket_screen.dart';
+import 'package:cinema_automation/constant/app_color_style.dart';
+import 'package:cinema_automation/screens/my_ticket_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final User currentUser;
@@ -153,7 +153,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             const Text(
-              'Filmlerim',
+              'Otomatik Filmlerim',
               style: TextStyle(
                 color: AppColorStyle.textPrimary,
                 fontWeight: FontWeight.bold,
@@ -165,7 +165,7 @@ class ProfileScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.favorite, color: Colors.redAccent),
               title: const Text(
-                'Favori Filmler',
+                'Favori Otomatik Filmler',
                 style: TextStyle(color: AppColorStyle.textPrimary),
               ),
               trailing: const Icon(
@@ -175,7 +175,7 @@ class ProfileScreen extends StatelessWidget {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("Favori Filmler yakında gelecek"),
+                    content: Text("Favori Otomatik Filmler yakında gelecek"),
                     duration: Duration(seconds: 2),
                   ),
                 );

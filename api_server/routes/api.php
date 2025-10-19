@@ -25,6 +25,9 @@ Route::get('movies/{movie}/showtimes', [MovieController::class, 'getShowtimesFor
 Route::get('movies/{movie}/cinemas/{cinema}/showtimes', [MovieController::class, 'getShowtimesForMovieAndCinema']);
 Route::get('movies/{movie}/stats', [MovieController::class, 'getMovieStats']);
 
+// Public routes - Cities
+Route::get('cities', [CinemaController::class, 'cities']);
+
 // Public routes - Cinemas
 Route::get('cinemas', [CinemaController::class, 'index']);
 Route::get('cinemas/{id}', [CinemaController::class, 'show']);

@@ -59,4 +59,22 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# cinema_api_server
+# Cinema Automation API Server
+
+This is the backend API server for the Cinema Automation System, built with Laravel.
+
+## Features
+- 🎬 Movie and showtime management
+- 🎫 Ticket booking and reservation system
+- 🏢 Multi-cinema support
+- 👥 User authentication and authorization
+- 📊 Analytics and reporting
+- 🔄 Real-time automation features
+
+## API Endpoints
+- Authentication: `/api/login`, `/api/register`
+- Movies: `/api/movies`, `/api/future-movies`
+- Cinemas: `/api/cinemas`
+- Showtimes: `/api/showtimes`
+- Tickets: `/api/tickets`, `/api/my-tickets`
+- Seats: `/api/showtimes/{id}/available-seats`

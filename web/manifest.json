@@ -1,6 +1,6 @@
 {
-    "name": "sinema_uygulamasi",
-    "short_name": "sinema_uygulamasi",
+    "name": "Cinema Automation",
+    "short_name": "CinemaAuto",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:sinema_uygulamasi/components/movies.dart';
-import 'package:sinema_uygulamasi/screens/movie_details.dart';
+import 'package:cinema_automation/components/movies.dart';
+import 'package:cinema_automation/screens/movie_details.dart';
 
 class MovieListSection extends StatelessWidget {
   final List<Movie> movies;

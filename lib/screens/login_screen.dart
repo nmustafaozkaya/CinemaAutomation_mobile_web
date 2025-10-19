@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
-import 'package:sinema_uygulamasi/components/rounded_button.dart';
-import 'package:sinema_uygulamasi/components/rounded_input_field.dart';
-import 'package:sinema_uygulamasi/components/square_box.dart';
-import 'package:sinema_uygulamasi/components/user.dart';
-import 'package:sinema_uygulamasi/components/user_preferences.dart';
-import 'package:sinema_uygulamasi/constant/app_text_style.dart';
-import 'package:sinema_uygulamasi/screens/home.dart';
-import 'package:sinema_uygulamasi/screens/register_screen.dart';
+import 'package:cinema_automation/api_connection/api_connection.dart';
+import 'package:cinema_automation/components/rounded_button.dart';
+import 'package:cinema_automation/components/rounded_input_field.dart';
+import 'package:cinema_automation/components/square_box.dart';
+import 'package:cinema_automation/components/user.dart';
+import 'package:cinema_automation/components/user_preferences.dart';
+import 'package:cinema_automation/constant/app_text_style.dart';
+import 'package:cinema_automation/screens/home.dart';
+import 'package:cinema_automation/screens/register_screen.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -31,25 +31,41 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    // Loading göster
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
     try {
+      print('API URL: ${ApiConnection.login}'); // Debug için
+
       var res = await http.post(
         Uri.parse(ApiConnection.login),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: jsonEncode({
           'email': emailController.text.trim(),
           'password': passwordController.text.trim(),
         }),
       );
 
+      print('Response Status: ${res.statusCode}'); // Debug için
+      print('Response Body: ${res.body}'); // Debug için
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
       if (res.statusCode == 200) {
         var resBody = jsonDecode(res.body);
-        if (res.statusCode == 401) {
-          Fluttertoast.showToast(
-            msg: 'Your email or password is wrong! Please try Again',
-          );
-        }
+
         if (resBody['success'] == true) {
-          Fluttertoast.showToast(msg: 'You are logged-in Successfully.');
+          Fluttertoast.showToast(msg: 'Giriş başarılı!');
           emailController.clear();
           passwordController.clear();
 
@@ -73,13 +89,33 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           });
         } else {
-          Fluttertoast.showToast(msg: resBody['success'] ?? 'Giriş başarısız');
+          Fluttertoast.showToast(
+            msg: resBody['message'] ?? 'Giriş başarısız',
+            toastLength: Toast.LENGTH_LONG,
+          );
         }
+      } else if (res.statusCode == 401) {
+        Fluttertoast.showToast(
+          msg: 'Email veya şifre hatalı!',
+          toastLength: Toast.LENGTH_LONG,
+        );
       } else {
-        Fluttertoast.showToast(msg: 'Sunucu hatası: ${res.statusCode}');
+        var resBody = jsonDecode(res.body);
+        Fluttertoast.showToast(
+          msg:
+              'Sunucu hatası: ${res.statusCode} - ${resBody['message'] ?? 'Bilinmeyen hata'}',
+          toastLength: Toast.LENGTH_LONG,
+        );
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Hata: $e');
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      print('Login Error: $e'); // Debug için
+      Fluttertoast.showToast(
+        msg: 'Bağlantı hatası: $e',
+        toastLength: Toast.LENGTH_LONG,
+      );
     }
   }
 

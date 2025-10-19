@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:sinema_uygulamasi/components/cinemas.dart';
-import 'package:sinema_uygulamasi/components/movies.dart';
-import 'package:sinema_uygulamasi/components/seat.dart';
-import 'package:sinema_uygulamasi/components/showtimes.dart';
-import 'package:sinema_uygulamasi/constant/app_color_style.dart';
-import 'package:sinema_uygulamasi/components/taxes.dart';
-import 'package:sinema_uygulamasi/screens/payment_screen.dart';
+import 'package:cinema_automation/components/cinemas.dart';
+import 'package:cinema_automation/components/movies.dart';
+import 'package:cinema_automation/components/seat.dart';
+import 'package:cinema_automation/components/showtimes.dart';
+import 'package:cinema_automation/constant/app_color_style.dart';
+import 'package:cinema_automation/components/taxes.dart';
+import 'package:cinema_automation/screens/payment_screen.dart';
 
 class ReservationScreen extends StatefulWidget {
   final Cinema cinema;

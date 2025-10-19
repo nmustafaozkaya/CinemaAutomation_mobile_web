@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sinema_uygulamasi/components/get_promotions.dart';
+import 'package:cinema_automation/components/get_promotions.dart';
 
 class PromotionsScreen extends StatefulWidget {
   const PromotionsScreen({super.key});

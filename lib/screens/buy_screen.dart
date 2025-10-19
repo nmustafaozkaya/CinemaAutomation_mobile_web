@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:sinema_uygulamasi/components/cinemas.dart';
-import 'package:sinema_uygulamasi/components/movies.dart';
-import 'package:sinema_uygulamasi/constant/app_color_style.dart';
-import 'package:sinema_uygulamasi/screens/cinema_select.dart';
-import 'package:sinema_uygulamasi/components/showtimes.dart';
-import 'package:sinema_uygulamasi/screens/ticket_screen.dart';
-import 'package:sinema_uygulamasi/screens/showtimes_screen.dart';
+import 'package:cinema_automation/components/cinemas.dart';
+import 'package:cinema_automation/components/movies.dart';
+import 'package:cinema_automation/constant/app_color_style.dart';
+import 'package:cinema_automation/screens/cinema_select.dart';
+import 'package:cinema_automation/components/showtimes.dart';
+import 'package:cinema_automation/screens/ticket_screen.dart';
+import 'package:cinema_automation/screens/showtimes_screen.dart';
 
 class BuyScreen extends StatefulWidget {
   final Movie? currentMovie;

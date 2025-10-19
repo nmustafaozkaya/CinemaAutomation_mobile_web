@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
-import 'package:sinema_uygulamasi/components/auto_ImageSlider.dart';
-import 'package:sinema_uygulamasi/components/promotions_screen.dart';
-import 'package:sinema_uygulamasi/components/movies.dart';
-import 'package:sinema_uygulamasi/constant/app_color_style.dart';
-import 'package:sinema_uygulamasi/screens/movie_details.dart';
-import 'package:sinema_uygulamasi/components/get_promotions.dart';
-import 'package:sinema_uygulamasi/screens/movies_screen.dart';
+import 'package:cinema_automation/api_connection/api_connection.dart';
+import 'package:cinema_automation/components/auto_ImageSlider.dart';
+import 'package:cinema_automation/components/promotions_screen.dart';
+import 'package:cinema_automation/components/movies.dart';
+import 'package:cinema_automation/constant/app_color_style.dart';
+import 'package:cinema_automation/screens/movie_details.dart';
+import 'package:cinema_automation/components/get_promotions.dart';
+import 'package:cinema_automation/screens/movies_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
