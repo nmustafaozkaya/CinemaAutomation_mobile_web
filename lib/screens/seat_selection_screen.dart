@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:cinema_automation/api_connection/api_connection.dart';
-import 'package:cinema_automation/components/cinemas.dart';
-import 'package:cinema_automation/components/movies.dart';
-import 'package:cinema_automation/components/seat.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/components/cinemas.dart';
+import 'package:sinema_uygulamasi/components/movies.dart';
+import 'package:sinema_uygulamasi/components/seat.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
-import 'package:cinema_automation/constant/app_color_style.dart';
+import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:intl/intl.dart';
-import 'package:cinema_automation/components/showtimes.dart';
-import 'package:cinema_automation/components/seat_reservation_response.dart';
-import 'package:cinema_automation/screens/reservation_screen.dart';
+import 'package:sinema_uygulamasi/components/showtimes.dart';
+import 'package:sinema_uygulamasi/components/seat_reservation_response.dart';
+import 'package:sinema_uygulamasi/screens/reservation_screen.dart';
 
 class SeatSelectionScreen extends StatefulWidget {
   final Cinema currentCinema;
@@ -457,7 +457,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        ...seats.map((seat) => buildSeatButton(seat)).toList(),
+                        ...seats.map((seat) => buildSeatButton(seat)),
                       ],
                     ),
                   );

@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:cinema_automation/api_connection/api_connection.dart';
-import 'package:cinema_automation/components/cinemas.dart';
-import 'package:cinema_automation/components/movies.dart';
-import 'package:cinema_automation/components/showtimes.dart';
-import 'package:cinema_automation/components/ticket_price.dart';
-import 'package:cinema_automation/constant/app_color_style.dart';
-import 'package:cinema_automation/screens/seat_selection_screen.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/components/cinemas.dart';
+import 'package:sinema_uygulamasi/components/movies.dart';
+import 'package:sinema_uygulamasi/components/showtimes.dart';
+import 'package:sinema_uygulamasi/components/ticket_price.dart';
+import 'package:sinema_uygulamasi/constant/app_color_style.dart';
+import 'package:sinema_uygulamasi/screens/seat_selection_screen.dart';
 
 class TicketSelectionScreen extends StatefulWidget {
   final Cinema currentCinema;
@@ -56,7 +56,6 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
         throw Exception("Sunucudan geçersiz yanıt");
       }
     } catch (e) {
-      print("Hata: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Bilet türleri alınamadı.")),
@@ -286,7 +285,9 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                           }),
                           const SizedBox(height: 8),
                           Divider(
-                            color: AppColorStyle.textSecondary.withOpacity(0.5),
+                            color: AppColorStyle.textSecondary.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 8),
                         ] else ...[

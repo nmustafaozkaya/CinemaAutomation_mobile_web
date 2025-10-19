@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:cinema_automation/components/user.dart';
-import 'package:cinema_automation/components/user_preferences.dart';
-import 'package:cinema_automation/screens/login_screen.dart';
+import 'package:sinema_uygulamasi/components/user.dart';
+import 'package:sinema_uygulamasi/components/user_preferences.dart';
+import 'package:sinema_uygulamasi/screens/login_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:cinema_automation/constant/app_color_style.dart';
-import 'package:cinema_automation/screens/my_ticket_screen.dart';
+import 'package:sinema_uygulamasi/constant/app_color_style.dart';
+import 'package:sinema_uygulamasi/screens/my_ticket_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final User currentUser;
   const ProfileScreen({super.key, required this.currentUser});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +58,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      currentUser.name,
+                      widget.currentUser.name,
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -62,7 +67,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      currentUser.email,
+                      widget.currentUser.email,
                       style: const TextStyle(
                         fontSize: 16,
                         color: AppColorStyle.textSecondary,
@@ -248,10 +253,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               onTap: () async {
+                final navigator = Navigator.of(context);
                 await UserPreferences.removeData();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                   (route) => false,
                 );
               },

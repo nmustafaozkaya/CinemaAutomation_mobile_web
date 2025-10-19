@@ -6,7 +6,7 @@ class AutoImageSlider extends StatefulWidget {
   const AutoImageSlider({super.key});
 
   @override
-  _AutoImageSliderState createState() => _AutoImageSliderState();
+  State<AutoImageSlider> createState() => _AutoImageSliderState();
 }
 
 class _AutoImageSliderState extends State<AutoImageSlider> {

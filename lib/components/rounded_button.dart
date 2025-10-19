@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cinema_automation/constant/app_text_style.dart';
+import 'package:sinema_uygulamasi/constant/app_text_style.dart';
 
 class RoundedButton extends StatelessWidget {
   final String text;
@@ -30,7 +30,7 @@ class RoundedButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
             foregroundColor: Colors.white,
           ),
-          child: Text(text, style: AppTextStyle.MIDDLE_BUTTON_TEXT),
+          child: Text(text, style: AppTextStyle.middleButtonText),
         ),
       ),
     );

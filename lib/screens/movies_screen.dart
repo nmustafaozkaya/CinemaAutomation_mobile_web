@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cinema_automation/api_connection/api_connection.dart';
-import 'package:cinema_automation/components/movies.dart';
-import 'package:cinema_automation/constant/app_color_style.dart';
-import 'package:cinema_automation/constant/app_text_style.dart';
-import 'package:cinema_automation/screens/movie_details.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/components/movies.dart';
+import 'package:sinema_uygulamasi/constant/app_color_style.dart';
+import 'package:sinema_uygulamasi/constant/app_text_style.dart';
+import 'package:sinema_uygulamasi/screens/movie_details.dart';
 
 Widget buildMoviePoster(String posterUrl) {
   if (posterUrl.isEmpty || posterUrl == 'N/A') {
@@ -15,7 +15,6 @@ Widget buildMoviePoster(String posterUrl) {
       posterUrl,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
-        print('Resim yüklenemedi: $posterUrl - Hata: $error');
         return Center(
           child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
         );
@@ -155,11 +154,11 @@ Widget _buildMovieGridSliver(
   );
 }
 
-class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
+class CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   final String selectedCategory;
   final ValueChanged<String> onCategorySelected;
 
-  _CategoryHeaderDelegate({
+  CategoryHeaderDelegate({
     required this.selectedCategory,
     required this.onCategorySelected,
   });
@@ -180,7 +179,7 @@ class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
             onTap: () => onCategorySelected('Now Showing'),
             child: Text(
               'Now Showing',
-              style: AppTextStyle.BASIC_HEADER_.copyWith(
+              style: AppTextStyle.basicHeader.copyWith(
                 fontWeight: selectedCategory == 'Now Showing'
                     ? FontWeight.bold
                     : FontWeight.normal,
@@ -194,7 +193,7 @@ class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
             onTap: () => onCategorySelected('Coming Soon'),
             child: Text(
               'Coming Soon',
-              style: AppTextStyle.BASIC_HEADER_.copyWith(
+              style: AppTextStyle.basicHeader.copyWith(
                 fontWeight: selectedCategory == 'Coming Soon'
                     ? FontWeight.bold
                     : FontWeight.normal,
@@ -208,7 +207,7 @@ class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
             onTap: () => onCategorySelected('Pre Order'),
             child: Text(
               'Pre Order',
-              style: AppTextStyle.BASIC_HEADER_.copyWith(
+              style: AppTextStyle.basicHeader.copyWith(
                 fontWeight: selectedCategory == 'Pre Order'
                     ? FontWeight.bold
                     : FontWeight.normal,
@@ -229,21 +228,21 @@ class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => 48.0;
 
   @override
-  bool shouldRebuild(_CategoryHeaderDelegate oldDelegate) {
+  bool shouldRebuild(CategoryHeaderDelegate oldDelegate) {
     return oldDelegate.selectedCategory != selectedCategory;
   }
 }
 
-class moviesScreen extends StatefulWidget {
+class MoviesScreen extends StatefulWidget {
   final bool isComingSoon;
 
-  const moviesScreen({super.key, required this.isComingSoon});
+  const MoviesScreen({super.key, required this.isComingSoon});
 
   @override
-  State<moviesScreen> createState() => _moviesScreenState();
+  State<MoviesScreen> createState() => _MoviesScreenState();
 }
 
-class _moviesScreenState extends State<moviesScreen> {
+class _MoviesScreenState extends State<MoviesScreen> {
   late String selectedCategory;
 
   void _onCategorySelected(String category) {
@@ -274,7 +273,7 @@ class _moviesScreenState extends State<moviesScreen> {
       body: CustomScrollView(
         slivers: [
           SliverPersistentHeader(
-            delegate: _CategoryHeaderDelegate(
+            delegate: CategoryHeaderDelegate(
               selectedCategory: selectedCategory,
               onCategorySelected: _onCategorySelected,
             ),

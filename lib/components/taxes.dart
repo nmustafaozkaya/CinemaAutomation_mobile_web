@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:cinema_automation/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 
 class TaxResponse {
   final bool success;

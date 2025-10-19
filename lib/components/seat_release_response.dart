@@ -1,4 +1,4 @@
-import 'package:cinema_automation/components/seat.dart';
+import 'package:sinema_uygulamasi/components/seat.dart';
 
 class SeatReleaseResponse {
   final bool success;

@@ -58,7 +58,6 @@ DateTime parseDate(String? dateStr) {
         // (2026-11-06T00:00:00.000000Z gibi)
         return DateTime.parse(dateStr);
       } catch (e) {
-        print('Tarih parse hatası: $e - gelen değer: $dateStr');
         return DateTime(1900);
       }
     }

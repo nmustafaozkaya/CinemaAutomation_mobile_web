@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:cinema_automation/components/movies.dart';
-import 'package:cinema_automation/constant/app_color_style.dart';
-import 'package:cinema_automation/api_connection/api_connection.dart';
-import 'package:cinema_automation/components/cinemas.dart';
-import 'package:cinema_automation/screens/showtimes_screen.dart';
+import 'package:sinema_uygulamasi/components/movies.dart';
+import 'package:sinema_uygulamasi/constant/app_color_style.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/components/cinemas.dart';
+import 'package:sinema_uygulamasi/screens/showtimes_screen.dart';
 
 class CinemaSelect extends StatefulWidget {
   final Movie? currentMovie2;
@@ -111,7 +111,6 @@ class _CinemaSelectState extends State<CinemaSelect> {
                 cityNames.add(cityName);
               }
             } catch (e) {
-              print('Showtime parse hatası: $e');
               continue;
             }
           }
@@ -130,7 +129,6 @@ class _CinemaSelectState extends State<CinemaSelect> {
               final cinema = Cinema.fromJson(cinemaData);
               cinemas.add(cinema);
             } catch (e) {
-              print('Cinema parse hatası: $e');
               continue;
             }
           }
@@ -243,7 +241,6 @@ class _CinemaSelectState extends State<CinemaSelect> {
           cityNames.add(cityName);
         }
       } catch (e) {
-        print('Showtime parse hatası: $e');
         continue;
       }
     }
@@ -254,7 +251,6 @@ class _CinemaSelectState extends State<CinemaSelect> {
         final cinema = Cinema.fromJson(cinemaData);
         cinemas.add(cinema);
       } catch (e) {
-        print('Cinema parse hatası: $e');
         continue;
       }
     }
@@ -370,7 +366,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedCity,
+                    initialValue: _selectedCity,
                     dropdownColor: AppColorStyle.appBarColor,
                     style: const TextStyle(color: AppColorStyle.textPrimary),
                     decoration: const InputDecoration(

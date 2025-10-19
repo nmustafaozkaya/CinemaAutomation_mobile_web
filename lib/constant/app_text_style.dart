@@ -1,45 +1,45 @@
 import 'package:flutter/material.dart';
 
 class AppTextStyle {
-  static const MINI_BOLD_DESCRIPTION_TEXT = TextStyle(
+  static const miniBoldDescriptionText = TextStyle(
     fontSize: 13,
     color: Colors.black,
     letterSpacing: 3,
     fontWeight: FontWeight.w600,
   );
 
-  static const MIDDLE_BUTTON_TEXT = TextStyle(
+  static const middleButtonText = TextStyle(
     fontSize: 20,
     color: Colors.white,
     letterSpacing: 5,
     fontWeight: FontWeight.w300,
   );
-  static const MIDDLE_DESCRIPTION_TEXT = TextStyle(
+  static const middleDescriptionText = TextStyle(
     fontSize: 13,
     color: Colors.black87,
     letterSpacing: 2,
   );
 
-  static const MINI_DEFAULT_DESCRIPTION_TEXT = TextStyle(
+  static const miniDefaultDescriptionText = TextStyle(
     fontSize: 13,
     color: Colors.black,
   );
-  static const MINI_DEFAULT_DESCRIPTION_BOLD = TextStyle(
+  static const miniDefaultDescriptionBold = TextStyle(
     fontSize: 13,
     color: Colors.black,
     fontWeight: FontWeight.w600,
   );
 
-  static const MIDDLE_BOLD_HEADER = TextStyle(
+  static const middleBoldHeader = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
     color: Colors.black87,
   );
 
-  static const TOP_HEADER_ = TextStyle(
+  static const topHeader = TextStyle(
     color: Colors.black,
     fontWeight: FontWeight.bold,
   );
 
-  static const BASIC_HEADER_ = TextStyle(color: Colors.black, fontSize: 18);
+  static const basicHeader = TextStyle(color: Colors.black, fontSize: 18);
 }

@@ -1,4 +1,4 @@
-name: cinema_automation
+name: sinema_uygulamasi
 description: "Cinema Automation System - Advanced cinema management and automation platform."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -75,7 +75,6 @@ flutter:
     - assets/images/slide1.jpg
     - assets/images/slide2.jpg
     - assets/images/slide3.jpg
-    - assets/images/logox.png
     - assets/images/promotion_firstbuy.png
     - assets/images/popcorn_coke.png
     - assets/images/cinema_woman.png

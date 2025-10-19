@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:cinema_automation/components/rounded_button.dart';
-import 'package:cinema_automation/components/rounded_input_field.dart';
+import 'package:sinema_uygulamasi/components/rounded_button.dart';
+import 'package:sinema_uygulamasi/components/rounded_input_field.dart';
 import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:cinema_automation/api_connection/api_connection.dart';
-import 'package:cinema_automation/components/user.dart';
-import 'package:cinema_automation/components/user_preferences.dart';
-import 'package:cinema_automation/screens/login_screen.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/components/user.dart';
+import 'package:sinema_uygulamasi/components/user_preferences.dart';
+import 'package:sinema_uygulamasi/screens/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,11 +20,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   var emailController = TextEditingController();
   var nameController = TextEditingController();
   var passwordController = TextEditingController();
-  var RepasswordController = TextEditingController();
+  var rePasswordController = TextEditingController();
   var phoneController = TextEditingController();
   Future<void> registerAndSaveUserRecord() async {
     // Şifrelerin eşleşip eşleşmediğini kontrol et
-    if (passwordController.text.trim() != RepasswordController.text.trim()) {
+    if (passwordController.text.trim() != rePasswordController.text.trim()) {
       Fluttertoast.showToast(msg: "Şifreler uyuşmuyor!");
       return;
     }
@@ -42,14 +42,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       'name': nameController.text.trim(),
       'email': emailController.text.trim(),
       'password': passwordController.text.trim(),
-      'password_confirmation': RepasswordController.text.trim(),
+      'password_confirmation': rePasswordController.text.trim(),
       'phone': phoneController.text.trim(),
     });
 
     try {
-      print('Register API URL: ${ApiConnection.signUp}'); // Debug için
-      print('Register Body: $body'); // Debug için
-
       var res = await http.post(
         Uri.parse(ApiConnection.signUp),
         headers: {
@@ -59,11 +56,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         body: body,
       );
 
-      print('Register Response Status: ${res.statusCode}'); // Debug için
-      print('Register Response Body: ${res.body}'); // Debug için
-
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
       var resBodyOfSignUp = jsonDecode(res.body);
 
@@ -110,9 +106,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
-      print("Register Error: ${e.toString()}"); // Debug için
       Fluttertoast.showToast(
         msg: "Bağlantı hatası: $e",
         toastLength: Toast.LENGTH_LONG,
@@ -171,7 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onChange: (value) {},
                     ),
                     RoundedInputField(
-                      controller: RepasswordController,
+                      controller: rePasswordController,
                       hintText: 'Repeat Password',
                       icon: Icons.lock,
                       isEmail: false,
@@ -181,7 +178,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     RoundedButton(
                       text: 'Register',
                       onPressed: () {
-                        if (RepasswordController.text.trim() !=
+                        if (rePasswordController.text.trim() !=
                             passwordController.text.trim()) {
                           Fluttertoast.showToast(msg: 'Passwords are not same');
                         } else {

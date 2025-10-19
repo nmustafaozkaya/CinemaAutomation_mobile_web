@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:cinema_automation/api_connection/api_connection.dart';
-import 'package:cinema_automation/components/rounded_button.dart';
-import 'package:cinema_automation/components/rounded_input_field.dart';
-import 'package:cinema_automation/components/square_box.dart';
-import 'package:cinema_automation/components/user.dart';
-import 'package:cinema_automation/components/user_preferences.dart';
-import 'package:cinema_automation/constant/app_text_style.dart';
-import 'package:cinema_automation/screens/home.dart';
-import 'package:cinema_automation/screens/register_screen.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/components/rounded_button.dart';
+import 'package:sinema_uygulamasi/components/rounded_input_field.dart';
+import 'package:sinema_uygulamasi/components/square_box.dart';
+import 'package:sinema_uygulamasi/components/user.dart';
+import 'package:sinema_uygulamasi/components/user_preferences.dart';
+import 'package:sinema_uygulamasi/constant/app_text_style.dart';
+import 'package:sinema_uygulamasi/screens/home.dart';
+import 'package:sinema_uygulamasi/screens/register_screen.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -41,8 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     try {
-      print('API URL: ${ApiConnection.login}'); // Debug için
-
       var res = await http.post(
         Uri.parse(ApiConnection.login),
         headers: {
@@ -55,11 +53,10 @@ class _LoginScreenState extends State<LoginScreen> {
         }),
       );
 
-      print('Response Status: ${res.statusCode}'); // Debug için
-      print('Response Body: ${res.body}'); // Debug için
-
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
       if (res.statusCode == 200) {
         var resBody = jsonDecode(res.body);
@@ -81,12 +78,14 @@ class _LoginScreenState extends State<LoginScreen> {
           }
 
           Future.delayed(const Duration(seconds: 1), () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HomePage(currentUser: user),
-              ),
-            );
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HomePage(currentUser: user),
+                ),
+              );
+            }
           });
         } else {
           Fluttertoast.showToast(
@@ -109,9 +108,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
-      print('Login Error: $e'); // Debug için
       Fluttertoast.showToast(
         msg: 'Bağlantı hatası: $e',
         toastLength: Toast.LENGTH_LONG,
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 10),
                         Text(
                           'Forgot Password ?',
-                          style: AppTextStyle.MINI_BOLD_DESCRIPTION_TEXT,
+                          style: AppTextStyle.miniBoldDescriptionText,
                         ),
                         const SizedBox(height: 5),
                         Column(
@@ -237,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: EdgeInsets.symmetric(vertical: 5),
                       child: Text(
                         ' Or Continue with ',
-                        style: AppTextStyle.MIDDLE_DESCRIPTION_TEXT,
+                        style: AppTextStyle.middleDescriptionText,
                       ),
                     ),
                     Expanded(
@@ -268,13 +268,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: EdgeInsets.all(8.0),
                     child: Text(
                       'Not a member?',
-                      style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_TEXT,
+                      style: AppTextStyle.miniDefaultDescriptionText,
                     ),
                   ),
                   GestureDetector(
                     child: Text(
                       'Register Now',
-                      style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_BOLD,
+                      style: AppTextStyle.miniDefaultDescriptionBold,
                     ),
                     onTap: () {
                       Navigator.pushReplacement(

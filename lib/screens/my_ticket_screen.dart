@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:cinema_automation/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'dart:convert';
-import "package:cinema_automation/components/mytickets.dart";
-import 'package:cinema_automation/components/user_preferences.dart';
-import 'package:cinema_automation/constant/app_color_style.dart';
+import "package:sinema_uygulamasi/components/mytickets.dart";
+import 'package:sinema_uygulamasi/components/user_preferences.dart';
+import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 
 class MyTicketsPage extends StatefulWidget {
   const MyTicketsPage({super.key});

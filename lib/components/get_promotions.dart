@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cinema_automation/components/promotions_screen.dart';
+import 'package:sinema_uygulamasi/components/promotions_screen.dart';
 
 class Promotion {
   final String title;
@@ -126,7 +126,7 @@ class HorizontalPromotionCard extends StatelessWidget {
                       promotion.description,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

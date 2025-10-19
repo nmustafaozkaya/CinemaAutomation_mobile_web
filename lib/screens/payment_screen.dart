@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:cinema_automation/api_connection/api_connection.dart';
-import 'package:cinema_automation/components/cinemas.dart';
-import 'package:cinema_automation/components/movies.dart';
-import 'package:cinema_automation/components/seat.dart';
-import 'package:cinema_automation/components/showtimes.dart';
-import 'package:cinema_automation/components/taxes.dart';
-import 'package:cinema_automation/components/user.dart';
-import 'package:cinema_automation/components/user_preferences.dart';
-import 'package:cinema_automation/screens/home.dart';
-import 'package:cinema_automation/constant/app_color_style.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
+import 'package:sinema_uygulamasi/components/cinemas.dart';
+import 'package:sinema_uygulamasi/components/movies.dart';
+import 'package:sinema_uygulamasi/components/seat.dart';
+import 'package:sinema_uygulamasi/components/showtimes.dart';
+import 'package:sinema_uygulamasi/components/taxes.dart';
+import 'package:sinema_uygulamasi/components/user.dart';
+import 'package:sinema_uygulamasi/components/user_preferences.dart';
+import 'package:sinema_uygulamasi/screens/home.dart';
+import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Cinema cinema;
@@ -136,12 +136,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_userToken == null || _userToken!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hata: Giriş yapılmamış. Lütfen tekrar giriş yapın.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Hata: Giriş yapılmamış. Lütfen tekrar giriş yapın.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
@@ -170,42 +172,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ödeme başarıyla tamamlandı!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                HomePage(currentUser: currentUser!, initialIndex: 3),
-          ),
-          (route) => false,
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ödeme başarıyla tamamlandı!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  HomePage(currentUser: currentUser!, initialIndex: 3),
+            ),
+            (route) => false,
+          );
+        }
       } else if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Yetkilendirme hatası. Lütfen tekrar giriş yapın.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Yetkilendirme hatası. Lütfen tekrar giriş yapın.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Hata: ${response.statusCode}\n${response.body}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Hata: ${response.statusCode}\n${response.body}'),
+            content: Text('Bağlantı hatası: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Bağlantı hatası: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -415,8 +425,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
           color: AppColorStyle.primaryAccent,
           child: Column(
             children: [
-              _buildRadioOption('Kredi Kartı', 'card'),
-              _buildRadioOption('Nakit', 'cash'),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment<String>(
+                      value: 'card',
+                      label: Text('Kredi Kartı'),
+                    ),
+                    ButtonSegment<String>(value: 'cash', label: Text('Nakit')),
+                  ],
+                  selected: {_paymentMethod},
+                  onSelectionChanged: (selection) {
+                    setState(() {
+                      _paymentMethod = selection.first;
+                    });
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -424,15 +450,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildRadioOption(String title, String value) {
-    return RadioListTile<String>(
-      title: Text(title, style: TextStyle(color: AppColorStyle.textPrimary)),
-      value: value,
-      groupValue: _paymentMethod,
-      onChanged: (val) => setState(() => _paymentMethod = val!),
-      activeColor: AppColorStyle.textPrimary,
-    );
-  }
+  // Removed deprecated Radio usage; using SegmentedButton above
 
   Widget _buildSubmitButton() {
     return SizedBox(

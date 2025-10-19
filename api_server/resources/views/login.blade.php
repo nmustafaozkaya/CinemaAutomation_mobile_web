@@ -19,7 +19,7 @@
                         <label class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-envelope mr-2"></i>Email
                         </label>
-                        <input type="email" id="email" value="admin@cinema.com"
+                        <input type="email" id="email" value="customer@cinema.com"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all"
                             placeholder="Email adresinizi girin">
                     </div>
