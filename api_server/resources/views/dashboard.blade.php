@@ -20,32 +20,30 @@
                 </p>
             </div>
 
-            <!-- Customer Quick Actions -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-effect p-8 rounded-2xl text-center card-hover">
-                    <div
-                        class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <i class="fas fa-play text-white text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-4">Vizyondaki Filmler</h3>
-                    <p class="text-gray-300 mb-6">En yeni filmleri keşfedin ve seansları görün</p>
-                    <a href="/movies"
-                        class="w-full inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
-                        Filmleri İncele
-                    </a>
+            <!-- Film Kategorileri -->
+            <div class="mb-12">
+                <h2 class="text-3xl font-bold text-white mb-8 text-center">
+                    <i class="fas fa-th-large mr-3 text-blue-400"></i>Film Kategorileri
+                </h2>
+                
+                <!-- Loading State - Hidden by default -->
+                <div id="movieLoadingState" style="display: none !important; visibility: hidden !important;">
+                    <div class="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto mb-4 animate-spin"></div>
+                    <p class="text-white">Filmler yükleniyor...</p>
                 </div>
-
-                <div class="glass-effect p-8 rounded-2xl text-center card-hover">
-                    <div
-                        class="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <i class="fas fa-ticket-alt text-white text-2xl"></i>
+                
+                <!-- Categories Container -->
+                <div id="categoriesContainer" class="space-y-12">
+                    <!-- Categories will be loaded here via JavaScript -->
+                </div>
+                
+                <!-- Empty State -->
+                <div id="movieEmptyState" class="text-center py-12 hidden">
+                    <div class="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-film text-gray-400 text-3xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-4">Bilet Al</h3>
-                    <p class="text-gray-300 mb-6">Hızlı ve kolay bilet alma deneyimi</p>
-                    <a href="/buy-tickets"
-                        class="w-full inline-block bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300">
-                        Bilet Al
-                    </a>
+                    <h4 class="text-xl font-bold text-white mb-2">Film Bulunamadı</h4>
+                    <p class="text-gray-400 mb-4">Şu anda vizyonda film bulunmuyor.</p>
                 </div>
             </div>
 
@@ -195,4 +193,425 @@
                 </div>
             </div>
         @endauth
+
+@auth
+    @if(auth()->user()->isCustomer())
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMovies();
+        });
+
+        async function loadMovies() {
+            try {
+                // Loading state'i gösterme, direkt filmleri yükle
+                console.log('Dashboard - Filmler yükleniyor...');
+                
+                const response = await axios.get('/api/movies?per_page=100');
+                console.log('Dashboard - API Response:', response.data);
+                
+                const movies = response.data.data.data || response.data.data;
+                console.log('Dashboard - Film sayısı:', movies.length);
+                
+                if (movies.length === 0) {
+                    console.log('Dashboard - Film bulunamadı, empty state gösteriliyor');
+                    showEmpty();
+                } else {
+                    console.log('Dashboard - Filmler kategorilere ayrılıyor');
+                    renderMoviesByCategory(movies);
+                    console.log('Dashboard - Kategoriler render edildi');
+                }
+                
+            } catch (error) {
+                console.error('Dashboard - Filmler yüklenemedi:', error);
+                console.error('Dashboard - Error details:', error.response?.data);
+                showEmpty();
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('movieLoadingState').classList.remove('hidden');
+            document.getElementById('movieGrid').classList.add('hidden');
+            document.getElementById('movieEmptyState').classList.add('hidden');
+        }
+
+        function showGrid() {
+            console.log('Dashboard - showGrid çağrıldı');
+            const loadingState = document.getElementById('movieLoadingState');
+            const movieGrid = document.getElementById('movieGrid');
+            const emptyState = document.getElementById('movieEmptyState');
+            
+            // Loading state'i tamamen gizle
+            if (loadingState) {
+                loadingState.style.display = 'none';
+                loadingState.style.visibility = 'hidden';
+                loadingState.style.opacity = '0';
+                loadingState.classList.add('hidden');
+            }
+            
+            // Movie grid'i göster
+            if (movieGrid) {
+                movieGrid.style.display = 'grid';
+                movieGrid.style.visibility = 'visible';
+                movieGrid.style.opacity = '1';
+                movieGrid.classList.remove('hidden');
+            }
+            
+            // Empty state'i gizle
+            if (emptyState) {
+                emptyState.style.display = 'none';
+                emptyState.style.visibility = 'hidden';
+                emptyState.style.opacity = '0';
+                emptyState.classList.add('hidden');
+            }
+            
+            console.log('Dashboard - Loading display:', loadingState?.style.display);
+            console.log('Dashboard - Grid display:', movieGrid?.style.display);
+        }
+
+        function showEmpty() {
+            document.getElementById('movieLoadingState').classList.add('hidden');
+            document.getElementById('movieGrid').classList.add('hidden');
+            document.getElementById('movieEmptyState').classList.remove('hidden');
+        }
+
+        function renderMoviesByCategory(movies) {
+            console.log('Dashboard - renderMoviesByCategory çağrıldı, film sayısı:', movies.length);
+            
+            // Filmleri türlerine göre grupla
+            const categories = {};
+            movies.forEach(movie => {
+                const genre = movie.genre || 'Diğer';
+                if (!categories[genre]) {
+                    categories[genre] = [];
+                }
+                categories[genre].push(movie);
+            });
+            
+            // En popüler türleri seç (en az 3 film olan)
+            const popularCategories = Object.entries(categories)
+                .filter(([genre, films]) => films.length >= 3)
+                .sort((a, b) => b[1].length - a[1].length)
+                .slice(0, 4); // En fazla 4 kategori
+            
+            console.log('Dashboard - Kategoriler:', popularCategories.map(([genre, films]) => `${genre}: ${films.length} film`));
+            
+            const categoriesContainer = document.getElementById('categoriesContainer');
+            let html = '';
+            
+            popularCategories.forEach(([genre, films]) => {
+                const genreIcon = getGenreIcon(genre);
+                const genreColor = getGenreColor(genre);
+                
+                html += `
+                    <div class="category-section">
+                        <div class="flex items-center mb-6">
+                            <div class="w-12 h-12 ${genreColor} rounded-xl flex items-center justify-center mr-4">
+                                <i class="${genreIcon} text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white">${genre}</h3>
+                                <p class="text-gray-400">${films.length} film</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                `;
+                
+                // Her kategoriden en fazla 4 film göster
+                films.slice(0, 4).forEach(movie => {
+                    const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+                    
+                    html += `
+                        <div class="glass-effect rounded-xl overflow-hidden card-hover">
+                            <div class="h-56 bg-gradient-to-br ${getGenreGradient(genre)} flex items-center justify-center relative overflow-hidden">
+                                ${posterUrl ? `
+                                    <img src="${posterUrl}" alt="${movie.title}" 
+                                         class="w-full h-full object-cover"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="hidden w-full h-full bg-gradient-to-br ${getGenreGradient(genre)} flex items-center justify-center">
+                                        <i class="fas fa-film text-white text-4xl opacity-50"></i>
+                                    </div>
+                                ` : `
+                                    <i class="fas fa-film text-white text-4xl opacity-50"></i>
+                                `}
+                                <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="text-base font-bold text-white mb-2 line-clamp-2">${movie.title}</h4>
+                                <p class="text-gray-300 text-sm mb-3">${movie.duration} dk</p>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                        <span class="text-yellow-400 font-semibold text-sm">${movie.imdb_raiting || movie.imdb_rating || 'N/A'}</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="showMovieDetails(${movie.id})" 
+                                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
+                                        <i class="fas fa-info-circle mr-1"></i>Detay
+                                    </button>
+                                    <button onclick="window.location.href='/ticket?movie=${movie.id}'" 
+                                            class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
+                                        <i class="fas fa-ticket-alt mr-1"></i>Bilet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // Daha Fazla butonu ekle
+                if (films.length > 4) {
+                    html += `
+                        <div class="glass-effect rounded-xl overflow-hidden card-hover flex items-center justify-center min-h-[300px]">
+                            <div class="text-center">
+                                <div class="w-16 h-16 ${genreColor} rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-plus text-white text-2xl"></i>
+                                </div>
+                                <h4 class="text-lg font-bold text-white mb-2">Daha Fazla</h4>
+                                <p class="text-gray-400 text-sm mb-4">${films.length - 4} film daha</p>
+                                <button onclick="window.location.href='/movies?genre=${encodeURIComponent(genre)}'" 
+                                        class="bg-gradient-to-r ${getGenreGradient(genre)} hover:opacity-80 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                                    <i class="fas fa-arrow-right mr-2"></i>Tümünü Gör
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            categoriesContainer.innerHTML = html;
+            console.log('Dashboard - Kategoriler render edildi');
+        }
+        
+        function getGenreIcon(genre) {
+            const icons = {
+                'Action': 'fas fa-fist-raised',
+                'Aksiyon': 'fas fa-fist-raised',
+                'Adventure': 'fas fa-mountain',
+                'Macera': 'fas fa-mountain',
+                'Comedy': 'fas fa-laugh',
+                'Komedi': 'fas fa-laugh',
+                'Drama': 'fas fa-theater-masks',
+                'Dram': 'fas fa-theater-masks',
+                'Horror': 'fas fa-ghost',
+                'Korku': 'fas fa-ghost',
+                'Sci-Fi': 'fas fa-rocket',
+                'Bilim Kurgu': 'fas fa-rocket',
+                'Thriller': 'fas fa-eye',
+                'Gerilim': 'fas fa-eye',
+                'Romance': 'fas fa-heart',
+                'Romantik': 'fas fa-heart',
+                'Animation': 'fas fa-magic',
+                'Animasyon': 'fas fa-magic'
+            };
+            return icons[genre] || 'fas fa-film';
+        }
+        
+        function getGenreColor(genre) {
+            const colors = {
+                'Action': 'bg-red-500',
+                'Aksiyon': 'bg-red-500',
+                'Adventure': 'bg-green-500',
+                'Macera': 'bg-green-500',
+                'Comedy': 'bg-yellow-500',
+                'Komedi': 'bg-yellow-500',
+                'Drama': 'bg-purple-500',
+                'Dram': 'bg-purple-500',
+                'Horror': 'bg-gray-800',
+                'Korku': 'bg-gray-800',
+                'Sci-Fi': 'bg-blue-500',
+                'Bilim Kurgu': 'bg-blue-500',
+                'Thriller': 'bg-orange-500',
+                'Gerilim': 'bg-orange-500',
+                'Romance': 'bg-pink-500',
+                'Romantik': 'bg-pink-500',
+                'Animation': 'bg-indigo-500',
+                'Animasyon': 'bg-indigo-500'
+            };
+            return colors[genre] || 'bg-gray-500';
+        }
+        
+        function getGenreGradient(genre) {
+            const gradients = {
+                'Action': 'from-red-600 to-red-800',
+                'Aksiyon': 'from-red-600 to-red-800',
+                'Adventure': 'from-green-600 to-green-800',
+                'Macera': 'from-green-600 to-green-800',
+                'Comedy': 'from-yellow-600 to-yellow-800',
+                'Komedi': 'from-yellow-600 to-yellow-800',
+                'Drama': 'from-purple-600 to-purple-800',
+                'Dram': 'from-purple-600 to-purple-800',
+                'Horror': 'from-gray-800 to-black',
+                'Korku': 'from-gray-800 to-black',
+                'Sci-Fi': 'from-blue-600 to-blue-800',
+                'Bilim Kurgu': 'from-blue-600 to-blue-800',
+                'Thriller': 'from-orange-600 to-orange-800',
+                'Gerilim': 'from-orange-600 to-orange-800',
+                'Romance': 'from-pink-600 to-pink-800',
+                'Romantik': 'from-pink-600 to-pink-800',
+                'Animation': 'from-indigo-600 to-indigo-800',
+                'Animasyon': 'from-indigo-600 to-indigo-800'
+            };
+            return gradients[genre] || 'from-gray-600 to-gray-800';
+        }
+
+        async function showMovieDetails(movieId) {
+            try {
+                const response = await axios.get(`/api/movies/${movieId}`);
+                const movie = response.data.data;
+                
+                // Modal oluştur
+                createMovieDetailModal(movie);
+            } catch (error) {
+                console.error('Film detayı yüklenemedi:', error);
+                alert('Film detayı yüklenemedi!');
+            }
+        }
+
+        function createMovieDetailModal(movie) {
+            // Mevcut modal varsa kaldır
+            const existingModal = document.getElementById('movieDetailModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Poster URL kontrolü
+            const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+            
+            // Modal HTML oluştur
+            const modalHTML = `
+                <div id="movieDetailModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                    <div class="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <!-- Header -->
+                        <div class="flex justify-between items-center p-6 border-b border-gray-700">
+                            <h2 class="text-2xl font-bold text-white">🎬 Film Detayları</h2>
+                            <button onclick="closeMovieDetailModal()" class="text-gray-400 hover:text-white text-2xl">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <!-- Poster -->
+                                <div class="lg:col-span-1">
+                                    <div class="aspect-[2/3] bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl overflow-hidden">
+                                        ${posterUrl ? `
+                                            <img src="${posterUrl}" alt="${movie.title}" 
+                                                 class="w-full h-full object-cover"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div class="hidden w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                                                <i class="fas fa-film text-white text-6xl opacity-50"></i>
+                                            </div>
+                                        ` : `
+                                            <div class="w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                                                <i class="fas fa-film text-white text-6xl opacity-50"></i>
+                                            </div>
+                                        `}
+                                    </div>
+                                </div>
+                                
+                                <!-- Details -->
+                                <div class="lg:col-span-2">
+                                    <h1 class="text-3xl font-bold text-white mb-4">${movie.title}</h1>
+                                    
+                                    <!-- Rating -->
+                                    <div class="flex items-center mb-4">
+                                        <div class="flex items-center bg-yellow-500/20 px-3 py-1 rounded-full">
+                                            <i class="fas fa-star text-yellow-400 mr-2"></i>
+                                            <span class="text-yellow-300 font-semibold">${movie.imdb_raiting || movie.imdb_rating || 'N/A'}</span>
+                                        </div>
+                                        <span class="text-gray-400 ml-4">IMDB Rating</span>
+                                    </div>
+                                    
+                                    <!-- Info Grid -->
+                                    <div class="grid grid-cols-2 gap-4 mb-6">
+                                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-clock text-blue-400 mr-2"></i>
+                                                <span class="text-gray-300">Süre</span>
+                                            </div>
+                                            <span class="text-white font-semibold">${movie.duration || 'N/A'} dakika</span>
+                                        </div>
+                                        
+                                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-tag text-green-400 mr-2"></i>
+                                                <span class="text-gray-300">Tür</span>
+                                            </div>
+                                            <span class="text-white font-semibold">${movie.genre || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-calendar text-purple-400 mr-2"></i>
+                                                <span class="text-gray-300">Çıkış Tarihi</span>
+                                            </div>
+                                            <span class="text-white font-semibold">${movie.release_date || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-globe text-orange-400 mr-2"></i>
+                                                <span class="text-gray-300">Dil</span>
+                                            </div>
+                                            <span class="text-white font-semibold">${movie.language || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Description -->
+                                    <div class="mb-6">
+                                        <h3 class="text-lg font-semibold text-white mb-3">
+                                            <i class="fas fa-info-circle text-blue-400 mr-2"></i>Özet
+                                        </h3>
+                                        <p class="text-gray-300 leading-relaxed">${movie.description || 'Açıklama mevcut değil.'}</p>
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="flex gap-4">
+                                        <button onclick="window.location.href='/ticket?movie=${movie.id}'" 
+                                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
+                                            <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                                        </button>
+                                        <button onclick="closeMovieDetailModal()" 
+                                                class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                                            <i class="fas fa-times mr-2"></i>Kapat
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Modal'ı body'ye ekle
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Modal'ı göster
+            const modal = document.getElementById('movieDetailModal');
+            modal.style.display = 'flex';
+            
+            // ESC tuşu ile kapatma
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeMovieDetailModal();
+                }
+            });
+        }
+
+        function closeMovieDetailModal() {
+            const modal = document.getElementById('movieDetailModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        </script>
+    @endif
+@endauth
 @endsection

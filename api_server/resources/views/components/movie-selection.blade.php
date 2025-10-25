@@ -84,14 +84,14 @@ class MovieSelection {
         try {
             this.showLoading();
             
-            const response = await axios.get('/api/movies');
+            const response = await axios.get('/api/movies?per_page=100');
             this.movies = response.data.data.data || response.data.data;
             this.filteredMovies = [...this.movies];
             
             if (this.movies.length === 0) {
                 this.showEmpty();
             } else {
-                this.renderMovies(this.movies.slice(0, 30));
+                this.renderMovies(this.movies.slice(0, 100)); // Tüm 100 filmi göster
                 this.showGrid();
             }
             

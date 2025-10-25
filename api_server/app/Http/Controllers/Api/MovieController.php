@@ -49,8 +49,8 @@ class MovieController extends Controller
         $sortDirection = $request->get('sort_direction', 'desc');
         $query->orderBy($sortBy, $sortDirection);
 
-        // Sayfalama
-        $perPage = $request->get('per_page', 20);
+        // Sayfalama - 100 film için optimize edildi
+        $perPage = $request->get('per_page', 100);
         $movies = $query->paginate($perPage);
 
         return response()->json([

@@ -37,14 +37,21 @@ async function loadMovies(search = '') {
         let url = '/api/movies';
         if (search) {
             url += `?search=${encodeURIComponent(search)}`;
+        } else {
+            url += '?per_page=100';
         }
         
+        console.log('API URL:', url);
         const response = await axios.get(url);
+        console.log('API Response:', response.data);
+        
         const movies = response.data.data.data || response.data.data;
+        console.log('Movies count:', movies.length);
         
         renderMovies(movies);
     } catch (error) {
         console.error('Filmler yüklenemedi:', error);
+        console.error('Error details:', error.response?.data);
         // Mock data fallback
         const mockMovies = [
             { id: 1, title: "Avatar: The Way of Water", genre: "Sci-Fi", duration: 192, imdb_raiting: 7.6, description: "Jake Sully lives with his newfound family formed on the planet of Pandora." },
@@ -108,9 +115,150 @@ async function showMovieDetails(movieId) {
         const response = await axios.get(`/api/movies/${movieId}`);
         const movie = response.data.data;
         
-        alert(`🎬 ${movie.title}\n\n📝 ${movie.description}\n\n⏱️ Süre: ${movie.duration} dakika\n🎭 Tür: ${movie.genre}\n⭐ IMDB: ${movie.imdb_raiting || movie.imdb_rating}\n📅 Çıkış: ${movie.release_date}`);
+        // Modal oluştur
+        createMovieDetailModal(movie);
     } catch (error) {
+        console.error('Film detayı yüklenemedi:', error);
         alert('Film detayı yüklenemedi!');
+    }
+}
+
+function createMovieDetailModal(movie) {
+    // Mevcut modal varsa kaldır
+    const existingModal = document.getElementById('movieDetailModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Poster URL kontrolü
+    const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+    
+    // Modal HTML oluştur
+    const modalHTML = `
+        <div id="movieDetailModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <!-- Header -->
+                <div class="flex justify-between items-center p-6 border-b border-gray-700">
+                    <h2 class="text-2xl font-bold text-white">🎬 Film Detayları</h2>
+                    <button onclick="closeMovieDetailModal()" class="text-gray-400 hover:text-white text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Poster -->
+                        <div class="lg:col-span-1">
+                            <div class="aspect-[2/3] bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl overflow-hidden">
+                                ${posterUrl ? `
+                                    <img src="${posterUrl}" alt="${movie.title}" 
+                                         class="w-full h-full object-cover"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="hidden w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                                        <i class="fas fa-film text-white text-6xl opacity-50"></i>
+                                    </div>
+                                ` : `
+                                    <div class="w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                                        <i class="fas fa-film text-white text-6xl opacity-50"></i>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="lg:col-span-2">
+                            <h1 class="text-3xl font-bold text-white mb-4">${movie.title}</h1>
+                            
+                            <!-- Rating -->
+                            <div class="flex items-center mb-4">
+                                <div class="flex items-center bg-yellow-500/20 px-3 py-1 rounded-full">
+                                    <i class="fas fa-star text-yellow-400 mr-2"></i>
+                                    <span class="text-yellow-300 font-semibold">${movie.imdb_raiting || movie.imdb_rating || 'N/A'}</span>
+                                </div>
+                                <span class="text-gray-400 ml-4">IMDB Rating</span>
+                            </div>
+                            
+                            <!-- Info Grid -->
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div class="bg-gray-800/50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-clock text-blue-400 mr-2"></i>
+                                        <span class="text-gray-300">Süre</span>
+                                    </div>
+                                    <span class="text-white font-semibold">${movie.duration || 'N/A'} dakika</span>
+                                </div>
+                                
+                                <div class="bg-gray-800/50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-tag text-green-400 mr-2"></i>
+                                        <span class="text-gray-300">Tür</span>
+                                    </div>
+                                    <span class="text-white font-semibold">${movie.genre || 'N/A'}</span>
+                                </div>
+                                
+                                <div class="bg-gray-800/50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-calendar text-purple-400 mr-2"></i>
+                                        <span class="text-gray-300">Çıkış Tarihi</span>
+                                    </div>
+                                    <span class="text-white font-semibold">${movie.release_date || 'N/A'}</span>
+                                </div>
+                                
+                                <div class="bg-gray-800/50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-globe text-orange-400 mr-2"></i>
+                                        <span class="text-gray-300">Dil</span>
+                                    </div>
+                                    <span class="text-white font-semibold">${movie.language || 'N/A'}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Description -->
+                            <div class="mb-6">
+                                <h3 class="text-lg font-semibold text-white mb-3">
+                                    <i class="fas fa-info-circle text-blue-400 mr-2"></i>Özet
+                                </h3>
+                                <p class="text-gray-300 leading-relaxed">${movie.description || 'Açıklama mevcut değil.'}</p>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="flex gap-4">
+                                <button onclick="window.location.href='/ticket?movie=${movie.id}'" 
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
+                                    <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                                </button>
+                                <button onclick="closeMovieDetailModal()" 
+                                        class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                                    <i class="fas fa-times mr-2"></i>Kapat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Modal'ı body'ye ekle
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Modal'ı göster
+    const modal = document.getElementById('movieDetailModal');
+    modal.style.display = 'flex';
+    
+    // ESC tuşu ile kapatma
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeMovieDetailModal();
+        }
+    });
+}
+
+function closeMovieDetailModal() {
+    const modal = document.getElementById('movieDetailModal');
+    if (modal) {
+        modal.remove();
     }
 }
 
@@ -119,6 +267,11 @@ document.getElementById('movieSearch')?.addEventListener('keypress', function(e)
     if (e.key === 'Enter') {
         searchMovies();
     }
+});
+
+// Sayfa yüklendiğinde filmleri yükle
+document.addEventListener('DOMContentLoaded', function() {
+    loadMovies();
 });
 </script>
 @endsection

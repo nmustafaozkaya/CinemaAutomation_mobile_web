@@ -448,7 +448,7 @@
                 console.log('📽️ Filmler yükleniyor...');
 
             try {
-                const response = await axios.get('/api/movies');
+                const response = await axios.get('/api/movies?per_page=100');
                 console.log('📡 Film API yanıtı:', response.data);
 
                 const movies = response.data.data.data || response.data.data || [];
@@ -1027,7 +1027,7 @@
                 console.log('📽️ Film dropdown yükleniyor...');
 
             try {
-                const response = await axios.get('/api/movies');
+                const response = await axios.get('/api/movies?per_page=100');
                 const movies = response.data.data.data || response.data.data || [];
 
                 let html = '<option value="">Film Seçin</option>';
