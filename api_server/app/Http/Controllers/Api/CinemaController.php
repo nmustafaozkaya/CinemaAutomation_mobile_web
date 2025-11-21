@@ -16,38 +16,89 @@ class CinemaController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Cinema::with(['city']);
+        try {
+            // Memory limit ve execution time artır (büyük response'lar için)
+            $originalMemoryLimit = ini_get('memory_limit');
+            $originalMaxExecutionTime = ini_get('max_execution_time');
+            ini_set('memory_limit', '512M');
+            set_time_limit(60);
 
-        // Şehir filtresi
-        if ($request->filled('city_id')) {
-            $query->where('city_id', $request->city_id);
+            $query = Cinema::with(['city:id,name']);
+
+            // Şehir filtresi
+            if ($request->filled('city_id')) {
+                $query->where('city_id', $request->city_id);
+            }
+
+            // Şehir adı ile filtre
+            if ($request->filled('city_name')) {
+                $query->whereHas('city', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->city_name . '%');
+                });
+            }
+
+            // Arama filtresi
+            if ($request->filled('search')) {
+                $query->where(function($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%')
+                      ->orWhere('address', 'like', '%' . $request->search . '%');
+                });
+            }
+
+            // Aktif sinemalar
+            if ($request->boolean('active_only', true)) {
+                $query->whereNull('deleted_at');
+            }
+
+            // Sadece gerekli alanları select et (performans için)
+            $cinemas = $query->select([
+                'id',
+                'name',
+                'address',
+                'phone',
+                'email',
+                'city_id'
+            ])->get();
+
+            // Response'u optimize et - JSON encoding için
+            $responseData = [
+                'success' => true,
+                'message' => 'Cinemas retrieved successfully',
+                'data' => $cinemas
+            ];
+
+            // JSON encoding sırasında hata olursa yakala
+            $jsonResponse = json_encode($responseData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            if ($jsonResponse === false) {
+                $error = json_last_error_msg();
+                throw new \Exception("JSON encoding error: $error");
+            }
+
+            // Ayarları geri yükle
+            if ($originalMemoryLimit) {
+                ini_set('memory_limit', $originalMemoryLimit);
+            }
+            if ($originalMaxExecutionTime) {
+                set_time_limit($originalMaxExecutionTime);
+            }
+
+            return response()->json($responseData, 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            
+        } catch (\Exception $e) {
+            // Ayarları geri yükle (hata durumunda)
+            if (isset($originalMemoryLimit)) {
+                ini_set('memory_limit', $originalMemoryLimit);
+            }
+            if (isset($originalMaxExecutionTime)) {
+                set_time_limit($originalMaxExecutionTime);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Sinemalar yüklenirken hata oluştu: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Şehir adı ile filtre
-        if ($request->filled('city_name')) {
-            $query->whereHas('city', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->city_name . '%');
-            });
-        }
-
-        // Arama filtresi
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('address', 'like', '%' . $request->search . '%');
-        }
-
-        // Aktif sinemalar
-        if ($request->boolean('active_only', true)) {
-            $query->whereNull('deleted_at');
-        }
-
-        $cinemas = $query->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Cinemas retrieved successfully',
-            'data' => $cinemas
-        ]);
     }
 
     /**
@@ -224,15 +275,13 @@ class CinemaController extends Controller
                                  $q->where('movie_id', $movieId)
                                    ->where('status', 'active')
                                    ->where('start_time', '>', now());
-                             });
+                             })->select(['id', 'name', 'cinema_id']); // Sadece gerekli alanlar
                          },
-                         'halls.showtimes' => function ($query) use ($movieId) {
-                             $query->where('movie_id', $movieId)
-                                   ->where('status', 'active')
-                                   ->where('start_time', '>', now())
-                                   ->orderBy('start_time');
-                         }
+                         // Showtimes'ı yükleme - sadece cinema listesi için gereksiz
+                         // Showtimes'ları ayrı bir endpoint'ten yükleyeceğiz
                      ])
+                     ->select(['id', 'name', 'address', 'city_id']) // Sadece gerekli alanlar
+                     ->limit(100) // Response boyutunu kontrol et
                      ->get();
 
         return response()->json([

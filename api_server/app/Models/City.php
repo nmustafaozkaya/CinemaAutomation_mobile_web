@@ -14,6 +14,12 @@ class City extends Model
         'name',
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'pivot'
+    ];
+
     public function cinemas(): HasMany
     {
         return $this->hasMany(Cinema::class);

@@ -14,6 +14,11 @@ class Movie extends Model
         'poster_url','genre', 'status','imdb_raiting'
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at'
+    ];
+
     protected $casts = [
         'release_date' => 'date',
         'duration' => 'integer',

@@ -30,7 +30,7 @@
                 <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">
                     4
                 </div>
-                <span class="ml-2 text-gray-400 font-medium">Koltuk Seç</span>
+                <span class="ml-2 text-gray-400 font-medium">Bilet Tipi</span>
             </div>
             <div class="w-12 h-1 bg-gray-600 rounded"></div>
         
@@ -38,7 +38,7 @@
                 <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">
                     5
                 </div>
-                <span class="ml-2 text-gray-400 font-medium">Bilet Tipi</span>
+                <span class="ml-2 text-gray-400 font-medium">Koltuk Seç</span>
             </div>
             <div class="w-12 h-1 bg-gray-600 rounded"></div>
         

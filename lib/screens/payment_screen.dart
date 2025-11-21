@@ -110,15 +110,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
         .where((t) => t.status == 'active')
         .map((tax) {
           double rate = double.tryParse(tax.rate) ?? 0.0;
-          double amount = TaxService.calculateTaxAmount(tax, widget.totalPrice);
+          double amount = TaxService.calculateTaxAmount(
+            tax,
+            widget.totalPrice,
+            ticketCount: widget.selectedSeats.length,
+          );
+          final isPerTicket = tax.type == 'fixed';
           return {
             "name": tax.name,
             "type": tax.type,
             "rate": rate,
             "amount": double.parse(amount.toStringAsFixed(2)),
-            "formatted_name": tax.type == 'percentage'
-                ? "${tax.name} (${tax.rate}%)"
-                : "${tax.name} (${tax.rate} ₺)",
+            "formatted_name": isPerTicket
+                ? "${tax.name} (${tax.rate} ₺ x ${widget.selectedSeats.length} bilet)"
+                : "${tax.name} (${tax.rate})",
           };
         })
         .toList();
@@ -310,7 +315,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
             Text(
-              'Vergi ve Ücretler: ₺${widget.taxAmount.toStringAsFixed(2)}',
+              'Hizmet Bedeli: ₺${widget.taxAmount.toStringAsFixed(2)}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
             const Divider(height: 20, thickness: 1),

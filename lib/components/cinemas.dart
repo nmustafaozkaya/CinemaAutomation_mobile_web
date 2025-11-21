@@ -18,14 +18,40 @@ class Cinema {
   });
 
   factory Cinema.fromJson(Map<String, dynamic> json) {
+    final cityData = json['city'];
+
+    int parsedCityId = 0;
+    String parsedCityName = 'Bilinmeyen';
+
+    if (cityData is Map<String, dynamic>) {
+      final dynamic cityIdValue = cityData['id'];
+      if (cityIdValue is int) {
+        parsedCityId = cityIdValue;
+      } else if (cityIdValue is String) {
+        parsedCityId = int.tryParse(cityIdValue) ?? 0;
+      }
+
+      final dynamic cityNameValue = cityData['name'];
+      if (cityNameValue is String && cityNameValue.trim().isNotEmpty) {
+        parsedCityName = cityNameValue;
+      }
+    } else {
+      final dynamic cityIdValue = json['city_id'];
+      if (cityIdValue is int) {
+        parsedCityId = cityIdValue;
+      } else if (cityIdValue is String) {
+        parsedCityId = int.tryParse(cityIdValue) ?? 0;
+      }
+    }
+
     return Cinema(
-      cityId: json['city']['id'],
-      cityName: json['city']['name'],
-      cinemaId: json['id'],
-      cinemaName: json['name'],
-      cinemaAddress: json['address'],
-      cinemaPhone: json['phone'],
-      cinemaEmail: json['email'],
+      cityId: parsedCityId,
+      cityName: parsedCityName,
+      cinemaId: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
+      cinemaName: json['name']?.toString() ?? 'Sinema',
+      cinemaAddress: json['address']?.toString() ?? '',
+      cinemaPhone: json['phone']?.toString() ?? '',
+      cinemaEmail: json['email']?.toString() ?? '',
     );
   }
 }

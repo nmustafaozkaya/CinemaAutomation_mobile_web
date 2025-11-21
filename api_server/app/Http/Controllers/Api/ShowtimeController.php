@@ -15,9 +15,38 @@ class ShowtimeController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Showtime::with(['movie', 'hall.cinema'])
+            // Memory limit ve execution time artır (büyük response'lar için)
+            $originalMemoryLimit = ini_get('memory_limit');
+            $originalMaxExecutionTime = ini_get('max_execution_time');
+            ini_set('memory_limit', '512M');
+            set_time_limit(60);
+
+            // Optimize edilmiş query - ilişkileri yükle
+            $query = Showtime::with([
+                'movie' => function($query) {
+                    $query->select(['id', 'title', 'poster_url', 'duration', 'genre', 'imdb_raiting', 'description']);
+                },
+                'hall' => function($query) {
+                    $query->select(['id', 'name', 'cinema_id']);
+                },
+                'hall.cinema' => function($query) {
+                    $query->select(['id', 'name', 'address', 'city_id']);
+                },
+                'hall.cinema.city' => function($query) {
+                    $query->select(['id', 'name']);
+                }
+            ])
                 ->where('status', 'active')
-                ->where('date', '>=', now()->toDateString());
+                ->where('start_time', '>', now())
+                ->select([
+                    'id',
+                    'movie_id',
+                    'hall_id',
+                    'price',
+                    'start_time',
+                    'end_time',
+                    'status'
+                ]);
 
             // Filtreleme
             if ($request->has('movie_id')) {
@@ -31,19 +60,109 @@ class ShowtimeController extends Controller
             }
 
             if ($request->has('date')) {
-                $query->where('date', $request->date);
+                $query->whereDate('start_time', $request->date);
             }
 
-            $showtimes = $query->orderBy('date')
-                ->orderBy('start_time')
-                ->paginate(20);
+            // Büyük response'ları önlemek için limit ekle - QUERY'DEN ÖNCE
+            // Özellikle movie_id veya cinema_id filtresi yoksa limit zorunlu
+            $limit = 100; // Varsayılan limit - response boyutunu kontrol altına al (düşürüldü)
+            if ($request->has('movie_id') || $request->has('cinema_id')) {
+                // Filtre varsa biraz daha fazla göster
+                $limit = 200;
+            }
+            $query->limit($limit);
 
-            return response()->json([
+            $showtimes = $query->orderBy('start_time')->get();
+
+            // Showtime verilerini manuel olarak formatla - JSON encoding sorunlarını önlemek için
+            $formattedShowtimes = $showtimes->map(function ($showtime) {
+                // String değerleri güvenli hale getir
+                $safeString = function($value) {
+                    if ($value === null) return '';
+                    // Önce string'e çevir, sonra trim et, özel karakterleri temizle
+                    $str = (string) $value;
+                    $str = trim($str);
+                    // Kontrol karakterlerini temizle (NULL bytes, etc.)
+                    $str = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $str);
+                    return $str;
+                };
+
+                return [
+                    'id' => (int) $showtime->id,
+                    'movie_id' => (int) $showtime->movie_id,
+                    'hall_id' => (int) $showtime->hall_id,
+                    'price' => number_format((float) $showtime->price, 2, '.', ''),
+                    'start_time' => $showtime->start_time ? $showtime->start_time->toIso8601String() : null,
+                    'end_time' => $showtime->end_time ? $showtime->end_time->toIso8601String() : null,
+                    'status' => $safeString($showtime->status),
+                    'movie' => $showtime->movie ? [
+                        'id' => (int) $showtime->movie->id,
+                        'title' => $safeString($showtime->movie->title),
+                        'poster_url' => $safeString($showtime->movie->poster_url),
+                        'duration' => (int) ($showtime->movie->duration ?? 0),
+                        'genre' => $safeString($showtime->movie->genre),
+                        'imdb_raiting' => $safeString($showtime->movie->imdb_raiting),
+                        'description' => $safeString($showtime->movie->description),
+                    ] : null,
+                    'hall' => $showtime->hall ? [
+                        'id' => (int) $showtime->hall->id,
+                        'name' => $safeString($showtime->hall->name),
+                        'cinema_id' => (int) ($showtime->hall->cinema_id ?? 0),
+                        'cinema' => $showtime->hall->cinema ? [
+                            'id' => (int) $showtime->hall->cinema->id,
+                            'name' => $safeString($showtime->hall->cinema->name),
+                            'address' => $safeString($showtime->hall->cinema->address),
+                            'city_id' => (int) ($showtime->hall->cinema->city_id ?? 0),
+                            'city' => $showtime->hall->cinema->city ? [
+                                'id' => (int) $showtime->hall->cinema->city->id,
+                                'name' => $safeString($showtime->hall->cinema->city->name),
+                            ] : null,
+                        ] : null,
+                    ] : null,
+                ];
+            });
+
+            // Response'u optimize et - JSON encoding için
+            $responseData = [
                 'success' => true,
-                'data' => $showtimes
-            ]);
+                'message' => 'Showtimes retrieved successfully',
+                'data' => $formattedShowtimes->values()->all()
+            ];
+
+            // JSON encoding sırasında hata olursa yakala
+            $jsonResponse = json_encode($responseData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            if ($jsonResponse === false) {
+                $error = json_last_error_msg();
+                throw new \Exception("JSON encoding error: $error");
+            }
+
+            // Output buffering'i temizle ve kapat
+            if (ob_get_level()) {
+                ob_clean();
+            }
+
+            // Ayarları geri yükle
+            if ($originalMemoryLimit) {
+                ini_set('memory_limit', $originalMemoryLimit);
+            }
+            if ($originalMaxExecutionTime) {
+                set_time_limit($originalMaxExecutionTime);
+            }
+
+            // Response header'larını ayarla - JSON encoding için güvenli yöntem
+            return response()->json($responseData, 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                ->header('Content-Type', 'application/json; charset=utf-8');
 
         } catch (\Exception $e) {
+            // Ayarları geri yükle (hata durumunda)
+            if (isset($originalMemoryLimit)) {
+                ini_set('memory_limit', $originalMemoryLimit);
+            }
+            if (isset($originalMaxExecutionTime)) {
+                set_time_limit($originalMaxExecutionTime);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Seanslar yüklenirken hata oluştu: ' . $e->getMessage()

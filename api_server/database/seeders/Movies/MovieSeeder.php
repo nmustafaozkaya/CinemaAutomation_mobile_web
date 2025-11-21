@@ -12,6 +12,7 @@ class MovieSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        // 2025 filmlerini ekle
+        $this->call(Movies2025Seeder::class);
     }
 }

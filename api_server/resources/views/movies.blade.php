@@ -12,14 +12,18 @@
         </a>
     </div>
     
-    <div class="flex flex-col md:flex-row gap-4 mb-8">
-        <div class="flex-1">
-            <input type="text" id="movieSearch" placeholder="Film adı ile ara..." 
-                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all">
+    <div class="mb-8">
+        <!-- Arama -->
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <input type="text" id="movieSearch" placeholder="Film adı ile ara..." 
+                       onkeypress="if(event.key === 'Enter') searchMovies()"
+                       class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all">
+            </div>
+            <button onclick="searchMovies()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold transition-all">
+                <i class="fas fa-search mr-2"></i>Ara
+            </button>
         </div>
-        <button onclick="searchMovies()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold transition-all">
-            <i class="fas fa-search mr-2"></i>Ara
-        </button>
     </div>
 </div>
 
@@ -28,102 +32,205 @@
 </div>
 
 <script>
+let currentSearch = '';
+
 document.addEventListener('DOMContentLoaded', function() {
     loadMovies();
 });
 
 async function loadMovies(search = '') {
     try {
-        let url = '/api/movies';
+        // Arama varsa normal API'leri kullan
         if (search) {
-            url += `?search=${encodeURIComponent(search)}`;
-        } else {
-            url += '?per_page=100';
+            let urlNowShowing = '/api/movies';
+            let urlComingSoon = '/api/future-movies';
+            const params = `?search=${encodeURIComponent(search)}`;
+            
+            urlNowShowing += params;
+            urlComingSoon += params;
+            
+            const [nowShowingResponse, comingSoonResponse] = await Promise.all([
+                axios.get(urlNowShowing).catch(() => ({ data: { data: { data: [] } } })),
+                axios.get(urlComingSoon).catch(() => ({ data: { data: { data: [] } } }))
+            ]);
+            
+            const nowShowingMovies = nowShowingResponse.data.data.data || nowShowingResponse.data.data || [];
+            const comingSoonMovies = comingSoonResponse.data.data.data || comingSoonResponse.data.data || [];
+            
+            renderMoviesByCategory(nowShowingMovies, comingSoonMovies);
+            return;
         }
         
-        console.log('API URL:', url);
-        const response = await axios.get(url);
-        console.log('API Response:', response.data);
+        // Arama yoksa distributed endpoint'ini kullan - toplam 100 filmi tarihe göre dağıtır
+        const url = '/api/movies/distributed';
         
-        const movies = response.data.data.data || response.data.data;
-        console.log('Movies count:', movies.length);
+        console.log('Movies - Distributed API çağrısı:', url);
         
-        renderMovies(movies);
+        const response = await axios.get(url).catch(() => ({ 
+            data: { 
+                data: { 
+                    now_showing: { data: [] }, 
+                    coming_soon: { data: [] } 
+                } 
+            } 
+        }));
+        
+        const nowShowingMovies = response.data.data.now_showing?.data || [];
+        const comingSoonMovies = response.data.data.coming_soon?.data || [];
+        
+        console.log('Movies - Now Showing:', nowShowingMovies.length, 'Coming Soon:', comingSoonMovies.length, 'Toplam:', nowShowingMovies.length + comingSoonMovies.length);
+        
+        renderMoviesByCategory(nowShowingMovies, comingSoonMovies);
     } catch (error) {
         console.error('Filmler yüklenemedi:', error);
         console.error('Error details:', error.response?.data);
-        // Mock data fallback
-        const mockMovies = [
-            { id: 1, title: "Avatar: The Way of Water", genre: "Sci-Fi", duration: 192, imdb_raiting: 7.6, description: "Jake Sully lives with his newfound family formed on the planet of Pandora." },
-            { id: 2, title: "Top Gun: Maverick", genre: "Action", duration: 131, imdb_raiting: 8.3, description: "After thirty years, Maverick is still pushing the envelope as a top naval aviator." },
-            { id: 3, title: "Black Panther: Wakanda Forever", genre: "Action", duration: 161, imdb_raiting: 6.7, description: "The people of Wakanda fight to protect their home from intervening world powers." },
-            { id: 4, title: "Spider-Man: Across the Spider-Verse", genre: "Animation", duration: 140, imdb_raiting: 8.7, description: "Miles Morales catapults across the Multiverse." },
-            { id: 5, title: "John Wick: Chapter 4", genre: "Action", duration: 169, imdb_raiting: 7.8, description: "John Wick uncovers a path to defeating The High Table." },
-            { id: 6, title: "Guardians of the Galaxy Vol. 3", genre: "Sci-Fi", duration: 150, imdb_raiting: 7.9, description: "Still reeling from the loss of Gamora, Peter Quill rallies his team." }
-        ];
-        renderMovies(mockMovies);
+        renderMoviesByCategory([], []);
     }
 }
 
-function renderMovies(movies) {
+function isNowShowingDate(releaseDate) {
+    if (!releaseDate) return true;
+    
+    try {
+        let dateParts;
+        if (releaseDate.includes('-')) {
+            dateParts = releaseDate.split('-');
+            let day, month, year;
+            
+            if (dateParts[0].length === 4) {
+                year = parseInt(dateParts[0]);
+                month = parseInt(dateParts[1]);
+                day = parseInt(dateParts[2]);
+            } else {
+                day = parseInt(dateParts[0]);
+                month = parseInt(dateParts[1]);
+                year = parseInt(dateParts[2]);
+            }
+            
+            const movieDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            return movieDate <= today;
+        }
+    } catch (e) {
+        console.error('Tarih parse hatası:', e, releaseDate);
+    }
+    
+    return true;
+}
+
+function renderMoviesByCategory(nowShowingMovies, comingSoonMovies) {
     const movieGrid = document.getElementById('movieGrid');
     let html = '';
     
-    movies.forEach(movie => {
-        // Poster URL kontrolü
-        const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
-        
+    // Now Showing bölümü
+    if (nowShowingMovies.length > 0) {
         html += `
-            <div class="glass-effect rounded-2xl overflow-hidden card-hover">
-                <div class="h-64 bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center relative overflow-hidden">
-                    ${posterUrl ? `
-                        <img src="${posterUrl}" alt="${movie.title}" 
-                             class="w-full h-full object-cover"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="hidden w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-                            <i class="fas fa-film text-white text-6xl opacity-50"></i>
-                        </div>
-                    ` : `
-                        <i class="fas fa-film text-white text-6xl opacity-50"></i>
-                    `}
-                    <div class="absolute inset-0 bg-black bg-opacity-20"></div>
-                </div>
-                <div class="p-6">
-                    <h3 class="text-xl font-bold text-white mb-2">${movie.title}</h3>
-                    <p class="text-purple-300 text-sm mb-2">${movie.genre} • ${movie.duration} dk</p>
-                    <p class="text-yellow-400 mb-4">
-                        <i class="fas fa-star mr-1"></i>${movie.imdb_raiting || movie.imdb_rating || 'N/A'}
-                    </p>
-                    <button onclick="showMovieDetails(${movie.id})" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-2 rounded-xl font-semibold transition-all">
-                        <i class="fas fa-info-circle mr-2"></i>Detaylar
-                    </button>
+            <div class="col-span-full mb-8">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-play text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white">Now Showing</h3>
                 </div>
             </div>
         `;
-    });
+        
+        nowShowingMovies.forEach(movie => {
+            html += renderMovieCard(movie, true);
+        });
+    }
+    
+    // Coming Soon bölümü
+    if (comingSoonMovies.length > 0) {
+        html += `
+            <div class="col-span-full mb-8 mt-8">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-calendar-alt text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white">Coming Soon</h3>
+                </div>
+            </div>
+        `;
+        
+        comingSoonMovies.forEach(movie => {
+            html += renderMovieCard(movie, false);
+        });
+    }
     
     movieGrid.innerHTML = html || '<p class="text-white text-center col-span-full">Film bulunamadı.</p>';
 }
 
-function searchMovies() {
-    const searchTerm = document.getElementById('movieSearch').value;
-    loadMovies(searchTerm);
+function renderMovieCard(movie, isNowShowing) {
+    const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+    
+    return `
+        <div class="glass-effect rounded-2xl overflow-hidden card-hover">
+            <div class="h-64 bg-gradient-to-br ${isNowShowing ? 'from-green-600 to-emerald-600' : 'from-blue-600 to-blue-800'} flex items-center justify-center relative overflow-hidden">
+                ${posterUrl ? `
+                    <img src="${posterUrl}" alt="${movie.title}" 
+                         class="w-full h-full object-cover"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="hidden w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                        <i class="fas fa-film text-white text-6xl opacity-50"></i>
+                    </div>
+                ` : `
+                    <i class="fas fa-film text-white text-6xl opacity-50"></i>
+                `}
+                <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+            </div>
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-white mb-2">${movie.title}</h3>
+                <p class="text-purple-300 text-sm mb-2">${movie.genre} • ${movie.duration} dk</p>
+                <p class="text-yellow-400 mb-4">
+                    <i class="fas fa-star mr-1"></i>${movie.imdb_raiting || movie.imdb_rating || 'N/A'}
+                </p>
+                <button onclick="showMovieDetails(${movie.id}, ${isNowShowing})" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-2 rounded-xl font-semibold transition-all">
+                    <i class="fas fa-info-circle mr-2"></i>Detaylar
+                </button>
+            </div>
+        </div>
+    `;
 }
 
-async function showMovieDetails(movieId) {
+function searchMovies() {
+    currentSearch = document.getElementById('movieSearch').value;
+    loadMovies(currentSearch);
+}
+
+async function showMovieDetails(movieId, isNowShowing = true) {
     try {
-        const response = await axios.get(`/api/movies/${movieId}`);
+        // Önce /api/movies'ten dene, bulunamazsa /api/future-movies'ten dene
+        let response;
+        try {
+            response = await axios.get(`/api/movies/${movieId}`);
+        } catch (e) {
+            if (e.response?.status === 404) {
+                response = await axios.get(`/api/future-movies/${movieId}`);
+                isNowShowing = false;
+            } else {
+                throw e;
+            }
+        }
+        
         const movie = response.data.data;
         
+        // Film tarihine göre isNowShowing'i belirle
+        if (isNowShowing === undefined || isNowShowing === null) {
+            isNowShowing = isNowShowingDate(movie.release_date);
+        }
+        
         // Modal oluştur
-        createMovieDetailModal(movie);
+        createMovieDetailModal(movie, isNowShowing);
     } catch (error) {
         console.error('Film detayı yüklenemedi:', error);
         alert('Film detayı yüklenemedi!');
     }
 }
 
-function createMovieDetailModal(movie) {
+function createMovieDetailModal(movie, isNowShowing = true) {
     // Mevcut modal varsa kaldır
     const existingModal = document.getElementById('movieDetailModal');
     if (existingModal) {
@@ -132,6 +239,34 @@ function createMovieDetailModal(movie) {
     
     // Poster URL kontrolü
     const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+    
+    // Kullanıcı giriş durumunu kontrol et
+    const isLoggedIn = window.userPermissions && window.userPermissions.isLoggedIn;
+    
+    // Bilet Al butonu - sadece giriş yapmış kullanıcılar ve Now Showing için
+    let buyTicketButton = '';
+    if (!isNowShowing) {
+        buyTicketButton = `
+            <button disabled
+                    class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold cursor-not-allowed flex items-center opacity-50">
+                <i class="fas fa-calendar-alt mr-2"></i>Yakında
+            </button>
+        `;
+    } else if (isLoggedIn) {
+        buyTicketButton = `
+            <button onclick="window.location.href='/buy-tickets?movie=${movie.id}'" 
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
+                <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+            </button>
+        `;
+    } else {
+        buyTicketButton = `
+            <button onclick="window.location.href='/login'" 
+                    class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
+                <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+            </button>
+        `;
+    }
     
     // Modal HTML oluştur
     const modalHTML = `
@@ -164,6 +299,13 @@ function createMovieDetailModal(movie) {
                                     </div>
                                 `}
                             </div>
+                            ${!isNowShowing ? `
+                                <div class="mt-4 bg-blue-500/20 border border-blue-500 rounded-lg p-3 text-center">
+                                    <span class="text-blue-300 font-semibold">
+                                        <i class="fas fa-calendar-alt mr-2"></i>Coming Soon
+                                    </span>
+                                </div>
+                            ` : ''}
                         </div>
                         
                         <!-- Details -->
@@ -222,12 +364,21 @@ function createMovieDetailModal(movie) {
                                 <p class="text-gray-300 leading-relaxed">${movie.description || 'Açıklama mevcut değil.'}</p>
                             </div>
                             
+                            ${!isLoggedIn && isNowShowing ? `
+                            <!-- Giriş uyarısı -->
+                            <div class="mb-6 bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-info-circle text-blue-400 mr-3 text-xl"></i>
+                                    <p class="text-blue-200">
+                                        Bilet satın almak için <strong>giriş yapmanız</strong> gerekmektedir.
+                                    </p>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
                             <!-- Actions -->
                             <div class="flex gap-4">
-                                <button onclick="window.location.href='/ticket?movie=${movie.id}'" 
-                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                                    <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
-                                </button>
+                                ${buyTicketButton}
                                 <button onclick="closeMovieDetailModal()" 
                                         class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
                                     <i class="fas fa-times mr-2"></i>Kapat

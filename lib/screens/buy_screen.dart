@@ -8,6 +8,7 @@ import 'package:sinema_uygulamasi/screens/cinema_select.dart';
 import 'package:sinema_uygulamasi/components/showtimes.dart';
 import 'package:sinema_uygulamasi/screens/ticket_screen.dart';
 import 'package:sinema_uygulamasi/screens/showtimes_screen.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 
 class BuyScreen extends StatefulWidget {
   final Movie? currentMovie;
@@ -43,6 +44,7 @@ class _BuyScreenState extends State<BuyScreen> {
   }
 
   Widget buildMoviePoster(String posterUrl) {
+    final resolvedUrl = ApiConnection.resolveMediaUrl(posterUrl);
     if (posterUrl.isEmpty || posterUrl == 'N/A') {
       return Container(
         width: 120,
@@ -62,7 +64,7 @@ class _BuyScreenState extends State<BuyScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Image.network(
-        posterUrl,
+        resolvedUrl,
         width: 120,
         height: 180,
         fit: BoxFit.cover,
@@ -245,8 +247,8 @@ class _BuyScreenState extends State<BuyScreen> {
 
                 _buildSelectionContainer(
                   title: 'Cinema Selection',
-                  icon: FontAwesomeIcons.repeat,
-                  onPressed: _selectCinema,
+                  icon: currentCinema != null ? null : FontAwesomeIcons.repeat,
+                  onPressed: currentCinema != null ? null : _selectCinema,
                   child: currentCinema != null
                       ? _buildInfoRow(
                           icon: Icons.location_on_outlined,
@@ -254,6 +256,7 @@ class _BuyScreenState extends State<BuyScreen> {
                           subtitle: currentCinema!.cinemaAddress,
                         )
                       : _buildPlaceholderText('Please select a cinema.'),
+                  isReadOnly: currentCinema != null,
                 ),
 
                 _buildSelectionContainer(
@@ -313,9 +316,10 @@ class _BuyScreenState extends State<BuyScreen> {
 
   Widget _buildSelectionContainer({
     required String title,
-    required IconData icon,
-    required VoidCallback onPressed,
+    required IconData? icon,
+    required VoidCallback? onPressed,
     required Widget child,
+    bool isReadOnly = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -341,14 +345,21 @@ class _BuyScreenState extends State<BuyScreen> {
                   color: AppColorStyle.textPrimary,
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  icon,
-                  color: AppColorStyle.secondaryAccent,
+              if (icon != null && onPressed != null && !isReadOnly)
+                IconButton(
+                  icon: Icon(
+                    icon,
+                    color: AppColorStyle.secondaryAccent,
+                    size: 20,
+                  ),
+                  onPressed: onPressed,
+                ),
+              if (isReadOnly)
+                const Icon(
+                  Icons.check_circle,
+                  color: Colors.green,
                   size: 20,
                 ),
-                onPressed: onPressed,
-              ),
             ],
           ),
           const SizedBox(height: 10),

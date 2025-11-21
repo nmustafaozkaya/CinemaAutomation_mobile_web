@@ -21,8 +21,9 @@
                 <i class="fas fa-map-marker-alt mr-1"></i>Şehir Filtresi (İsteğe Bağlı)
             </label>
             <select id="cityFilter" onchange="window.cinemaSelection.filterByCity(this.value)"
-                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-green-400 transition-all">
-                <option value="">Tüm Şehirler</option>
+                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-green-400 transition-all"
+                style="color: white; background-color: rgba(255, 255, 255, 0.1);">
+                <option value="" style="background-color: #1f2937; color: white;">Tüm Şehirler</option>
                 <!-- Cities will be loaded here -->
             </select>
         </div>
@@ -80,7 +81,7 @@ class CinemaSelection {
         this.countInfoElement = document.getElementById('filteredCinemaCount');
     }
 
-    async loadCinemas() {
+    async loadCinemas(preferredCityId = '') {
         try {
             this.showLoading();
             
@@ -93,24 +94,55 @@ class CinemaSelection {
             const data = response.data;
             
             this.cinemas = data.data || [];
-            // Şehirleri sinemalardan çıkar
-            this.availableCities = this.cinemas
-                .filter(cinema => cinema.city)
-                .map(cinema => cinema.city)
-                .filter((city, index, self) => self.findIndex(c => c.id === city.id) === index);
+            
+            // Şehirleri sinemalardan çıkar ve temizle
+            this.availableCities = [];
+            const cityMap = new Map();
+            
+            this.cinemas.forEach(cinema => {
+                if (cinema.city && cinema.city.id && cinema.city.name) {
+                    // Aynı ID'ye sahip şehirleri tekrarlamadan ekle
+                    if (!cityMap.has(cinema.city.id)) {
+                        cityMap.set(cinema.city.id, {
+                            id: cinema.city.id,
+                            name: cinema.city.name
+                        });
+                    }
+                }
+            });
+            
+            // Map'ten array'e çevir
+            this.availableCities = Array.from(cityMap.values());
+            
             this.filteredCinemas = [...this.cinemas];
             
             this.renderCityFilter();
             this.updateCinemaCount();
+
+            const effectiveCityId = preferredCityId || this.currentCityFilter || '';
             
+            // Debug için console log
+            console.log('Yüklenen sinemalar:', this.cinemas.length);
+            console.log('Bulunan şehirler:', this.availableCities);
+            
+            // Loading'i kapat ve içeriği göster
             if (this.cinemas.length === 0) {
                 this.showEmpty();
+            } else if (effectiveCityId) {
+                this.applyCityFilter(effectiveCityId, { 
+                    skipLoading: true, 
+                    updateDropdown: true 
+                });
             } else {
+                // Önce sinemaları render et
+                this.filteredCinemas = [...this.cinemas];
                 this.renderCinemas(this.cinemas);
+                // Sonra grid'i göster (loading'i kapatır)
                 this.showGrid();
             }
             
         } catch (error) {
+            console.error('Sinema yükleme hatası:', error);
             console.log('Mock data yükleniyor:', error.message);
             this.renderMockCinemas();
             this.showGrid();
@@ -118,45 +150,96 @@ class CinemaSelection {
     }
 
     renderCityFilter() {
-        let html = '<option value="">Tüm Şehirler</option>';
+        let html = '<option value="" style="background-color: #1f2937; color: white;">Tüm Şehirler</option>';
         
-        this.availableCities.forEach(city => {
-            html += `<option value="${city.id}">${city.name}</option>`;
-        });
+        if (this.availableCities && this.availableCities.length > 0) {
+            this.availableCities.forEach(city => {
+                if (city && city.id && city.name) {
+                    html += `<option value="${city.id}" style="background-color: #1f2937; color: white;">${city.name}</option>`;
+                }
+            });
+        }
         
         this.cityFilterElement.innerHTML = html;
+        
+        // Eğer şehir yoksa bilgi ver
+        if (this.availableCities.length === 0) {
+            console.warn('Şehir bilgisi bulunamadı. Sinemalarda city ilişkisi eksik olabilir.');
+        }
     }
 
     filterByCity(cityId) {
-        this.currentCityFilter = cityId;
-        
-        if (!cityId) {
-            // Şehir seçilmemişse tüm sinemalar
+        this.applyCityFilter(cityId);
+    }
+
+    applyCityFilter(cityId, options = {}) {
+        const { skipLoading = false, updateDropdown = false } = options;
+
+        try {
+            if (!skipLoading) {
+                this.showLoading();
+            }
+            
+            this.currentCityFilter = cityId || '';
+
+            if (updateDropdown && this.cityFilterElement) {
+                this.cityFilterElement.value = this.currentCityFilter;
+            }
+            
+            if (!this.currentCityFilter) {
+                this.filteredCinemas = [...this.cinemas];
+            } else {
+                this.filteredCinemas = this.cinemas.filter(cinema => {
+                    if (!cinema.city) return false;
+                    return cinema.city.id == this.currentCityFilter || cinema.city_id == this.currentCityFilter;
+                });
+            }
+            
+            this.updateCinemaCount();
+
+            const renderFiltered = () => {
+                if (this.filteredCinemas.length === 0) {
+                    this.showEmpty();
+                } else {
+                    this.renderCinemas(this.filteredCinemas);
+                    this.showGrid();
+
+                    setTimeout(() => {
+                        if (this.gridElement && this.gridElement.classList.contains('hidden')) {
+                            console.warn('Grid hala gizli, zorla gösteriliyor...');
+                            this.showGrid();
+                        }
+                    }, 50);
+                }
+            };
+
+            if (skipLoading) {
+                renderFiltered();
+            } else {
+                setTimeout(renderFiltered, 50);
+            }
+        } catch (error) {
+            console.error('Şehir filtreleme hatası:', error);
             this.filteredCinemas = [...this.cinemas];
-        } else {
-            // Şehir seçilmişse sadece o şehirdeki sinemalar
-            this.filteredCinemas = this.cinemas.filter(cinema => 
-                cinema.city && cinema.city.id == cityId
-            );
-        }
-        
-        this.updateCinemaCount();
-        
-        if (this.filteredCinemas.length === 0) {
-            this.showEmpty();
-        } else {
+            this.updateCinemaCount();
             this.renderCinemas(this.filteredCinemas);
             this.showGrid();
         }
     }
 
     clearFilters() {
-        this.currentCityFilter = '';
-        this.cityFilterElement.value = '';
-        this.filteredCinemas = [...this.cinemas];
-        this.updateCinemaCount();
-        this.renderCinemas(this.filteredCinemas);
-        this.showGrid();
+        try {
+            this.currentCityFilter = '';
+            if (this.cityFilterElement) {
+                this.cityFilterElement.value = '';
+            }
+            this.filteredCinemas = [...this.cinemas];
+            this.updateCinemaCount();
+            this.renderCinemas(this.filteredCinemas);
+            this.showGrid();
+        } catch (error) {
+            console.error('Filtre temizleme hatası:', error);
+        }
     }
 
     updateCinemaCount() {
@@ -164,42 +247,68 @@ class CinemaSelection {
     }
 
     renderCinemas(cinemas) {
+        if (!this.gridElement) {
+            console.error('Grid element bulunamadı!');
+            return;
+        }
+        
+        if (!cinemas || cinemas.length === 0) {
+            this.gridElement.innerHTML = '';
+            return;
+        }
+        
         let html = '';
         
-        cinemas.forEach(cinema => {
-            // Seans sayısını hesapla
-            const showtimeCount = cinema.halls ? 
-                cinema.halls.reduce((total, hall) => total + (hall.showtimes ? hall.showtimes.length : 0), 0) : 0;
-            
-            html += `
-                <div class="glass-effect rounded-2xl p-6 card-hover cursor-pointer" 
-                     onclick="selectCinemaForTicket(${cinema.id}, '${cinema.name}', '${cinema.address || ''}')">
-                    <div class="h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-4">
-                        <i class="fas fa-building text-white text-3xl opacity-70"></i>
-                    </div>
-                    <h4 class="text-lg font-bold text-white mb-2">${cinema.name}</h4>
-                    <p class="text-blue-300 text-sm mb-1">
-                        <i class="fas fa-map-marker-alt mr-1"></i>${cinema.city ? cinema.city.name : 'Şehir bilgisi yok'}
-                    </p>
-                    <p class="text-gray-400 text-xs mb-2">
-                        ${cinema.address || 'Adres bilgisi yok'}
-                    </p>
-                    <p class="text-emerald-400 text-sm">
-                        <i class="fas fa-door-open mr-1"></i>${cinema.halls ? cinema.halls.length : 'N/A'} Salon
-                    </p>
-                    <p class="text-yellow-400 text-sm">
-                        <i class="fas fa-clock mr-1"></i>${showtimeCount} Seans
-                    </p>
-                    ${cinema.phone ? `
-                        <p class="text-gray-400 text-xs mt-1">
-                            <i class="fas fa-phone mr-1"></i>${cinema.phone}
+        try {
+            cinemas.forEach(cinema => {
+                // Seans sayısını hesapla
+                const showtimeCount = cinema.halls ? 
+                    cinema.halls.reduce((total, hall) => total + (hall.showtimes ? hall.showtimes.length : 0), 0) : 0;
+                
+                // XSS koruması için string escape
+                const cinemaName = (cinema.name || 'İsimsiz Sinema').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const cinemaAddress = (cinema.address || 'Adres bilgisi yok').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const cityName = cinema.city ? (cinema.city.name || 'Şehir bilgisi yok') : 'Şehir bilgisi yok';
+                
+                html += `
+                    <div class="glass-effect rounded-2xl p-6 card-hover cursor-pointer" 
+                         onclick="selectCinemaForTicket(${cinema.id}, '${cinemaName}', '${cinemaAddress}')">
+                        <div class="h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-4">
+                            <i class="fas fa-building text-white text-3xl opacity-70"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-2">${cinemaName}</h4>
+                        <p class="text-blue-300 text-sm mb-1">
+                            <i class="fas fa-map-marker-alt mr-1"></i>${cityName}
                         </p>
-                    ` : ''}
-                </div>
-            `;
-        });
-        
-        this.gridElement.innerHTML = html;
+                        <p class="text-gray-400 text-xs mb-2">
+                            ${cinemaAddress}
+                        </p>
+                        <p class="text-emerald-400 text-sm">
+                            <i class="fas fa-door-open mr-1"></i>${cinema.halls ? cinema.halls.length : 'N/A'} Salon
+                        </p>
+                        <p class="text-yellow-400 text-sm">
+                            <i class="fas fa-clock mr-1"></i>${showtimeCount} Seans
+                        </p>
+                        ${cinema.phone ? `
+                            <p class="text-gray-400 text-xs mt-1">
+                                <i class="fas fa-phone mr-1"></i>${cinema.phone}
+                            </p>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            this.gridElement.innerHTML = html;
+            
+            // Grid'in görünür olduğundan emin ol
+            this.gridElement.style.display = 'grid';
+            this.gridElement.style.opacity = '1';
+            this.gridElement.style.visibility = 'visible';
+            
+        } catch (error) {
+            console.error('Sinema render hatası:', error);
+            this.gridElement.innerHTML = '<div class="text-white text-center p-4">Sinemalar yüklenirken bir hata oluştu.</div>';
+        }
     }
 
     renderMockCinemas() {
@@ -271,21 +380,46 @@ class CinemaSelection {
     }
 
     showLoading() {
-        this.loadingElement.classList.remove('hidden');
-        this.gridElement.classList.add('hidden');
-        this.emptyElement.classList.add('hidden');
+        if (this.loadingElement) {
+            this.loadingElement.classList.remove('hidden');
+        }
+        if (this.gridElement) {
+            this.gridElement.classList.add('hidden');
+        }
+        if (this.emptyElement) {
+            this.emptyElement.classList.add('hidden');
+        }
     }
 
     showGrid() {
-        this.loadingElement.classList.add('hidden');
-        this.gridElement.classList.remove('hidden');
-        this.emptyElement.classList.add('hidden');
+        if (this.loadingElement) {
+            this.loadingElement.classList.add('hidden');
+            this.loadingElement.style.display = 'none';
+        }
+        if (this.gridElement) {
+            this.gridElement.classList.remove('hidden');
+            // Grid'in görünür olduğundan emin ol
+            this.gridElement.style.display = 'grid';
+            this.gridElement.style.opacity = '1';
+            this.gridElement.style.visibility = 'visible';
+            this.gridElement.style.minHeight = '200px';
+        }
+        if (this.emptyElement) {
+            this.emptyElement.classList.add('hidden');
+            this.emptyElement.style.display = 'none';
+        }
     }
 
     showEmpty() {
-        this.loadingElement.classList.add('hidden');
-        this.gridElement.classList.add('hidden');
-        this.emptyElement.classList.remove('hidden');
+        if (this.loadingElement) {
+            this.loadingElement.classList.add('hidden');
+        }
+        if (this.gridElement) {
+            this.gridElement.classList.add('hidden');
+        }
+        if (this.emptyElement) {
+            this.emptyElement.classList.remove('hidden');
+        }
     }
 
     // Get cinema by ID
@@ -325,7 +459,8 @@ async function selectMovieForTicket(movieId, movieTitle) {
     window.cinemaSelection.showSelectedMovie(selectedMovie);
     
     // Load cinemas for this movie (TÜM SİNEMALAR)
-    await window.cinemaSelection.loadCinemas();
+    const preferredCityId = window.movieSelection?.currentCityId || '';
+    await window.cinemaSelection.loadCinemas(preferredCityId);
 }
 
 // Global function for cinema selection

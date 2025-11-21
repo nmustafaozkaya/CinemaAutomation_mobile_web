@@ -1,27 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'package:sinema_uygulamasi/components/movies.dart';
+import 'package:sinema_uygulamasi/components/city_filter_provider.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:sinema_uygulamasi/constant/app_text_style.dart';
 import 'package:sinema_uygulamasi/screens/movie_details.dart';
 
 Widget buildMoviePoster(String posterUrl) {
-  if (posterUrl.isEmpty || posterUrl == 'N/A') {
-    return Center(
-      child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+  // Poster URL'ini temizle ve kontrol et
+  if (posterUrl.isEmpty ||
+      posterUrl == 'N/A' ||
+      posterUrl.trim().isEmpty ||
+      posterUrl == 'null') {
+    return Container(
+      color: Colors.grey.shade300,
+      child: const Center(
+        child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+      ),
     );
-  } else {
-    return Image.network(
-      posterUrl,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Center(
-          child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
-        );
-      },
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Center(
+  }
+
+  // URL'yi çözümle
+  final resolvedUrl = ApiConnection.resolveMediaUrl(posterUrl);
+
+  // Geçerli URL kontrolü - http/https ile başlamalı
+  final isValidUrl =
+      resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://');
+
+  if (!isValidUrl) {
+    debugPrint('Geçersiz poster URL: $resolvedUrl');
+    return Container(
+      color: Colors.grey.shade300,
+      child: const Center(
+        child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+      ),
+    );
+  }
+
+  return Image.network(
+    resolvedUrl,
+    fit: BoxFit.cover,
+    width: double.infinity,
+    height: double.infinity,
+    loadingBuilder: (context, child, loadingProgress) {
+      if (loadingProgress == null) return child;
+      return Container(
+        color: Colors.grey.shade300,
+        child: Center(
           child: CircularProgressIndicator(
             color: AppColorStyle.secondaryAccent,
             value: loadingProgress.expectedTotalBytes != null
@@ -29,19 +54,29 @@ Widget buildMoviePoster(String posterUrl) {
                       loadingProgress.expectedTotalBytes!
                 : null,
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+    errorBuilder: (context, error, stackTrace) {
+      debugPrint('Poster yükleme hatası: $error - URL: $resolvedUrl');
+      return Container(
+        color: Colors.grey.shade300,
+        child: const Center(
+          child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+        ),
+      );
+    },
+  );
 }
 
 Widget _buildMovieGridSliver(
   BuildContext context,
-  String apiurl,
+  Future<List<Movie>> moviesFuture,
   bool isNowPlaying,
+  VoidCallback? onRetry,
 ) {
   return FutureBuilder<List<Movie>>(
-    future: fetchMovies(apiurl),
+    future: moviesFuture, // State'ten gelen Future'ı kullan
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const SliverFillRemaining(
@@ -52,20 +87,52 @@ Widget _buildMovieGridSliver(
           ),
         );
       } else if (snapshot.hasError) {
+        debugPrint('MoviesScreen - Hata: ${snapshot.error}');
         return SliverFillRemaining(
           child: Center(
-            child: Text(
-              "Hata: ${snapshot.error}",
-              style: TextStyle(color: AppColorStyle.textPrimary),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Hata: ${snapshot.error}",
+                    style: TextStyle(
+                      color: AppColorStyle.textPrimary,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: onRetry,
+                    child: const Text('Tekrar Dene'),
+                  ),
+                ],
+              ),
             ),
           ),
         );
       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        return const SliverFillRemaining(
+        return SliverFillRemaining(
           child: Center(
-            child: Text(
-              "Otomatik film bulunamadı.",
-              style: TextStyle(color: AppColorStyle.textPrimary),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.movie_outlined, size: 48, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
+                  "Film bulunamadı.",
+                  style: TextStyle(color: AppColorStyle.textPrimary),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: onRetry,
+                  child: const Text('Tekrar Dene'),
+                ),
+              ],
             ),
           ),
         );
@@ -121,27 +188,36 @@ Widget _buildMovieGridSliver(
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      movie.runtime,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w300,
-                        fontSize: 14,
-                        color: AppColorStyle.textSecondary,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        movie.runtime,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w300,
+                          fontSize: 14,
+                          color: AppColorStyle.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      movie.genre.split(',')[0].trim(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w300,
-                        fontSize: 14,
-                        color: AppColorStyle.textSecondary,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                        vertical: 4.0,
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      child: Text(
+                        movie.genre.split(',')[0].trim(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w300,
+                          fontSize: 14,
+                          color: AppColorStyle.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -203,20 +279,6 @@ class CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           ),
-          GestureDetector(
-            onTap: () => onCategorySelected('Pre Order'),
-            child: Text(
-              'Pre Order',
-              style: AppTextStyle.basicHeader.copyWith(
-                fontWeight: selectedCategory == 'Pre Order'
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-                color: selectedCategory == 'Pre Order'
-                    ? AppColorStyle.secondaryAccent
-                    : AppColorStyle.textPrimary,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -244,19 +306,60 @@ class MoviesScreen extends StatefulWidget {
 
 class _MoviesScreenState extends State<MoviesScreen> {
   late String selectedCategory;
+  late Future<List<Movie>> _moviesFuture;
+  bool isNowPlaying = true;
+  final CityFilterProvider _cityFilter = CityFilterProvider();
+  late final CityFilterListener _cityFilterListener;
 
   void _onCategorySelected(String category) {
     setState(() {
       selectedCategory = category;
+      isNowPlaying = category == 'Now Showing';
+      // Yeni Future oluştur - cache'i bypass et
+      _loadMovies();
     });
   }
 
-  bool isNowPlaying = true;
+  void _loadMovies() {
+    String apiUrl;
+
+    // Kategoriye göre API URL'i belirle - web'deki gibi
+    if (selectedCategory == 'Now Showing') {
+      apiUrl = ApiConnection.movies;
+    } else {
+      // Coming Soon
+      apiUrl = ApiConnection.futureMovies;
+    }
+
+    // Parametreleri ekle - web'deki gibi
+    final params = <String>['per_page=100'];
+    if (_cityFilter.hasCityFilter) {
+      params.add('city_id=${_cityFilter.selectedCityId}');
+    }
+
+    apiUrl = '$apiUrl?${params.join('&')}';
+
+    // Future oluştur
+    _moviesFuture = fetchMovies(apiUrl);
+  }
 
   @override
   void initState() {
     super.initState();
     selectedCategory = widget.isComingSoon ? 'Coming Soon' : 'Now Showing';
+    isNowPlaying = !widget.isComingSoon;
+    _loadMovies();
+
+    // Şehir filtresi değiştiğinde filmleri yeniden yükle
+    _cityFilterListener = _handleCityFilterChange;
+    _cityFilter.addListener(_cityFilterListener);
+  }
+
+  void _handleCityFilterChange(int? cityId, String? cityName) {
+    if (!mounted) return;
+    setState(() {
+      _loadMovies();
+    });
   }
 
   @override
@@ -282,46 +385,26 @@ class _MoviesScreenState extends State<MoviesScreen> {
           ),
           SliverPadding(
             padding: const EdgeInsets.all(12),
-            sliver: Builder(
-              builder: (context) {
-                if (selectedCategory == 'Now Showing') {
-                  isNowPlaying = true;
-                  return _buildMovieGridSliver(
-                    context,
-                    ApiConnection.movies,
-                    isNowPlaying,
-                  );
-                } else if (selectedCategory == 'Coming Soon') {
-                  isNowPlaying = false;
-                  return _buildMovieGridSliver(
-                    context,
-                    ApiConnection.futureMovies,
-                    isNowPlaying,
-                  );
-                } else if (selectedCategory == 'Pre Order') {
-                  return const SliverFillRemaining(
-                    child: Center(
-                      child: Text(
-                        'No Pre Order movies available.',
-                        style: TextStyle(color: AppColorStyle.textPrimary),
-                      ),
-                    ),
-                  );
-                } else {
-                  return const SliverFillRemaining(
-                    child: Center(
-                      child: Text(
-                        'Seçim bulunamadı.',
-                        style: TextStyle(color: AppColorStyle.textPrimary),
-                      ),
-                    ),
-                  );
-                }
+            sliver: _buildMovieGridSliver(
+              context,
+              _moviesFuture,
+              isNowPlaying,
+              () {
+                // State'teki Future'ı yeniden yükle
+                setState(() {
+                  _loadMovies();
+                });
               },
             ),
           ),
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _cityFilter.removeListener(_cityFilterListener);
+    super.dispose();
   }
 }

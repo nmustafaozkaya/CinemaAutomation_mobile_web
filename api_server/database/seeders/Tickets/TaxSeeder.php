@@ -13,7 +13,7 @@ class TaxSeeder extends Seeder
             'name' => 'KDV',
             'type' => 'percentage',
             'rate' => 20.00,
-            'status' => 'active',
+            'status' => 'inactive',
             'priority' => 1,
             'description' => 'Katma Değer Vergisi %20'
         ]);
@@ -31,7 +31,7 @@ class TaxSeeder extends Seeder
             'name' => 'İşlem Ücreti',
             'type' => 'fixed_total',
             'rate' => 5.00,
-            'status' => 'active',
+            'status' => 'inactive',
             'priority' => 3,
             'description' => 'Toplam işlem ücreti'
         ]);

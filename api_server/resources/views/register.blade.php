@@ -21,7 +21,7 @@
                         </label>
                         <input type="text" id="name"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
-                            placeholder="Ad ve soyadınızı girin" required>
+                            placeholder="Ad Soyad" required>
                     </div>
 
                     <div>
@@ -30,7 +30,38 @@
                         </label>
                         <input type="email" id="email"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
-                            placeholder="Email adresinizi girin" required>
+                            placeholder="Email" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">
+                            <i class="fas fa-phone mr-2"></i>Telefon
+                        </label>
+                        <input type="tel" id="phone"
+                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
+                            placeholder="Telefon">
+                    </div>
+
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">
+                            <i class="fas fa-calendar mr-2"></i>Doğum Tarihi
+                        </label>
+                        <input type="date" id="birth_date"
+                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
+                            max="{{ date('Y-m-d', strtotime('-1 day')) }}">
+                    </div>
+
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">
+                            <i class="fas fa-venus-mars mr-2"></i>Cinsiyet
+                        </label>
+                        <select id="gender"
+                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                            <option value="">Seçiniz</option>
+                            <option value="male">Erkek</option>
+                            <option value="female">Kadın</option>
+                            <option value="other">Diğer</option>
+                        </select>
                     </div>
 
                     <div>
@@ -39,7 +70,7 @@
                         </label>
                         <input type="password" id="password"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
-                            placeholder="Şifrenizi girin (Min. 8 karakter)" required>
+                            placeholder="Şifre" required>
                     </div>
 
                     <div>
@@ -48,7 +79,7 @@
                         </label>
                         <input type="password" id="password_confirmation"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
-                            placeholder="Şifrenizi tekrar girin" required>
+                            placeholder="Şifre Tekrar" required>
                     </div>
 
                     <div class="flex items-center">
@@ -120,13 +151,16 @@
 
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const birthDate = document.getElementById('birth_date').value;
+            const gender = document.getElementById('gender').value;
             const password = document.getElementById('password').value;
             const passwordConfirmation = document.getElementById('password_confirmation').value;
             const terms = document.getElementById('terms').checked;
 
             // Validation
             if (!name || !email || !password || !passwordConfirmation) {
-                showMessage('Lütfen tüm alanları doldurun!', 'error');
+                showMessage('Lütfen zorunlu alanları doldurun!', 'error');
                 return;
             }
 
@@ -148,12 +182,19 @@
             showLoading();
 
             try {
-                const response = await axios.post('/api/register', {
+                const registerData = {
                     name: name,
                     email: email,
                     password: password,
                     password_confirmation: passwordConfirmation
-                });
+                };
+
+                // Opsiyonel alanları ekle
+                if (phone) registerData.phone = phone;
+                if (birthDate) registerData.birth_date = birthDate;
+                if (gender) registerData.gender = gender;
+
+                const response = await axios.post('/api/register', registerData);
 
                 hideLoading();
 

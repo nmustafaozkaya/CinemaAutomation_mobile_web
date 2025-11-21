@@ -6,17 +6,20 @@ import 'package:sinema_uygulamasi/screens/buy_screen.dart';
 import 'package:sinema_uygulamasi/components/movies.dart';
 import 'package:sinema_uygulamasi/components/cinemas.dart';
 import 'package:sinema_uygulamasi/components/showtimes.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 
 class MovieDetails extends StatefulWidget {
   static const String routeName = '/movie-details';
 
   final Movie? currentMovie;
   final bool isNowShowing;
+  final Cinema? preselectedCinema;
 
   const MovieDetails({
     super.key,
     this.currentMovie,
     required this.isNowShowing,
+    this.preselectedCinema,
   });
 
   @override
@@ -26,6 +29,15 @@ class MovieDetails extends StatefulWidget {
 class _MovieDetailsState extends State<MovieDetails> {
   Cinema? selectedCinema;
   Showtime? selectedShowtime;
+
+  @override
+  void initState() {
+    super.initState();
+    // Eğer önceden seçilmiş sinema varsa, onu kullan
+    if (widget.preselectedCinema != null) {
+      selectedCinema = widget.preselectedCinema;
+    }
+  }
 
   Widget _buildStarRating(double rating, {double size = 24}) {
     int fullStars = rating.floor();
@@ -48,6 +60,7 @@ class _MovieDetailsState extends State<MovieDetails> {
   }
 
   Widget _buildMoviePoster(String posterUrl) {
+    final resolvedUrl = ApiConnection.resolveMediaUrl(posterUrl);
     if (posterUrl.isEmpty || posterUrl == 'N/A') {
       return Container(
         height: 300,
@@ -64,7 +77,7 @@ class _MovieDetailsState extends State<MovieDetails> {
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.network(
-          posterUrl,
+          resolvedUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
             return Container(
@@ -136,7 +149,7 @@ class _MovieDetailsState extends State<MovieDetails> {
       buttonColor = Colors.amber;
       buttonOnPressed = _navigateToBuyScreen;
     } else {
-      buttonText = "Buy Ticket (Coming Soon)";
+      buttonText = "Coming Soon";
       buttonColor = AppColorStyle.primaryAccent;
       buttonTextColor = AppColorStyle.textSecondary;
       buttonOnPressed = null;

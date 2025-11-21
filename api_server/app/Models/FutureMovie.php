@@ -23,6 +23,11 @@ class FutureMovie extends Model
         'status'
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at'
+    ];
+
     // ✅ TARİH FORMATINI DÜZELTTİK
     protected $casts = [
         'release_date' => 'date', // Carbon olarak otomatik cast
@@ -49,6 +54,17 @@ class FutureMovie extends Model
     {
         $thirtyDaysLater = Carbon::now()->addDays(30);
         return $query->where('release_date', '<=', $thirtyDaysLater);
+    }
+
+    /**
+     * Scope: Pre-order için uygun filmler (1 hafta içinde)
+     */
+    public function scopePreOrder($query)
+    {
+        $oneWeekLater = Carbon::now()->addDays(7);
+        $now = Carbon::now();
+        return $query->where('release_date', '>', $now)
+                    ->where('release_date', '<=', $oneWeekLater);
     }
 
     /**

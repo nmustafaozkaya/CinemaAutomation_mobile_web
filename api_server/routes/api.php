@@ -19,6 +19,7 @@ Route::post('register', [AuthController::class, 'register']);
 
 // Public routes - Movies
 Route::get('movies', [MovieController::class, 'index']);
+Route::get('movies/distributed', [MovieController::class, 'distributed']); // Toplam 100 filmi tarihe göre dağıt
 Route::get('movies/{id}', [MovieController::class, 'show']);
 Route::get('movies/{movie}/cinemas', [MovieController::class, 'getCinemasForMovie']);
 Route::get('movies/{movie}/showtimes', [MovieController::class, 'getShowtimesForMovie']);
@@ -65,6 +66,7 @@ Route::post('taxes/calculate', [TaxController::class, 'calculateTotal']);
 Route::prefix('future-movies')->group(function () {
     Route::get('/', [FutureMoviesController::class, 'index']);
     Route::get('/coming-soon', [FutureMoviesController::class, 'comingSoon']);
+    Route::get('/pre-order', [FutureMoviesController::class, 'preOrder']);
     Route::get('/genres', [FutureMoviesController::class, 'genres']);
     Route::get('/statuses', [FutureMoviesController::class, 'statuses']);
     Route::get('/{id}', [FutureMoviesController::class, 'show']);

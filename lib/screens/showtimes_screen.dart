@@ -36,56 +36,103 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
     _fetchShowtimes();
   }
 
+  List<dynamic> _extractShowtimeList(dynamic decodedData) {
+    if (decodedData is! Map<String, dynamic>) return [];
+
+    if (decodedData['success'] != true || decodedData['data'] == null) {
+      return [];
+    }
+
+    final data = decodedData['data'];
+    if (data is List) {
+      return data;
+    }
+    if (data is Map<String, dynamic> && data['data'] is List) {
+      return data['data'] as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> _fetchShowtimePayload(Uri url) async {
+    final response = await http.get(url);
+    if (response.statusCode != 200) {
+      throw Exception(
+        'API başvurusunda hata oluştu. Kod: ${response.statusCode}',
+      );
+    }
+
+    if (response.body.isEmpty) {
+      return [];
+    }
+
+    final decodedData = json.decode(response.body);
+    return _extractShowtimeList(decodedData);
+  }
+
   Future<void> _fetchShowtimes() async {
     try {
-      final url = Uri.parse(
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final primaryUrl = Uri.parse(
         "${ApiConnection.showtimes}?movie_id=${widget.currentMovie.id}&cinema_id=${widget.selectedCinema.cinemaId}",
       );
-      final response = await http.get(url);
 
-      if (response.statusCode == 200) {
-        final decodedData = json.decode(response.body);
-        final List<dynamic> showtimeList = decodedData['data']['data'];
+      List<dynamic> showtimeList = await _fetchShowtimePayload(primaryUrl);
 
-        if (showtimeList.isEmpty) {
-          setState(() {
-            _errorMessage =
-                "Bu sinemada seçili film için otomatik seans bulunamadı.";
-            _isLoading = false;
-          });
-          return;
+      if (showtimeList.isEmpty) {
+        final fallbackUrl = Uri.parse(
+          "${ApiConnection.movies}/${widget.currentMovie.id}/showtimes?cinema_id=${widget.selectedCinema.cinemaId}",
+        );
+
+        try {
+          showtimeList = await _fetchShowtimePayload(fallbackUrl);
+        } catch (fallbackError) {
+          debugPrint('Fallback showtime isteği başarısız: $fallbackError');
         }
+      }
 
-        final showtimes = showtimeList
-            .map((json) => Showtime.fromJson(json))
-            .toList();
-        final dates =
-            showtimes
-                .map(
-                  (s) => DateTime(
+      if (showtimeList.isEmpty) {
+        setState(() {
+          _errorMessage =
+              "Bu sinemada seçtiğiniz film için şu anda aktif seans görünmüyor. Lütfen farklı bir tarih veya sinema deneyin.";
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final showtimes = showtimeList
+          .map((json) => Showtime.fromJson(json))
+          .toList();
+          final dates = showtimes
+              .map(
+                (s) {
+                  // startTime artık local timezone'da, toLocal() gerekmez
+                  return DateTime(
                     s.startTime.year,
                     s.startTime.month,
                     s.startTime.day,
-                  ),
-                )
-                .toSet()
-                .toList()
-              ..sort();
+                  );
+                },
+              )
+              .toSet()
+              .toList()
+            ..sort();
 
-        setState(() {
-          _allShowtimes = showtimes;
-          _uniqueDates = dates;
-          _selectedDate = dates.isNotEmpty ? dates.first : null;
-          _isLoading = false;
-        });
-      } else {
-        throw Exception(
-          'API\'den veri alınamadı. Hata kodu: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
       setState(() {
-        _errorMessage = e.toString();
+        _allShowtimes = showtimes;
+        _uniqueDates = dates;
+        _selectedDate = dates.isNotEmpty ? dates.first : null;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } catch (e, stack) {
+      debugPrint('Showtimes yüklenirken hata: $e\n$stack');
+      setState(() {
+        _errorMessage =
+            "Seans bilgileri alınırken beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.";
         _isLoading = false;
       });
     }
@@ -145,11 +192,11 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
       );
     }
 
-    final showtimesForDate = _allShowtimes.where((showtime) {
-      final st = showtime.startTime;
-      return st.year == _selectedDate!.year &&
-          st.month == _selectedDate!.month &&
-          st.day == _selectedDate!.day;
+      final showtimesForDate = _allShowtimes.where((showtime) {
+      // startTime artık local timezone'da, toLocal() gerekmez
+      return showtime.startTime.year == _selectedDate!.year &&
+          showtime.startTime.month == _selectedDate!.month &&
+          showtime.startTime.day == _selectedDate!.day;
     }).toList();
 
     if (showtimesForDate.isEmpty) {
@@ -172,6 +219,7 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
       itemCount: showtimesForDate.length,
       itemBuilder: (context, index) {
         final showtime = showtimesForDate[index];
+        // startTime artık local timezone'da, toLocal() gerekmez
         final formattedTime = DateFormat('HH:mm').format(showtime.startTime);
 
         return GestureDetector(

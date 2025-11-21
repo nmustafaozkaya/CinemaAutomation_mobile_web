@@ -57,15 +57,15 @@
     </div>
 </div>
 
-<!-- Step 4: Koltuk Seçimi -->
-<div id="ticketStep4" class="ticket-step hidden">
+<!-- Step 5: Koltuk Seçimi -->
+<div id="ticketStep5" class="ticket-step hidden">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-2xl font-bold text-white text-center flex-1">
             <i class="fas fa-couch mr-2 text-green-400"></i>Koltuk Seçiniz (Maksimum 6 adet)
         </h3>
-        <button onclick="goBackToStep(3)"
+        <button onclick="goBackToStep(4)"
             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i>Seans Değiştir
+            <i class="fas fa-arrow-left mr-2"></i>Bilet Tipi Değiştir
         </button>
     </div>
 
@@ -115,11 +115,12 @@
 
         <!-- Selected Seats Info -->
         <div class="text-center mt-4">
-            <div id="selectedSeatsInfo" class="text-white font-medium mb-4">Seçili koltuk yok</div>
+            <div id="selectedSeatsInfo" class="text-white font-medium mb-2">Seçili koltuk yok</div>
+            <div id="seatRequirementInfo" class="text-sm text-gray-300 mb-2"></div>
             <div id="selectedSeatsPrice" class="text-emerald-400 font-bold mb-4 hidden"></div>
-            <button id="continueToTicketTypes" onclick="goToTicketTypes()"
+            <button id="continueToPaymentStep" onclick="goToPayment()"
                 class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-bold hidden">
-                <i class="fas fa-arrow-right mr-2"></i>Bilet Tiplerini Seç
+                <i class="fas fa-arrow-right mr-2"></i>Ödemeye Geç
             </button>
         </div>
     </div>
@@ -135,7 +136,8 @@
     class SeatMap {
         constructor() {
             this.selectedSeats = [];
-            this.maxSeats = 6;
+            this.defaultMaxSeats = 6;
+            this.maxSeats = this.defaultMaxSeats;
             this.seatData = null;
             this.selectedShowtime = null;
 
@@ -145,7 +147,8 @@
             this.legendElement = document.getElementById('seatLegend');
             this.infoElement = document.getElementById('selectedSeatsInfo');
             this.priceElement = document.getElementById('selectedSeatsPrice');
-            this.continueBtn = document.getElementById('continueToTicketTypes');
+            this.requirementElement = document.getElementById('seatRequirementInfo');
+            this.continueBtn = document.getElementById('continueToPaymentStep');
             this.autoCleanupOnLoad();
         }
         forceReset() {
@@ -489,10 +492,21 @@
         }
 
         updateSelectedSeatsInfo() {
+            const requiredSeats = window.paymentForm?.getTotalTicketCount() || 0;
+
             if (this.selectedSeats.length === 0) {
                 this.infoElement.textContent = 'Seçili koltuk yok';
+                if (this.requirementElement) {
+                    this.requirementElement.textContent = requiredSeats > 0
+                        ? `Lütfen ${requiredSeats} koltuk seçin.`
+                        : 'Devam etmek için önce bilet tiplerini seçin.';
+                    this.requirementElement.classList.remove('text-emerald-300', 'text-red-400');
+                    this.requirementElement.classList.add('text-gray-300');
+                }
                 this.priceElement.classList.add('hidden');
-                this.continueBtn.classList.add('hidden');
+                if (this.continueBtn) {
+                    this.continueBtn.classList.add('hidden');
+                }
             } else {
                 const seatCodes = this.selectedSeats.map(s => s.code).join(', ');
                 this.infoElement.textContent = `${this.selectedSeats.length} koltuk seçili: ${seatCodes}`;
@@ -504,7 +518,34 @@
                     this.priceElement.classList.remove('hidden');
                 }
 
-                this.continueBtn.classList.remove('hidden');
+                if (this.requirementElement) {
+                    if (requiredSeats > 0 && this.selectedSeats.length !== requiredSeats) {
+                        const diff = requiredSeats - this.selectedSeats.length;
+                        const text = diff > 0
+                            ? `Devam etmek için ${diff} koltuk daha seçin.`
+                            : `Lütfen ${Math.abs(diff)} koltuğu iptal edin.`;
+                        this.requirementElement.textContent = text;
+                        this.requirementElement.classList.remove('text-emerald-300', 'text-gray-300');
+                        this.requirementElement.classList.add('text-red-400');
+                        if (this.continueBtn) {
+                            this.continueBtn.classList.add('hidden');
+                        }
+                    } else if (requiredSeats > 0) {
+                        this.requirementElement.textContent = 'Harika! Bilet sayısı ile koltuk sayısı eşleşti.';
+                        this.requirementElement.classList.remove('text-red-400', 'text-gray-300');
+                        this.requirementElement.classList.add('text-emerald-300');
+                        if (this.continueBtn) {
+                            this.continueBtn.classList.remove('hidden');
+                        }
+                    } else {
+                        this.requirementElement.textContent = 'Bilet tipi belirlenmedi.';
+                        this.requirementElement.classList.remove('text-emerald-300', 'text-red-400');
+                        this.requirementElement.classList.add('text-gray-300');
+                        if (this.continueBtn) {
+                            this.continueBtn.classList.add('hidden');
+                        }
+                    }
+                }
             }
         }
 
@@ -566,6 +607,26 @@
 
         setShowtime(showtime) {
             this.selectedShowtime = showtime;
+        }
+
+        async setSeatLimit(limit) {
+            const normalizedLimit = Math.min(limit || this.defaultMaxSeats, this.defaultMaxSeats);
+            this.maxSeats = normalizedLimit > 0 ? normalizedLimit : this.defaultMaxSeats;
+
+            await this.enforceSeatLimit();
+            this.updateSelectedSeatsInfo();
+        }
+
+        async enforceSeatLimit() {
+            while (this.selectedSeats.length > this.maxSeats) {
+                const seat = this.selectedSeats.pop();
+                try {
+                    await axios.post(`/api/seats/${seat.id}/release`);
+                    console.log(`Koltuk ${seat.code} limit düşürüldüğü için serbest bırakıldı`);
+                } catch (error) {
+                    console.error('Koltuk serbest bırakılamadı:', error);
+                }
+            }
         }
         // SeatMap class'ının içine ekleyin
         async manualRefresh() {
@@ -705,15 +766,27 @@
                 `;
 
                 dateShowtimes.forEach(showtime => {
-                    const startTime = new Date(showtime.start_time);
-                    const timeString = startTime.toLocaleTimeString('tr-TR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
+                    // API'den gelen zaman string'ini al
+                    let timeStr = showtime.start_time;
+                    
+                    // API'den gelen zamanı parse et (timezone conversion YAPMA)
+                    const startTime = new Date(timeStr);
+                    
+                    // Saat ve dakikayı direkt al (timezone conversion olmadan)
+                    const hours = String(startTime.getUTCHours()).padStart(2, '0');
+                    const minutes = String(startTime.getUTCMinutes()).padStart(2, '0');
+                    const timeString = `${hours}:${minutes}`;
+                    
+                    const dateString = startTime.toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
                     });
+                    const formattedDateTime = `${dateString} ${timeString}`;
 
                     html += `
                         <div class="glass-effect rounded-xl p-4 card-hover cursor-pointer" 
-                             onclick="selectShowtimeForTicket(${showtime.id}, '${startTime.toLocaleString('tr-TR')}', '${showtime.hall.name}', ${showtime.price || 45})">
+                             onclick="selectShowtimeForTicket(${showtime.id}, '${formattedDateTime}', '${showtime.hall.name}', ${showtime.price || 45})">
                             <div class="text-center">
                                 <h4 class="text-lg font-semibold text-white mb-2">${showtime.hall.name}</h4>
                                 <p class="text-emerald-400 font-bold text-xl mb-1">${timeString}</p>
@@ -759,11 +832,20 @@
                 throw new Error('Film veya sinema seçilmedi');
             }
 
+            // MovieController endpoint'ini kullan (cinema_id parametresi ile)
             const response = await axios.get(`/api/movies/${selectedMovie.id}/showtimes`, {
                 params: { cinema_id: selectedCinema.id }
             });
 
-            allShowtimes = response.data.data || [];
+            // Response format: { success: true, data: [...] }
+            let showtimes = [];
+            if (response.data.success && response.data.data) {
+                if (Array.isArray(response.data.data)) {
+                    showtimes = response.data.data;
+                }
+            }
+
+            allShowtimes = showtimes;
             filteredShowtimes = [...allShowtimes];
 
             initializeDateFilter();
@@ -778,8 +860,9 @@
 
         } catch (error) {
             console.error('Seanslar yüklenemedi:', error);
-            renderMockShowtimes();
-            showShowtimeGrid();
+            allShowtimes = [];
+            filteredShowtimes = [];
+            showEmptyShowtimes();
         }
     }
 

@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:sinema_uygulamasi/components/movies.dart';
+import 'package:sinema_uygulamasi/components/movies.dart' show Movie;
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'package:sinema_uygulamasi/components/cinemas.dart';
 import 'package:sinema_uygulamasi/screens/showtimes_screen.dart';
+import 'package:sinema_uygulamasi/screens/cinema_movies_screen.dart';
 
 class CinemaSelect extends StatefulWidget {
   final Movie? currentMovie2;
@@ -24,14 +25,59 @@ class _CinemaSelectState extends State<CinemaSelect> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   String? _error;
+  Map<int, String> _cityIdToNameMap = {}; // Şehir ID'den isme mapping
 
   @override
   void initState() {
     super.initState();
-    if (widget.currentMovie2 != null) {
-      fetchCinemasForMovie();
-    } else {
-      fetchAllCinemas();
+    _loadCities().then((_) {
+      if (widget.currentMovie2 != null) {
+        fetchCinemasForMovie();
+      } else {
+        fetchAllCinemas();
+      }
+    });
+  }
+
+  // Şehirleri API'den yükle
+  Future<void> _loadCities() async {
+    try {
+      final uri = Uri.parse(ApiConnection.cities);
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('İstek zaman aşımına uğradı');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        
+        if (jsonResponse['success'] == true && jsonResponse['data'] is List) {
+          final List<dynamic> citiesData = jsonResponse['data'];
+          final cityMap = <int, String>{};
+          
+          for (final cityData in citiesData) {
+            if (cityData['id'] != null && cityData['name'] != null) {
+              cityMap[cityData['id'] as int] = cityData['name'] as String;
+            }
+          }
+          
+          setState(() {
+            _cityIdToNameMap = cityMap;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Şehirler yüklenirken hata: $e');
+      // Hata durumunda varsayılan şehirleri kullan
+      _cityIdToNameMap = {
+        1: 'İstanbul',
+        2: 'Ankara',
+        3: 'Afyonkarahisar',
+        4: 'İzmir',
+        5: 'Bursa',
+      };
     }
   }
 
@@ -49,109 +95,83 @@ class _CinemaSelectState extends State<CinemaSelect> {
       });
 
       final movieId = widget.currentMovie2!.id;
-      final uri = Uri.parse('${ApiConnection.showtimes}?movie_id=$movieId');
-      final response = await http.get(uri);
+      
+      // Web'in kullandığı endpoint - daha temiz ve doğru JSON döndürüyor
+      final uri = Uri.parse('${ApiConnection.cinemas}/showing/$movieId');
+      
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.');
+        },
+      );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-
-        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
-          final data = jsonResponse['data'];
-
-          List<dynamic> showtimesList = [];
-
-          if (data is Map && data.containsKey('data')) {
-            showtimesList = data['data'] ?? [];
-          } else if (data is List) {
-            showtimesList = data;
-          } else {
-            throw Exception('Beklenmeyen veri formatı');
-          }
-
-          if (showtimesList.isEmpty) {
-            setState(() {
-              _isLoading = false;
-              _error = "Bu film için gösterimde olan sinema bulunamadı.";
-            });
-            return;
-          }
-
-          final Map<int, Map<String, dynamic>> uniqueCinemas = {};
-          final Set<String> cityNames = {};
-
-          for (final showtime in showtimesList) {
-            try {
-              if (showtime == null ||
-                  showtime['hall'] == null ||
-                  showtime['hall']['cinema'] == null) {
-                continue;
-              }
-
-              final cinemaData = Map<String, dynamic>.from(
-                showtime['hall']['cinema'],
-              );
-              final cinemaId = cinemaData['id'];
-
-              if (cinemaId == null) continue;
-
-              if (!uniqueCinemas.containsKey(cinemaId)) {
-                if (cinemaData['city_id'] != null) {
-                  if (cinemaData['city'] == null) {
-                    cinemaData['city'] = {
-                      'id': cinemaData['city_id'],
-                      'name': _getCityNameById(cinemaData['city_id']),
-                    };
-                  }
-                }
-
-                uniqueCinemas[cinemaId] = cinemaData;
-
-                final cityName =
-                    cinemaData['city']?['name'] ?? 'Bilinmeyen Şehir';
-                cityNames.add(cityName);
-              }
-            } catch (e) {
-              continue;
-            }
-          }
-
-          if (uniqueCinemas.isEmpty) {
-            setState(() {
-              _isLoading = false;
-              _error = "Bu film için gösterimde olan sinema bulunamadı.";
-            });
-            return;
-          }
-
-          final List<Cinema> cinemas = [];
-          for (final cinemaData in uniqueCinemas.values) {
-            try {
-              final cinema = Cinema.fromJson(cinemaData);
-              cinemas.add(cinema);
-            } catch (e) {
-              continue;
-            }
-          }
-
-          final sortedCities = cityNames.toList()..sort();
-
-          cinemas.sort((a, b) => a.cinemaName.compareTo(b.cinemaName));
-
-          setState(() {
-            _allCinemas = cinemas;
-            _filteredCinemas = cinemas;
-            _cities = ['Tümü', ...sortedCities];
-            _isLoading = false;
-          });
-        } else {
-          throw Exception(
-            jsonResponse['message'] ?? 'API yanıtı formatı beklenmedik.',
-          );
-        }
-      } else {
+      if (response.statusCode != 200) {
         throw Exception('Sunucu hatası: ${response.statusCode}');
       }
+
+      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
+
+      if (jsonResponse['success'] != true || jsonResponse['data'] == null) {
+        setState(() {
+          _error = jsonResponse['message'] ?? 'Bu film için gösterimde olan sinema bulunamadı.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Data artık direkt olarak cinema listesi
+      final List<dynamic> cinemasData = jsonResponse['data'] as List<dynamic>;
+      
+      if (cinemasData.isEmpty) {
+        setState(() {
+          _error = "Bu film için gösterimde olan sinema bulunamadı.";
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Sinemalar zaten temiz JSON olarak geliyor, complex parsing'e gerek yok
+      final List<Cinema> cinemas = [];
+      final Set<String> cityNames = {};
+
+      for (final cinemaData in cinemasData) {
+        try {
+          final cinema = Cinema.fromJson(cinemaData as Map<String, dynamic>);
+          cinemas.add(cinema);
+          
+          // Şehir isimlerini topla
+          if (cinema.cityName.isNotEmpty && 
+              cinema.cityName != 'Bilinmeyen' && 
+              cinema.cityName != 'Bilinmeyen Şehir') {
+            cityNames.add(cinema.cityName);
+          }
+        } catch (e) {
+          debugPrint('Cinema parse hatası: $e');
+          continue;
+        }
+      }
+
+      if (cinemas.isEmpty) {
+        setState(() {
+          _error = "Bu film için gösterimde olan sinema bulunamadı.";
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final sortedCities = cityNames.toList()..sort();
+      cinemas.sort((a, b) => a.cinemaName.compareTo(b.cinemaName));
+
+      setState(() {
+        _allCinemas = cinemas;
+        _filteredCinemas = cinemas;
+        _cities = ['Tümü', ...sortedCities];
+        _isLoading = false;
+      });
+      
     } catch (e) {
+      debugPrint('fetchCinemasForMovie hatası: $e');
       setState(() {
         _error = 'Sinema bilgileri alınamadı: ${e.toString()}';
         _isLoading = false;
@@ -166,11 +186,95 @@ class _CinemaSelectState extends State<CinemaSelect> {
         _error = null;
       });
 
-      final uri = Uri.parse(ApiConnection.showtimes);
-      final response = await http.get(uri);
+      final client = http.Client();
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      try {
+        final uri = Uri.parse('${ApiConnection.showtimes}?_t=${DateTime.now().millisecondsSinceEpoch}');
+        
+        final request = http.Request('GET', uri);
+        request.headers['Accept'] = 'application/json';
+        request.headers['Content-Type'] = 'application/json';
+
+        final streamedResponse = await client
+            .send(request)
+            .timeout(
+              const Duration(seconds: 30),
+              onTimeout: () {
+                throw Exception('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.');
+              },
+            );
+
+        final response = await http.Response.fromStream(streamedResponse);
+
+        if (response.statusCode != 200) {
+          throw Exception(
+            'Sunucu hatası: ${response.statusCode}. '
+            'Yanıt: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}',
+          );
+        }
+
+        if (response.bodyBytes.isEmpty) {
+          setState(() {
+            _isLoading = false;
+            _error = "Henüz hiç sinema bulunamadı.";
+          });
+          return;
+        }
+
+        String decodedBody;
+        try {
+          // UTF-8 decode - allowMalformed true yaparak bozuk karakterleri atla
+          decodedBody = utf8.decode(response.bodyBytes, allowMalformed: true);
+        } catch (e) {
+          // UTF-8 decode başarısız olursa alternatif olarak response.body kullan
+          try {
+            decodedBody = response.body;
+          } catch (e2) {
+            throw Exception('Response decode edilemedi: ${e.toString()}');
+          }
+        }
+
+        // JSON'un tam olduğunu kontrol et
+        if (decodedBody.trim().isEmpty) {
+          setState(() {
+            _isLoading = false;
+            _error = "Henüz hiç sinema bulunamadı.";
+          });
+          return;
+        }
+
+        Map<String, dynamic> jsonResponse;
+        try {
+          String cleanedBody = decodedBody.trim();
+          
+          // Agresif JSON temizleme - yaygın syntax hatalarını düzelt
+          cleanedBody = _fixCommonJsonErrors(cleanedBody);
+          
+          // Eğer JSON tam bitmemişse, son kapanış parantezlerini kontrol et
+          if (!cleanedBody.endsWith('}') && !cleanedBody.endsWith(']')) {
+            int lastValidBrace = cleanedBody.lastIndexOf('}');
+            int lastValidBracket = cleanedBody.lastIndexOf(']');
+            int lastValid = lastValidBrace > lastValidBracket ? lastValidBrace : lastValidBracket;
+            
+            if (lastValid > 0) {
+              cleanedBody = cleanedBody.substring(0, lastValid + 1);
+              if (cleanedBody.contains('"data":[') && !cleanedBody.endsWith(']}')) {
+                cleanedBody = '${cleanedBody.replaceAll(RegExp(r',\s*$'), '')}]}';
+              }
+            }
+          }
+          
+          jsonResponse = json.decode(cleanedBody) as Map<String, dynamic>;
+        } on FormatException catch (e) {
+          debugPrint('❌ JSON parse hatası: ${e.message}');
+          debugPrint('Response uzunluğu: ${decodedBody.length} karakter');
+          if (e.offset != null && e.offset! < decodedBody.length) {
+            final start = (e.offset! - 100).clamp(0, decodedBody.length);
+            final end = (e.offset! + 100).clamp(0, decodedBody.length);
+            debugPrint('Hata pozisyonu: ${e.offset}, çevresi: ${decodedBody.substring(start, end)}');
+          }
+          throw Exception('JSON parse hatası: ${e.message}');
+        }
 
         if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
           await _processCinemaData(jsonResponse['data']);
@@ -179,10 +283,21 @@ class _CinemaSelectState extends State<CinemaSelect> {
             jsonResponse['message'] ?? 'API yanıtı formatı beklenmedik.',
           );
         }
-      } else {
-        throw Exception('Sunucu hatası: ${response.statusCode}');
+      } finally {
+        client.close();
       }
+    } on http.ClientException catch (e) {
+      setState(() {
+        _error = 'Bağlantı hatası: ${e.message}';
+        _isLoading = false;
+      });
+    } on FormatException catch (e) {
+      setState(() {
+        _error = 'Veri formatı hatası: ${e.message}';
+        _isLoading = false;
+      });
     } catch (e) {
+      debugPrint('fetchAllCinemas hatası: $e');
       setState(() {
         _error = 'Sinema bilgileri alınamadı: ${e.toString()}';
         _isLoading = false;
@@ -228,17 +343,31 @@ class _CinemaSelectState extends State<CinemaSelect> {
         if (cinemaId == null) continue;
 
         if (!uniqueCinemas.containsKey(cinemaId)) {
-          if (cinemaData['city_id'] != null && cinemaData['city'] == null) {
-            cinemaData['city'] = {
-              'id': cinemaData['city_id'],
-              'name': _getCityNameById(cinemaData['city_id']),
-            };
+          // Şehir bilgisini düzelt
+          if (cinemaData['city_id'] != null) {
+            final cityId = cinemaData['city_id'] is int 
+                ? cinemaData['city_id'] 
+                : int.tryParse(cinemaData['city_id'].toString());
+            
+            if (cinemaData['city'] == null || cinemaData['city']['name'] == null) {
+              final cityName = _cityIdToNameMap[cityId] ?? 
+                  (cinemaData['city']?['name'] ?? 'Bilinmeyen');
+              cinemaData['city'] = {
+                'id': cityId,
+                'name': cityName,
+              };
+            }
+          } else if (cinemaData['city'] == null) {
+            // city_id yoksa ve city de yoksa atla
+            continue;
           }
 
           uniqueCinemas[cinemaId] = cinemaData;
 
-          final cityName = cinemaData['city']?['name'] ?? 'Bilinmeyen Şehir';
-          cityNames.add(cityName);
+          final cityName = cinemaData['city']?['name'] ?? 'Bilinmeyen';
+          if (cityName != 'Bilinmeyen') {
+            cityNames.add(cityName);
+          }
         }
       } catch (e) {
         continue;
@@ -255,7 +384,14 @@ class _CinemaSelectState extends State<CinemaSelect> {
       }
     }
 
-    final sortedCities = cityNames.toList()..sort();
+    // "Bilinmeyen" şehirleri filtrele
+    final validCities = cityNames.where((city) => 
+      city.isNotEmpty && 
+      city != 'Bilinmeyen' && 
+      city != 'Bilinmeyen Şehir'
+    ).toList();
+    
+    final sortedCities = validCities..sort();
 
     cinemas.sort((a, b) => a.cinemaName.compareTo(b.cinemaName));
 
@@ -265,18 +401,6 @@ class _CinemaSelectState extends State<CinemaSelect> {
       _cities = ['Tümü', ...sortedCities];
       _isLoading = false;
     });
-  }
-
-  String _getCityNameById(int cityId) {
-    final cityMap = {
-      1: 'İstanbul',
-      2: 'Ankara',
-      3: 'Afyonkarahisar',
-      4: 'İzmir',
-      5: 'Bursa',
-    };
-
-    return cityMap[cityId] ?? 'Bilinmeyen Şehir';
   }
 
   void _filterCinemas(String query) {
@@ -472,7 +596,15 @@ class _CinemaSelectState extends State<CinemaSelect> {
                                       ),
                                     );
                                   } else {
-                                    Navigator.pop(context, cinema);
+                                    // Sinema seçildiğinde o sinemadaki tüm filmleri göster
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => CinemaMoviesScreen(
+                                          selectedCinema: cinema,
+                                        ),
+                                      ),
+                                    );
                                   }
                                 },
                                 leading: const CircleAvatar(
@@ -507,5 +639,59 @@ class _CinemaSelectState extends State<CinemaSelect> {
               ],
             ),
     );
+  }
+
+  // JSON syntax hatalarını düzelt
+  String _fixCommonJsonErrors(String json) {
+    // 1. "id":123"name" -> "id":123,"name" (eksik virgül)
+    json = json.replaceAllMapped(
+      RegExp(r'(\d+)"([a-zA-Z_]+)'),
+      (match) => '${match[1]},"${match[2]}',
+    );
+    
+    // 2. "id":123.45"name" -> "id":123.45,"name" (decimal sayılar için)
+    json = json.replaceAllMapped(
+      RegExp(r'(\d+\.\d+)"([a-zA-Z_]+)'),
+      (match) => '${match[1]},"${match[2]}',
+    );
+    
+    // 3. "}"name" -> },"name" (obje kapanışından sonra virgül eksik)
+    json = json.replaceAllMapped(
+      RegExp(r'\}"([a-zA-Z_]+)'),
+      (match) => '},"${match[1]}',
+    );
+    
+    // 4. "]"name" -> ],"name" (array kapanışından sonra virgül eksik)
+    json = json.replaceAllMapped(
+      RegExp(r'\]"([a-zA-Z_]+)'),
+      (match) => '],"${match[1]}',
+    );
+    
+    // 5. "name":Salon -> "name":"Salon" (value'da tırnak eksik - başta)
+    // Dikkatli olmalıyız: true, false, null, number'ları bozmayalım
+    json = json.replaceAllMapped(
+      RegExp(r'":([A-Z][a-zA-Z0-9\s]+)([,}\]])'),
+      (match) {
+        final value = match[1]!.trim();
+        // true, false, null kontrolü
+        if (value == 'true' || value == 'false' || value == 'null') {
+          return ':${match[1]}${match[2]}';
+        }
+        // Sayı kontrolü
+        if (RegExp(r'^\d+(\.\d+)?$').hasMatch(value)) {
+          return ':${match[1]}${match[2]}';
+        }
+        // String olmalı, tırnak ekle
+        return ':"$value"${match[2]}';
+      },
+    );
+    
+    // 6. Çift colon temizle: :: -> :
+    json = json.replaceAll('::', ':');
+    
+    // 7. Çift virgül temizle: ,, -> ,
+    json = json.replaceAll(',,', ',');
+    
+    return json;
   }
 }

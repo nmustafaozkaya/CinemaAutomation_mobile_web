@@ -69,6 +69,9 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'birth_date' => 'nullable|date|before:today',
+            'gender' => 'nullable|in:male,female,other',
             'cinema_id' => 'nullable|exists:cinemas,id',
             'role_id' => 'nullable|exists:roles,id'
         ]);
@@ -80,6 +83,9 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'birth_date' => $request->birth_date,
+            'gender' => $request->gender,
             'cinema_id' => $request->cinema_id,
             'role_id' => $request->role_id ?? $defaultRole->id,
             'is_active' => true
@@ -159,9 +165,12 @@ class AuthController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'sometimes|required|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'birth_date' => 'nullable|date|before:today',
+            'gender' => 'nullable|in:male,female,other',
         ]);
 
-        $updateData = $request->only(['name', 'email']);
+        $updateData = $request->only(['name', 'email', 'phone', 'birth_date', 'gender']);
 
         if ($request->filled('password')) {
             $updateData['password'] = Hash::make($request->password);

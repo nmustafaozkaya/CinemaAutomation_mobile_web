@@ -17,6 +17,19 @@ class FutureMoviesController extends Controller
         try {
             $query = FutureMovie::query();
 
+            // ✅ COMING SOON: Sadece release_date'i bugünden SONRA olan filmler
+            // release_date DATE tipinde ve Carbon cast ediliyor, bu yüzden whereDate kullanabiliriz
+            $today = now()->startOfDay();
+            
+            // DATE tipi Carbon'a cast edildiği için whereDate direkt çalışır
+            // Ayrıca string formatında saklanan tarihler için de STR_TO_DATE kontrolü ekliyoruz
+            $query->where(function($q) use ($today) {
+                // Carbon date cast için (DATE tipi)
+                $q->whereDate('release_date', '>', $today)
+                  // Eğer string formatında saklanıyorsa (d-m-Y formatı)
+                  ->orWhereRaw("STR_TO_DATE(release_date, '%d-%m-%Y') > ?", [$today->format('Y-m-d')]);
+            });
+
             // Arama
             if ($request->has('search') && !empty($request->search)) {
                 $query->search($request->search);
@@ -44,28 +57,55 @@ class FutureMoviesController extends Controller
             if (in_array($sortBy, ['release_date', 'title', 'imdb_raiting', 'created_at'])) {
                 if ($sortBy === 'release_date') {
                     // Tarih sıralaması için özel işlem
-                    $query->orderByRaw("STR_TO_DATE(release_date, '%d-%m-%Y') {$sortOrder}");
+                    $query->orderByRaw("STR_TO_DATE(release_date, '%Y-%m-%d') {$sortOrder}, STR_TO_DATE(release_date, '%d-%m-%Y') {$sortOrder}");
                 } else {
                     $query->orderBy($sortBy, $sortOrder);
                 }
             }
 
-            // Sayfalama
-            $perPage = min($request->get('per_page', 15), 50);
-            $movies = $query->paginate($perPage);
+            // Sayfalama - Toplam 100 film için limit kullan
+            $totalMovies = $request->get('total_movies', null);
+            
+            if ($totalMovies !== null) {
+                // Toplam film sayısı belirtilmişse, sadece limit uygula (sayfalama yok)
+                $limit = min((int)$totalMovies, 100);
+                $movies = $query->limit($limit)->get();
+                
+                // Response'a ekstra bilgiler ekle
+                $movies->transform(function ($movie) {
+                    $movie->days_until_release = $movie->days_until_release;
+                    $movie->status_label = $movie->status_label;
+                    return $movie;
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Future movies retrieved successfully',
+                    'data' => [
+                        'data' => $movies,
+                        'total' => $movies->count(),
+                        'current_page' => 1,
+                        'per_page' => $limit,
+                    ]
+                ]);
+            } else {
+                // Normal sayfalama
+                $perPage = min($request->get('per_page', 15), 100);
+                $movies = $query->paginate($perPage);
 
-            // Response'a ekstra bilgiler ekle
-            $movies->getCollection()->transform(function ($movie) {
-                $movie->days_until_release = $movie->days_until_release;
-                $movie->status_label = $movie->status_label;
-                return $movie;
-            });
+                // Response'a ekstra bilgiler ekle
+                $movies->getCollection()->transform(function ($movie) {
+                    $movie->days_until_release = $movie->days_until_release;
+                    $movie->status_label = $movie->status_label;
+                    return $movie;
+                });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Future movies retrieved successfully',
-                'data' => $movies
-            ]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Future movies retrieved successfully',
+                    'data' => $movies
+                ]);
+            }
 
         } catch (\Exception $e) {
             return response()->json([
@@ -130,6 +170,47 @@ class FutureMoviesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve coming soon movies',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Pre-order için uygun filmler (1 hafta içinde)
+     */
+    public function preOrder(Request $request)
+    {
+        try {
+            $perPage = min($request->get('per_page', 100), 100);
+            
+            $query = FutureMovie::preOrder();
+
+            // Şehir filtresi - gelecekte seansları olan filmler için
+            if ($request->filled('city_id') && $request->city_id != '0') {
+                // FutureMovie'ler henüz seansları olmayabilir, bu yüzden şimdilik şehir filtresini uygulamıyoruz
+                // İleride FutureMovie'ye showtime ilişkisi eklendiğinde buraya eklenebilir
+            }
+
+            $movies = $query->orderByRaw("STR_TO_DATE(release_date, '%d-%m-%Y') ASC")
+                ->paginate($perPage);
+
+            $movies->getCollection()->transform(function ($movie) {
+                $movie->days_until_release = $movie->days_until_release;
+                $movie->status_label = $movie->status_label;
+                $movie->is_pre_order = true; // Pre-order için işaretle
+                return $movie;
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pre-order movies retrieved successfully',
+                'data' => $movies
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve pre-order movies',
                 'error' => $e->getMessage()
             ], 500);
         }

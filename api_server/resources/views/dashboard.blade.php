@@ -7,8 +7,13 @@
             <div class="text-center mb-12">
                 <div class="floating-animation inline-block mb-6">
                     <div
-                        class="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto">
-                        <i class="fas fa-user text-white text-3xl"></i>
+                        class="w-24 h-24 rounded-full bg-white/10 border-2 border-emerald-400/60 shadow-lg flex items-center justify-center mx-auto p-2">
+                        <img src="{{ asset('images/logo.png') }}" alt="Cinema Automation" class="w-16 h-16 object-contain rounded-full"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display: none;"
+                            class="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                            <i class="fas fa-user text-white text-3xl"></i>
+                        </div>
                     </div>
                 </div>
                 <h1
@@ -52,8 +57,13 @@
             <div class="text-center mb-12">
                 <div class="floating-animation inline-block mb-6">
                     <div
-                        class="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto">
-                        <i class="fas fa-cog text-white text-3xl"></i>
+                        class="w-24 h-24 rounded-full bg-white/10 border-2 border-emerald-400/60 shadow-lg flex items-center justify-center mx-auto p-2">
+                        <img src="{{ asset('images/logo.png') }}" alt="Cinema Automation" class="w-16 h-16 object-contain rounded-full"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display: none;"
+                            class="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                            <i class="fas fa-cog text-white text-3xl"></i>
+                        </div>
                     </div>
                 </div>
                 <h1
@@ -151,8 +161,13 @@
             <div class="text-center mb-12">
                 <div class="floating-animation inline-block mb-6">
                     <div
-                        class="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto">
-                        <i class="fas fa-film text-white text-3xl"></i>
+                        class="w-24 h-24 rounded-full bg-white/10 border-2 border-emerald-400/60 shadow-lg flex items-center justify-center mx-auto p-2">
+                        <img src="{{ asset('images/logo.png') }}" alt="Cinema Automation" class="w-16 h-16 object-contain rounded-full"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display: none;"
+                            class="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                            <i class="fas fa-film text-white text-3xl"></i>
+                        </div>
                     </div>
                 </div>
                 <h1
@@ -203,10 +218,12 @@
 
         async function loadMovies() {
             try {
-                // Loading state'i gösterme, direkt filmleri yükle
                 console.log('Dashboard - Filmler yükleniyor...');
                 
-                const response = await axios.get('/api/movies?per_page=100');
+                let url = '/api/movies?per_page=100';
+                
+                console.log('Dashboard - API URL:', url);
+                const response = await axios.get(url);
                 console.log('Dashboard - API Response:', response.data);
                 
                 const movies = response.data.data.data || response.data.data;
@@ -216,8 +233,8 @@
                     console.log('Dashboard - Film bulunamadı, empty state gösteriliyor');
                     showEmpty();
                 } else {
-                    console.log('Dashboard - Filmler kategorilere ayrılıyor');
-                    renderMoviesByCategory(movies);
+                    console.log('Dashboard - Filmler türlerine göre kategorilere ayrılıyor');
+                    renderMoviesByGenre(movies);
                     console.log('Dashboard - Kategoriler render edildi');
                 }
                 
@@ -274,24 +291,62 @@
             document.getElementById('movieEmptyState').classList.remove('hidden');
         }
 
-        function renderMoviesByCategory(movies) {
-            console.log('Dashboard - renderMoviesByCategory çağrıldı, film sayısı:', movies.length);
+        function renderMoviesByGenre(movies) {
+            console.log('Dashboard - renderMoviesByGenre çağrıldı, film sayısı:', movies.length);
             
-            // Filmleri türlerine göre grupla
+            // Filmleri türlerine göre grupla - Korku ve Gerilim'i ayır
             const categories = {};
             movies.forEach(movie => {
-                const genre = movie.genre || 'Diğer';
-                if (!categories[genre]) {
-                    categories[genre] = [];
-                }
-                categories[genre].push(movie);
+                const genreStr = movie.genre || 'Diğer';
+                
+                // Virgülle ayrılmış türleri parçala ve ayır
+                const genres = genreStr.split(',').map(g => g.trim()).filter(g => g);
+                
+                genres.forEach(genre => {
+                    // Korku ve Gerilim'i ayrı kategorilere ayır
+                    if (genre.includes('Korku') && !genre.includes('Gerilim')) {
+                        if (!categories['Korku']) {
+                            categories['Korku'] = [];
+                        }
+                        categories['Korku'].push(movie);
+                    } else if (genre.includes('Gerilim') && !genre.includes('Korku')) {
+                        if (!categories['Gerilim']) {
+                            categories['Gerilim'] = [];
+                        }
+                        categories['Gerilim'].push(movie);
+                    } else if (genre.includes('Korku') && genre.includes('Gerilim')) {
+                        // Hem Korku hem Gerilim içeriyorsa her ikisine de ekle
+                        if (!categories['Korku']) {
+                            categories['Korku'] = [];
+                        }
+                        if (!categories['Gerilim']) {
+                            categories['Gerilim'] = [];
+                        }
+                        // Sadece bir kez ekle (duplicate kontrolü)
+                        if (!categories['Korku'].some(m => m.id === movie.id)) {
+                            categories['Korku'].push(movie);
+                        }
+                        if (!categories['Gerilim'].some(m => m.id === movie.id)) {
+                            categories['Gerilim'].push(movie);
+                        }
+                    } else {
+                        // Diğer türler
+                        if (!categories[genre]) {
+                            categories[genre] = [];
+                        }
+                        // Duplicate kontrolü
+                        if (!categories[genre].some(m => m.id === movie.id)) {
+                            categories[genre].push(movie);
+                        }
+                    }
+                });
             });
             
-            // En popüler türleri seç (en az 3 film olan)
+            // En popüler türleri seç (en az 2 film olan)
             const popularCategories = Object.entries(categories)
-                .filter(([genre, films]) => films.length >= 3)
+                .filter(([genre, films]) => films.length >= 2)
                 .sort((a, b) => b[1].length - a[1].length)
-                .slice(0, 4); // En fazla 4 kategori
+                .slice(0, 8); // En fazla 8 kategori göster
             
             console.log('Dashboard - Kategoriler:', popularCategories.map(([genre, films]) => `${genre}: ${films.length} film`));
             
@@ -303,21 +358,29 @@
                 const genreColor = getGenreColor(genre);
                 
                 html += `
-                    <div class="category-section">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 ${genreColor} rounded-xl flex items-center justify-center mr-4">
-                                <i class="${genreIcon} text-white text-xl"></i>
+                    <div class="category-section mb-12">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 ${genreColor} rounded-xl flex items-center justify-center mr-4">
+                                    <i class="${genreIcon} text-white text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white">${genre}</h3>
+                                    <p class="text-gray-400">${films.length} film</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-white">${genre}</h3>
-                                <p class="text-gray-400">${films.length} film</p>
-                            </div>
+                            ${films.length > 10 ? `
+                                <a href="/movies?genre=${encodeURIComponent(genre)}" 
+                                   class="text-blue-400 hover:text-blue-300 font-semibold flex items-center">
+                                    Tümünü Gör <i class="fas fa-arrow-right ml-2"></i>
+                                </a>
+                            ` : ''}
                         </div>
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
                 `;
                 
-                // Her kategoriden en fazla 4 film göster
-                films.slice(0, 4).forEach(movie => {
+                // Her kategoriden en fazla 10 film göster
+                films.slice(0, 10).forEach(movie => {
                     const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
                     
                     html += `
@@ -346,12 +409,8 @@
                                 </div>
                                 <div class="flex gap-2">
                                     <button onclick="showMovieDetails(${movie.id})" 
-                                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
+                                            class="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
                                         <i class="fas fa-info-circle mr-1"></i>Detay
-                                    </button>
-                                    <button onclick="window.location.href='/ticket?movie=${movie.id}'" 
-                                            class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
-                                        <i class="fas fa-ticket-alt mr-1"></i>Bilet
                                     </button>
                                 </div>
                             </div>
@@ -359,16 +418,16 @@
                     `;
                 });
                 
-                // Daha Fazla butonu ekle
-                if (films.length > 4) {
+                // Daha Fazla butonu ekle (eğer 10'dan fazla film varsa)
+                if (films.length > 10) {
                     html += `
-                        <div class="glass-effect rounded-xl overflow-hidden card-hover flex items-center justify-center min-h-[300px]">
-                            <div class="text-center">
+                        <div class="glass-effect rounded-xl overflow-hidden card-hover flex items-center justify-center min-h-[300px] border-2 border-dashed border-gray-600 hover:border-blue-500 transition-all">
+                            <div class="text-center p-6">
                                 <div class="w-16 h-16 ${genreColor} rounded-full flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-plus text-white text-2xl"></i>
                                 </div>
                                 <h4 class="text-lg font-bold text-white mb-2">Daha Fazla</h4>
-                                <p class="text-gray-400 text-sm mb-4">${films.length - 4} film daha</p>
+                                <p class="text-gray-400 text-sm mb-4">${films.length - 10} film daha</p>
                                 <button onclick="window.location.href='/movies?genre=${encodeURIComponent(genre)}'" 
                                         class="bg-gradient-to-r ${getGenreGradient(genre)} hover:opacity-80 text-white px-6 py-3 rounded-lg font-semibold transition-all">
                                     <i class="fas fa-arrow-right mr-2"></i>Tümünü Gör
@@ -401,6 +460,7 @@
                 'Horror': 'fas fa-ghost',
                 'Korku': 'fas fa-ghost',
                 'Sci-Fi': 'fas fa-rocket',
+                'Bilim-Kurgu': 'fas fa-rocket',
                 'Bilim Kurgu': 'fas fa-rocket',
                 'Thriller': 'fas fa-eye',
                 'Gerilim': 'fas fa-eye',
@@ -425,6 +485,7 @@
                 'Horror': 'bg-gray-800',
                 'Korku': 'bg-gray-800',
                 'Sci-Fi': 'bg-blue-500',
+                'Bilim-Kurgu': 'bg-blue-500',
                 'Bilim Kurgu': 'bg-blue-500',
                 'Thriller': 'bg-orange-500',
                 'Gerilim': 'bg-orange-500',
@@ -449,6 +510,7 @@
                 'Horror': 'from-gray-800 to-black',
                 'Korku': 'from-gray-800 to-black',
                 'Sci-Fi': 'from-blue-600 to-blue-800',
+                'Bilim-Kurgu': 'from-blue-600 to-blue-800',
                 'Bilim Kurgu': 'from-blue-600 to-blue-800',
                 'Thriller': 'from-orange-600 to-orange-800',
                 'Gerilim': 'from-orange-600 to-orange-800',
@@ -459,6 +521,7 @@
             };
             return gradients[genre] || 'from-gray-600 to-gray-800';
         }
+        
 
         async function showMovieDetails(movieId) {
             try {
@@ -472,7 +535,7 @@
                 alert('Film detayı yüklenemedi!');
             }
         }
-
+        
         function createMovieDetailModal(movie) {
             // Mevcut modal varsa kaldır
             const existingModal = document.getElementById('movieDetailModal');
@@ -482,6 +545,27 @@
             
             // Poster URL kontrolü
             const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+            
+            // Kullanıcı giriş durumunu kontrol et
+            const isLoggedIn = window.userPermissions && window.userPermissions.isLoggedIn;
+            
+            // Bilet Al butonu - sadece giriş yapmış kullanıcılar için
+            let buyTicketButton = '';
+            if (isLoggedIn) {
+                buyTicketButton = `
+                    <button onclick="window.location.href='/buy-tickets?movie=${movie.id}'" 
+                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
+                        <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                    </button>
+                `;
+            } else {
+                buyTicketButton = `
+                    <button onclick="window.location.href='/login'" 
+                            class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+                    </button>
+                `;
+            }
             
             // Modal HTML oluştur
             const modalHTML = `
@@ -572,12 +656,21 @@
                                         <p class="text-gray-300 leading-relaxed">${movie.description || 'Açıklama mevcut değil.'}</p>
                                     </div>
                                     
+                                    ${!isLoggedIn ? `
+                                    <!-- Giriş uyarısı -->
+                                    <div class="mb-6 bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-info-circle text-blue-400 mr-3 text-xl"></i>
+                                            <p class="text-blue-200">
+                                                Bilet satın almak için <strong>giriş yapmanız</strong> gerekmektedir.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    
                                     <!-- Actions -->
                                     <div class="flex gap-4">
-                                        <button onclick="window.location.href='/ticket?movie=${movie.id}'" 
-                                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                                            <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
-                                        </button>
+                                        ${buyTicketButton}
                                         <button onclick="closeMovieDetailModal()" 
                                                 class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
                                             <i class="fas fa-times mr-2"></i>Kapat

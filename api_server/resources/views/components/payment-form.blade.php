@@ -1,12 +1,12 @@
-<!-- Step 5: Bilet Tipi Seçimi -->
-<div id="ticketStep5" class="ticket-step hidden">
+<!-- Step 4: Bilet Tipi Seçimi -->
+<div id="ticketStep4" class="ticket-step hidden">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-2xl font-bold text-white text-center flex-1">
             <i class="fas fa-users mr-2 text-orange-400"></i>Bilet Tiplerini Seçiniz
         </h3>
-        <button onclick="goBackToStep(4)"
+        <button onclick="goBackToStep(3)"
             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i>Koltuk Değiştir
+            <i class="fas fa-arrow-left mr-2"></i>Seans Değiştir
         </button>
     </div>
 
@@ -39,17 +39,17 @@
             </div>
 
             <!-- Continue Button -->
-            <button id="continueToPayment" onclick="goToPayment()"
+            <button id="continueToSeatSelection" onclick="goToSeatSelection()"
                 class="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold disabled:bg-gray-600 disabled:cursor-not-allowed transition-all"
                 disabled>
-                <i class="fas fa-arrow-right mr-2"></i>Ödemeye Geç
+                <i class="fas fa-arrow-right mr-2"></i>Koltuk Seçimine Geç
             </button>
         </div>
 
         <!-- Fiyat Bilgileri -->
         <div class="bg-white/10 p-6 rounded-xl">
             <h4 class="text-xl font-semibold text-white mb-4">
-                <i class="fas fa-calculator mr-2"></i>Fiyat Hesaplama
+                <i class="fas fa-calculator mr-2"></i>Hizmet Bedeli
             </h4>
             <!-- Base Prices -->
             <div id="priceInfo" class="space-y-3 text-white mb-4">
@@ -58,7 +58,7 @@
             <!-- Tax Calculation -->
             <div id="taxCalculationSection" class="border-t border-white/20 pt-4 hidden">
                 <h5 class="text-white font-medium mb-3">
-                    <i class="fas fa-receipt mr-1"></i>Vergi Hesaplaması
+                    <i class="fas fa-receipt mr-1"></i>Hizmet Bedeli Detayı
                 </h5>
 
                 <div class="space-y-2 text-sm">
@@ -68,12 +68,12 @@
                     </div>
 
                     <div id="taxBreakdown" class="space-y-1">
-                        <!-- Vergi detayları buraya gelecek -->
+                        <!-- Hizmet bedeli detayları buraya gelecek -->
                     </div>
 
                     <div class="border-t border-white/20 pt-2 mt-2">
                         <div class="flex justify-between text-white font-bold">
-                            <span>Toplam Vergi:</span>
+                            <span>Toplam Hizmet Bedeli:</span>
                             <span id="totalTaxAmount" class="text-red-400">₺0</span>
                         </div>
                     </div>
@@ -87,7 +87,7 @@
                     <span id="totalPricePreview" class="text-emerald-400">₺0</span>
                 </div>
                 <div id="taxSummaryInfo" class="text-xs text-gray-400 mt-1">
-                    Vergi hesaplaması yapılmadı
+                    Hizmet bedeli hesaplanmadı
                 </div>
             </div>
         </div>
@@ -102,7 +102,7 @@
         </h3>
         <button onclick="goBackToStep(5)"
             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i>Bilet Tipi Değiştir
+            <i class="fas fa-arrow-left mr-2"></i>Koltuk Değiştir
         </button>
     </div>
 
@@ -190,7 +190,7 @@
                     <span id="totalPrice" class="text-emerald-400">₺0</span>
                 </div>
                 <div id="ticketCountInfo" class="text-sm text-gray-400">
-                    Vergi hesaplaması yapılmadı
+                    Hizmet bedeli hesaplanmadı
                 </div>
             </div>
 
@@ -211,6 +211,7 @@
 </div>
 
 <script>
+    const MAX_TICKETS_PER_ORDER = 6;
     // Payment Form JavaScript (Önceki kodunuzu kullanarak güncellenmiş hali)
     class PaymentForm {
         constructor() {
@@ -226,7 +227,7 @@
             this.priceInfoElement = document.getElementById('priceInfo');
             this.countElement = document.getElementById('selectedTicketCount');
             this.summaryElement = document.getElementById('ticketTypeSummary');
-            this.continueButton = document.getElementById('continueToPayment');
+            this.continueButton = document.getElementById('continueToSeatSelection');
             this.completeSaleBtn = document.getElementById('completeSaleBtn');
 
             // Tax Elements
@@ -236,7 +237,7 @@
             this.totalTaxElement = document.getElementById('totalTaxAmount');
             this.taxSummaryElement = document.getElementById('taxSummaryInfo');
 
-            // Vergileri yükle
+            // Hizmet bedelini yükle
             this.loadTaxes();
         }
 
@@ -244,17 +245,16 @@
             try {
                 const response = await axios.get('/api/taxes');
                 this.taxes = response.data.data || [];
-                console.log('Vergiler yüklendi:', this.taxes);
+                console.log('Hizmet bedeli yüklendi:', this.taxes);
             } catch (error) {
-                console.log('Vergiler yüklenemedi, varsayılan KDV kullanılacak:', error);
-                // Varsayılan KDV %20
+                console.log('Hizmet bedeli yüklenemedi, varsayılan değer kullanılacak:', error);
                 this.taxes = [
                     {
-                        name: 'KDV',
-                        type: 'percentage',
-                        rate: 20,
+                        name: 'Hizmet Bedeli',
+                        type: 'fixed',
+                        rate: '2.00',
                         status: 'active',
-                        formatted_name: 'KDV (%20)'
+                        formatted_name: 'Hizmet Bedeli (₺2)'
                     }
                 ];
             }
@@ -283,20 +283,20 @@
                 this.showTaxSection();
 
             } catch (error) {
-                console.log('Vergi hesaplaması yapılamadı, manuel hesaplama:', error);
+                console.log('Hizmet bedeli hesaplaması yapılamadı, manuel hesaplama:', error);
 
-                // Manuel KDV hesaplama (varsayılan %20)
-                const kdvRate = this.taxes.find(tax => tax.name === 'KDV')?.rate || 20;
-                const taxAmount = (subtotal * kdvRate) / 100;
+                const serviceFee = this.taxes.find(tax => tax.name === 'Hizmet Bedeli');
+                const feeRate = parseFloat(serviceFee?.rate ?? 2);
+                const taxAmount = feeRate * totalTickets;
 
                 this.taxCalculation = {
                     subtotal: subtotal,
                     taxes: [{
-                        name: 'KDV',
-                        type: 'percentage',
-                        rate: kdvRate,
+                        name: 'Hizmet Bedeli',
+                        type: 'fixed',
+                        rate: feeRate,
                         amount: taxAmount,
-                        formatted_name: `KDV (%${kdvRate})`
+                        formatted_name: `Hizmet Bedeli (${feeRate} ₺ x ${totalTickets} bilet)`
                     }],
                     total_tax_amount: taxAmount,
                     total: subtotal + taxAmount,
@@ -315,7 +315,7 @@
             // Ara toplam
             this.subtotalElement.textContent = `₺${this.taxCalculation.subtotal.toFixed(2)}`;
 
-            // Vergi detayları
+            // Hizmet bedeli detayları
             let taxHTML = '';
             this.taxCalculation.taxes.forEach(tax => {
                 taxHTML += `
@@ -327,7 +327,7 @@
             });
             this.taxBreakdownElement.innerHTML = taxHTML;
 
-            // Toplam vergi
+            // Toplam hizmet bedeli
             this.totalTaxElement.textContent = `₺${this.taxCalculation.total_tax_amount.toFixed(2)}`;
         }
 
@@ -340,22 +340,22 @@
 
             if (!this.taxCalculation) {
                 document.getElementById('totalPricePreview').textContent = `₺0`;
-                this.taxSummaryElement.textContent = 'Vergi hesaplaması yapılmadı';
+                this.taxSummaryElement.textContent = 'Hizmet bedeli hesaplanmadı';
                 return;
             }
 
             document.getElementById('totalPricePreview').textContent = `₺${this.taxCalculation.total.toFixed(2)}`;
 
-            // Vergi özet bilgisi
+            // Hizmet bedeli özet bilgisi
             const taxInfo = this.taxCalculation.taxes.map(tax =>
-                tax.formatted_name || `${tax.name} %${tax.rate}`
+                tax.formatted_name || `${tax.name}`
             ).join(' + ');
 
             this.taxSummaryElement.innerHTML = `
             <div>${taxInfo} dahil</div>
             <div class="text-xs">
                 Ara Toplam: ₺${this.taxCalculation.subtotal.toFixed(2)} + 
-                Vergi: ₺${this.taxCalculation.total_tax_amount.toFixed(2)}
+                Hizmet Bedeli: ₺${this.taxCalculation.total_tax_amount.toFixed(2)}
             </div>
         `;
 
@@ -373,7 +373,7 @@
                 <div>${taxInfo} dahil • ${selectedSeats.length} bilet</div>
                 <div class="text-xs text-gray-500">
                     Ara Toplam: ₺${this.taxCalculation.subtotal.toFixed(2)} + 
-                    Vergi: ₺${this.taxCalculation.total_tax_amount.toFixed(2)}
+                    Hizmet Bedeli: ₺${this.taxCalculation.total_tax_amount.toFixed(2)}
                 </div>
             `;
             }
@@ -461,7 +461,7 @@
 
                 // Bilet sayısını güncelle
                 const taxInfo = this.taxCalculation.taxes.map(tax =>
-                    tax.formatted_name || `${tax.name} %${tax.rate}`
+                    tax.formatted_name || `${tax.name}`
                 ).join(' + ');
 
                 const ticketCountElement = document.getElementById('ticketCountInfo');
@@ -470,7 +470,7 @@
                     <div>${taxInfo} dahil • ${selectedSeats.length} bilet</div>
                     <div class="text-xs text-gray-500">
                         Ara Toplam: ₺${this.taxCalculation.subtotal.toFixed(2)} + 
-                        Vergi: ₺${this.taxCalculation.total_tax_amount.toFixed(2)}
+                        Hizmet Bedeli: ₺${this.taxCalculation.total_tax_amount.toFixed(2)}
                     </div>
                 `;
                 }
@@ -572,18 +572,12 @@
         }
 
         updateSummary() {
-            const totalCount = Object.values(this.selectedTicketTypes).reduce((sum, count) => sum + count, 0);
+            const totalCount = this.getTotalTicketCount();
             this.countElement.textContent = totalCount;
-
-            const selectedSeats = window.seatMap?.getSelectedSeats() || [];
 
             if (totalCount === 0) {
                 this.summaryElement.textContent = 'Hiç bilet seçilmedi';
                 this.summaryElement.className = 'mt-2 text-sm text-gray-300';
-                this.continueButton.disabled = true;
-            } else if (totalCount !== selectedSeats.length) {
-                this.summaryElement.textContent = `Uyarı: ${selectedSeats.length} koltuk seçtiniz ama ${totalCount} bilet seçtiniz!`;
-                this.summaryElement.className = 'mt-2 text-sm text-red-400';
                 this.continueButton.disabled = true;
             } else {
                 const summary = Object.entries(this.selectedTicketTypes)
@@ -642,7 +636,7 @@
             await this.calculateTotalWithTaxes();
 
             if (!this.taxCalculation) {
-                alert('Vergi hesaplaması yapılamadı. Lütfen tekrar deneyin.');
+                alert('Hizmet bedeli hesaplanamadı. Lütfen tekrar deneyin.');
                 return;
             }
 
@@ -770,6 +764,10 @@
             return this.selectedTicketTypes;
         }
 
+        getTotalTicketCount() {
+            return Object.values(this.selectedTicketTypes).reduce((sum, count) => sum + count, 0);
+        }
+
         reset() {
             this.selectedTicketTypes = {};
             this.customerTypes = [];
@@ -777,6 +775,9 @@
             this.taxCalculation = null;
             this.updateSummary();
             this.hideTaxSection();
+            if (this.continueButton) {
+                this.continueButton.disabled = true;
+            }
         }
 
         async changeTicketCount(ticketType, change) {
@@ -785,13 +786,12 @@
             }
 
             const newCount = this.selectedTicketTypes[ticketType] + change;
-            const totalTickets = Object.values(this.selectedTicketTypes).reduce((sum, count) => sum + count, 0) + change;
+            const proposedTotal = this.getTotalTicketCount() + change;
 
             if (newCount < 0) return;
 
-            const maxSeats = window.seatMap?.getSelectedSeats()?.length || 6;
-            if (totalTickets > maxSeats) {
-                alert(`Maksimum ${maxSeats} bilet seçebilirsiniz!`);
+            if (proposedTotal > MAX_TICKETS_PER_ORDER) {
+                alert(`Maksimum ${MAX_TICKETS_PER_ORDER} bilet seçebilirsiniz!`);
                 return;
             }
 
@@ -809,13 +809,54 @@
     });
 
     // Global functions
-    function goToTicketTypes() {
+    async function goToSeatSelection() {
+        if (!selectedShowtime) {
+            alert('Lütfen önce bir seans seçin!');
+            return;
+        }
+
+        if (!window.paymentForm) {
+            alert('Bilet tipleri yüklenmedi. Lütfen sayfayı yenileyin.');
+            return;
+        }
+
+        const totalTickets = window.paymentForm.getTotalTicketCount();
+        if (totalTickets === 0) {
+            alert('Devam etmek için en az bir bilet seçmelisiniz.');
+            return;
+        }
+
+        if (!window.seatMap) {
+            alert('Koltuk haritası hazır değil. Lütfen daha sonra tekrar deneyin.');
+            return;
+        }
+
+        await window.seatMap.setSeatLimit(totalTickets);
+        window.seatMap.setShowtime(selectedShowtime);
+
         currentTicketStep = 5;
         updateTicketSteps();
-        window.paymentForm.loadTicketTypes(selectedShowtime.id);
+        await window.seatMap.loadSeats(selectedShowtime.id);
     }
 
     function goToPayment() {
+        if (!window.paymentForm || !window.seatMap) {
+            alert('Lütfen önce bilet tipi ve koltuk seçimini tamamlayın.');
+            return;
+        }
+
+        const totalTickets = window.paymentForm.getTotalTicketCount();
+        if (totalTickets === 0) {
+            alert('Ödeme adımına geçmek için bilet seçmelisiniz.');
+            return;
+        }
+
+        const selectedSeats = window.seatMap.getSelectedSeats() || [];
+        if (selectedSeats.length !== totalTickets) {
+            alert('Seçtiğiniz koltuk sayısı ile bilet sayısı eşleşmiyor!');
+            return;
+        }
+
         currentTicketStep = 6;
         updateTicketSteps();
         window.paymentForm.generateOrderSummary();

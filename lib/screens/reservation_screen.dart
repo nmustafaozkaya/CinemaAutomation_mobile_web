@@ -7,6 +7,7 @@ import 'package:sinema_uygulamasi/components/showtimes.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:sinema_uygulamasi/components/taxes.dart';
 import 'package:sinema_uygulamasi/screens/payment_screen.dart';
+import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 
 class ReservationScreen extends StatefulWidget {
   final Cinema cinema;
@@ -52,35 +53,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
       _calculateTaxes();
     } catch (e) {
       setState(() {
-        taxes = [
-          Tax(
-            id: 1,
-            name: 'KDV',
-            type: 'percentage',
-            rate: '20.00',
-            status: 'active',
-            priority: 1,
-            description: 'Katma Değer Vergisi %20',
-          ),
-          Tax(
-            id: 2,
-            name: 'Hizmet Bedeli',
-            type: 'fixed',
-            rate: '2.00',
-            status: 'active',
-            priority: 2,
-            description: 'Bilet başına hizmet bedeli',
-          ),
-          Tax(
-            id: 3,
-            name: 'İşlem Ücreti',
-            type: 'fixed_total',
-            rate: '5.00',
-            status: 'active',
-            priority: 3,
-            description: 'Toplam işlem ücreti',
-          ),
-        ];
+        taxes = [TaxService.fallbackServiceFee()];
       });
 
       _calculateTaxes();
@@ -95,6 +68,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
         calculatedTaxAmount += TaxService.calculateTaxAmount(
           tax,
           widget.totalPrice,
+          ticketCount: widget.selectedSeats.length,
         );
       }
     }
@@ -135,7 +109,9 @@ class _ReservationScreenState extends State<ReservationScreen> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
+                              ApiConnection.resolveMediaUrl(
                                 widget.movie.poster,
+                              ),
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
@@ -270,7 +246,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Taxes and Fees',
+                            'Hizmet Bedeli',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -284,12 +260,14 @@ class _ReservationScreenState extends State<ReservationScreen> {
                             double taxValue = TaxService.calculateTaxAmount(
                               tax,
                               widget.totalPrice,
+                              ticketCount: widget.selectedSeats.length,
                             );
-                            String displayRate = tax.type == 'percentage'
-                                ? '${tax.rate}%'
+                            bool isPerTicket = tax.type == 'fixed';
+                            String displayRate = isPerTicket
+                                ? '${tax.rate} ₺ x ${widget.selectedSeats.length} bilet'
                                 : tax.type == 'fixed_total'
-                                ? 'Sabit'
-                                : '${tax.rate} ₺';
+                                    ? 'Sabit'
+                                    : '${tax.rate}%';
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -320,7 +298,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Total Fees:',
+                                'Toplam Hizmet Bedeli:',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppColorStyle.textPrimary,

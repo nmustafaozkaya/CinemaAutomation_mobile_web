@@ -38,13 +38,13 @@
                 <div class="step-item flex items-center">
                     <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">4
                     </div>
-                    <span class="ml-2 text-gray-400 font-medium">Koltuk Seç</span>
+                    <span class="ml-2 text-gray-400 font-medium">Bilet Tipi</span>
                 </div>
                 <div class="w-12 h-1 bg-gray-600 rounded"></div>
                 <div class="step-item flex items-center">
                     <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">5
                     </div>
-                    <span class="ml-2 text-gray-400 font-medium">Bilet Tipi</span>
+                    <span class="ml-2 text-gray-400 font-medium">Koltuk Seç</span>
                 </div>
                 <div class="w-12 h-1 bg-gray-600 rounded"></div>
                 <div class="step-item flex items-center">
@@ -60,7 +60,7 @@
             <h3 class="text-2xl font-bold text-white mb-6 text-center">
                 <i class="fas fa-film mr-2 text-green-400"></i>Film Seçiniz
             </h3>
-            <div id="ticketMovieGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div id="ticketMovieGrid" class="space-y-12">
                 <!-- Movie selection will be loaded here -->
             </div>
         </div>
@@ -95,15 +95,15 @@
             <div id="showtimeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
         </div>
 
-        <!-- Step 4: Koltuk Seçimi -->
-        <div id="ticketStep4" class="ticket-step hidden">
+        <!-- Step 5: Koltuk Seçimi -->
+        <div id="ticketStep5" class="ticket-step hidden">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-2xl font-bold text-white text-center flex-1">
                     <i class="fas fa-couch mr-2 text-green-400"></i>Koltuk Seçiniz (Maksimum 6 adet)
                 </h3>
-                <button onclick="goBackToStep(3)"
+                <button onclick="goBackToStep(4)"
                     class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Seans Değiştir
+                    <i class="fas fa-arrow-left mr-2"></i>Bilet Tipi Değiştir
                 </button>
             </div>
             <div id="selectedShowtimeInfo" class="bg-white/10 p-4 rounded-xl mb-6"></div>
@@ -129,24 +129,25 @@
                     </div>
                 </div>
                 <div class="text-center mt-4">
-                    <div id="selectedSeatsInfo" class="text-white font-medium mb-4">Seçili koltuk yok</div>
-                    <button id="continueToTicketTypes" onclick="goToTicketTypes()"
+                    <div id="selectedSeatsInfo" class="text-white font-medium mb-2">Seçili koltuk yok</div>
+                    <div id="seatRequirementInfo" class="text-sm text-gray-300 mb-3"></div>
+                    <button id="continueToPayment" onclick="goToPayment()"
                         class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-bold hidden">
-                        <i class="fas fa-arrow-right mr-2"></i>Bilet Tiplerini Seç
+                        <i class="fas fa-arrow-right mr-2"></i>Ödemeye Geç
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Step 5: Bilet Tipi Seçimi -->
-        <div id="ticketStep5" class="ticket-step hidden">
+        <!-- Step 4: Bilet Tipi Seçimi -->
+        <div id="ticketStep4" class="ticket-step hidden">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-2xl font-bold text-white text-center flex-1">
                     <i class="fas fa-users mr-2 text-green-400"></i>Bilet Tiplerini Seçiniz
                 </h3>
-                <button onclick="goBackToStep(4)"
+                <button onclick="goBackToStep(3)"
                     class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Koltuk Değiştir
+                    <i class="fas fa-arrow-left mr-2"></i>Seans Değiştir
                 </button>
             </div>
 
@@ -165,10 +166,10 @@
                         </div>
                         <div id="ticketTypeSummary" class="mt-2 text-sm text-gray-300"></div>
                     </div>
-                    <button id="continueToPayment" onclick="goToPayment()"
+                    <button id="continueToSeatSelection" onclick="goToSeatSelection()"
                         class="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold disabled:bg-gray-600 disabled:cursor-not-allowed"
                         disabled>
-                        <i class="fas fa-arrow-right mr-2"></i>Ödemeye Geç
+                        <i class="fas fa-arrow-right mr-2"></i>Koltuk Seçimine Geç
                     </button>
                 </div>
 
@@ -197,7 +198,7 @@
                 </h3>
                 <button onclick="goBackToStep(5)"
                     class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Bilet Tipi Değiştir
+                    <i class="fas fa-arrow-left mr-2"></i>Koltuk Değiştir
                 </button>
             </div>
 
@@ -250,6 +251,7 @@
         let selectedTicketTypes = {};
         let ticketPrices = {};
         let currentTicketStep = 1;
+        const MAX_TICKETS_PER_ORDER = 6;
 
         document.addEventListener('DOMContentLoaded', function () {
             loadMoviesForTicket();
@@ -268,7 +270,18 @@
         
         async function selectMovieFromUrl(movieId) {
             try {
-                const response = await axios.get(`/api/movies/${movieId}`);
+                // Önce /api/movies'ten dene, bulunamazsa /api/future-movies'ten dene
+                let response;
+                try {
+                    response = await axios.get(`/api/movies/${movieId}`);
+                } catch (e) {
+                    if (e.response?.status === 404) {
+                        response = await axios.get(`/api/future-movies/${movieId}`);
+                    } else {
+                        throw e;
+                    }
+                }
+                
                 const movie = response.data.data;
                 
                 if (movie) {
@@ -296,11 +309,20 @@
             try {
                 console.log('Seanslar yükleniyor...', cinemaId);
                 const response = await axios.get(`/api/showtimes?movie_id=${selectedMovie.id}&cinema_id=${cinemaId}`);
-                const showtimes = response.data.data.data || response.data.data;
+                // Response format: { success: true, data: [...] } veya { success: true, data: { data: [...] } }
+                let showtimes = [];
+                if (response.data.success && response.data.data) {
+                    if (Array.isArray(response.data.data)) {
+                        showtimes = response.data.data;
+                    } else if (response.data.data.data && Array.isArray(response.data.data.data)) {
+                        showtimes = response.data.data.data;
+                    }
+                }
                 console.log('Seanslar yüklendi:', showtimes.length);
                 renderShowtimes(showtimes);
             } catch (error) {
                 console.error('Seanslar yüklenemedi:', error);
+                renderShowtimes([]);
             }
         }
 
@@ -338,87 +360,160 @@
 
         async function loadMoviesForTicket() {
             try {
-                console.log('Bilet satın alma - API çağrısı yapılıyor...');
-                const response = await axios.get('/api/movies?per_page=100');
-                console.log('Bilet satın alma - API Response:', response.data);
+                console.log('Bilet satın alma - Distributed API çağrısı yapılıyor...');
                 
-                const movies = response.data.data.data || response.data.data;
-                console.log('Bilet satın alma - Film sayısı:', movies.length);
+                // Distributed endpoint'ini kullan - toplam 100 filmi tarihe göre dağıtır
+                const response = await axios.get('/api/movies/distributed').catch(() => ({ 
+                    data: { 
+                        data: { 
+                            now_showing: { data: [] }, 
+                            coming_soon: { data: [] } 
+                        } 
+                    } 
+                }));
                 
-                renderMoviesForTicket(movies.slice(0, 100));
+                const nowShowingMovies = response.data.data.now_showing?.data || [];
+                const comingSoonMovies = response.data.data.coming_soon?.data || [];
+                
+                console.log('Bilet satın alma - Now Showing:', nowShowingMovies.length, 'Coming Soon:', comingSoonMovies.length, 'Toplam:', nowShowingMovies.length + comingSoonMovies.length);
+                
+                renderMoviesForTicketByCategory(nowShowingMovies, comingSoonMovies);
             } catch (error) {
                 console.error('Bilet satın alma - Filmler yüklenemedi:', error);
                 console.error('Bilet satın alma - Error details:', error.response?.data);
-                const mockMovies = [
-                    { id: 1, title: "Avatar: The Way of Water", genre: "Sci-Fi", duration: 192, imdb_raiting: 7.6 },
-                    { id: 2, title: "Top Gun: Maverick", genre: "Action", duration: 131, imdb_raiting: 8.3 },
-                    { id: 3, title: "Black Panther: Wakanda Forever", genre: "Action", duration: 161, imdb_raiting: 6.7 },
-                    { id: 4, title: "Spider-Man: Across the Spider-Verse", genre: "Animation", duration: 140, imdb_raiting: 8.7 },
-                    { id: 5, title: "John Wick: Chapter 4", genre: "Action", duration: 169, imdb_raiting: 7.8 },
-                    { id: 6, title: "Guardians of the Galaxy Vol. 3", genre: "Sci-Fi", duration: 150, imdb_raiting: 7.9 }
-                ];
-                renderMoviesForTicket(mockMovies);
+                renderMoviesForTicketByCategory([], []);
             }
         }
 
-        function renderMoviesForTicket(movies) {
+        function renderMoviesForTicketByCategory(nowShowingMovies, comingSoonMovies) {
             const movieGrid = document.getElementById('ticketMovieGrid');
+            
+            // Grid container'ı temizle ve yeniden yapılandır
+            movieGrid.className = 'space-y-12';
             let html = '';
-
-            movies.forEach(movie => {
-                const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
-
+            
+            // Now Showing bölümü
+            if (nowShowingMovies.length > 0) {
                 html += `
-                                                                                                        <div class="glass-effect rounded-2xl p-6 card-hover movie-card" data-movie-id="${movie.id}">
-                                                                                                            <div class="h-32 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center relative overflow-hidden mb-4">
-                                                                                                                ${posterUrl ? `
-                                                                                                                    <img src="${posterUrl}" alt="${movie.title}" 
-                                                                                                                         class="w-full h-full object-cover rounded-xl"
-                                                                                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                                                                                                    <div class="hidden w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
-                                                                                                                        <i class="fas fa-film text-white text-3xl opacity-50"></i>
-                                                                                                                    </div>
-                                                                                                                ` : `
-                                                                                                                    <i class="fas fa-film text-white text-3xl opacity-50"></i>
-                                                                                                                `}
-                                                                                                                <div class="absolute inset-0 bg-black bg-opacity-20 rounded-xl"></div>
-                                                                                                            </div>
-                                                                                                            <h4 class="text-lg font-bold text-white mb-2">${movie.title}</h4>
-                                                                                                            <p class="text-purple-300 text-sm">${movie.genre} • ${movie.duration} dk</p>
-                                                                                                            <p class="text-yellow-400 mt-2">
-                                                                                                                <i class="fas fa-star mr-1"></i>${movie.imdb_raiting || movie.imdb_rating || 'N/A'}
-                                                                                                            </p>
-                                                                                                            <div class="flex gap-2 mt-4">
-                                                                                                                <button onclick="selectMovieForTicket(${movie.id}, '${movie.title}')" 
-                                                                                                                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
-                                                                                                                    <i class="fas fa-ticket-alt mr-1"></i>Seç
-                                                                                                                </button>
-                                                                                                                <button onclick="showMovieDetails(${movie.id})" 
-                                                                                                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
-                                                                                                                    <i class="fas fa-info-circle"></i>
-                                                                                                                </button>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    `;
-            });
-
-            movieGrid.innerHTML = html;
+                    <div>
+                        <div class="flex items-center mb-6">
+                            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-play text-white"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white">Now Showing</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                `;
+                
+                nowShowingMovies.forEach(movie => {
+                    html += renderMovieCardForTicket(movie, true);
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Coming Soon bölümü
+            if (comingSoonMovies.length > 0) {
+                html += `
+                    <div>
+                        <div class="flex items-center mb-6">
+                            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-calendar-alt text-white"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white">Coming Soon</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                `;
+                
+                comingSoonMovies.forEach(movie => {
+                    html += renderMovieCardForTicket(movie, false);
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            movieGrid.innerHTML = html || '<p class="text-white text-center">Film bulunamadı.</p>';
+        }
+        
+        function renderMovieCardForTicket(movie, isNowShowing) {
+            const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+            
+            // Coming Soon için "Seç" butonunu gösterme
+            const selectButton = isNowShowing ? `
+                <button onclick="selectMovieForTicket(${movie.id}, '${movie.title.replace(/'/g, "\\'")}')" 
+                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
+                    <i class="fas fa-ticket-alt mr-1"></i>Seç
+                </button>
+            ` : `
+                <button disabled
+                        class="flex-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-semibold cursor-not-allowed opacity-50">
+                    <i class="fas fa-calendar-alt mr-1"></i>Yakında
+                </button>
+            `;
+            
+            return `
+                <div class="glass-effect rounded-2xl p-6 card-hover movie-card" data-movie-id="${movie.id}">
+                    <div class="h-32 bg-gradient-to-br ${isNowShowing ? 'from-green-600 to-emerald-600' : 'from-blue-600 to-blue-800'} rounded-xl flex items-center justify-center relative overflow-hidden mb-4">
+                        ${posterUrl ? `
+                            <img src="${posterUrl}" alt="${movie.title}" 
+                                 class="w-full h-full object-cover rounded-xl"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="hidden w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-film text-white text-3xl opacity-50"></i>
+                            </div>
+                        ` : `
+                            <i class="fas fa-film text-white text-3xl opacity-50"></i>
+                        `}
+                        <div class="absolute inset-0 bg-black bg-opacity-20 rounded-xl"></div>
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-2">${movie.title}</h4>
+                    <p class="text-purple-300 text-sm">${movie.genre} • ${movie.duration} dk</p>
+                    <p class="text-yellow-400 mt-2">
+                        <i class="fas fa-star mr-1"></i>${movie.imdb_raiting || movie.imdb_rating || 'N/A'}
+                    </p>
+                    <div class="flex gap-2 mt-4">
+                        ${selectButton}
+                        <button onclick="showMovieDetails(${movie.id}, ${isNowShowing})" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
         }
 
-        async function showMovieDetails(movieId) {
+        async function showMovieDetails(movieId, isNowShowing = true) {
             try {
-                const response = await axios.get(`/api/movies/${movieId}`);
+                // Önce /api/movies'ten dene, bulunamazsa /api/future-movies'ten dene
+                let response;
+                try {
+                    response = await axios.get(`/api/movies/${movieId}`);
+                } catch (e) {
+                    if (e.response?.status === 404) {
+                        response = await axios.get(`/api/future-movies/${movieId}`);
+                        isNowShowing = false;
+                    } else {
+                        throw e;
+                    }
+                }
+                
                 const movie = response.data.data;
                 
                 // Modal oluştur
-                createMovieDetailModal(movie);
+                createMovieDetailModal(movie, isNowShowing);
             } catch (error) {
                 console.error('Film detayı yüklenemedi:', error);
                 alert('Film detayı yüklenemedi!');
             }
         }
 
-        function createMovieDetailModal(movie) {
+        function createMovieDetailModal(movie, isNowShowing = true) {
             // Mevcut modal varsa kaldır
             const existingModal = document.getElementById('movieDetailModal');
             if (existingModal) {
@@ -427,6 +522,34 @@
             
             // Poster URL kontrolü
             const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+            
+            // Kullanıcı giriş durumunu kontrol et
+            const isLoggedIn = window.userPermissions && window.userPermissions.isLoggedIn;
+            
+            // Bilet Al butonu - sadece giriş yapmış kullanıcılar ve Now Showing için
+            let buyTicketButton = '';
+            if (!isNowShowing) {
+                buyTicketButton = `
+                    <button disabled
+                            class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold cursor-not-allowed flex items-center opacity-50">
+                        <i class="fas fa-calendar-alt mr-2"></i>Yakında
+                    </button>
+                `;
+            } else if (isLoggedIn) {
+                buyTicketButton = `
+                    <button onclick="selectMovieForTicket(${movie.id}, '${movie.title.replace(/'/g, "\\'")}'); closeMovieDetailModal();" 
+                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
+                        <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                    </button>
+                `;
+            } else {
+                buyTicketButton = `
+                    <button onclick="window.location.href='/login'" 
+                            class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+                    </button>
+                `;
+            }
             
             // Modal HTML oluştur
             const modalHTML = `
@@ -459,6 +582,13 @@
                                             </div>
                                         `}
                                     </div>
+                                    ${!isNowShowing ? `
+                                        <div class="mt-4 bg-blue-500/20 border border-blue-500 rounded-lg p-3 text-center">
+                                            <span class="text-blue-300 font-semibold">
+                                                <i class="fas fa-calendar-alt mr-2"></i>Coming Soon
+                                            </span>
+                                        </div>
+                                    ` : ''}
                                 </div>
                                 
                                 <!-- Details -->
@@ -517,12 +647,21 @@
                                         <p class="text-gray-300 leading-relaxed">${movie.description || 'Açıklama mevcut değil.'}</p>
                                     </div>
                                     
+                                    ${!isLoggedIn && isNowShowing ? `
+                                    <!-- Giriş uyarısı -->
+                                    <div class="mb-6 bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-info-circle text-blue-400 mr-3 text-xl"></i>
+                                            <p class="text-blue-200">
+                                                Bilet satın almak için <strong>giriş yapmanız</strong> gerekmektedir.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    
                                     <!-- Actions -->
                                     <div class="flex gap-4">
-                                        <button onclick="selectMovieForTicket(${movie.id}, '${movie.title}'); closeMovieDetailModal();" 
-                                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                                            <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
-                                        </button>
+                                        ${buyTicketButton}
                                         <button onclick="closeMovieDetailModal()" 
                                                 class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
                                             <i class="fas fa-times mr-2"></i>Kapat
@@ -651,16 +790,19 @@
 
             try {
                 const response = await axios.get(`/api/showtimes?movie_id=${selectedMovie.id}&cinema_id=${cinemaId}`);
-                const showtimes = response.data.data.data || response.data.data;
+                // Response format: { success: true, data: [...] } veya { success: true, data: { data: [...] } }
+                let showtimes = [];
+                if (response.data.success && response.data.data) {
+                    if (Array.isArray(response.data.data)) {
+                        showtimes = response.data.data;
+                    } else if (response.data.data.data && Array.isArray(response.data.data.data)) {
+                        showtimes = response.data.data.data;
+                    }
+                }
                 renderShowtimes(showtimes);
             } catch (error) {
                 console.error('Seanslar yüklenemedi:', error);
-                const mockShowtimes = [
-                    { id: 1, hall: { name: "Salon 1" }, start_time: "2025-07-09T14:00:00", price: 45 },
-                    { id: 2, hall: { name: "Salon 2" }, start_time: "2025-07-09T17:00:00", price: 50 },
-                    { id: 3, hall: { name: "Salon 1" }, start_time: "2025-07-09T20:00:00", price: 55 }
-                ];
-                renderShowtimes(mockShowtimes);
+                renderShowtimes([]);
             }
         }
 
@@ -668,24 +810,63 @@
             const showtimeGrid = document.getElementById('showtimeGrid');
             let html = '';
 
+            if (!showtimes || showtimes.length === 0) {
+                html = '<p class="text-white text-center col-span-full">Bu sinemada seçili film için seans bulunamadı.</p>';
+                showtimeGrid.innerHTML = html;
+                return;
+            }
+
             showtimes.forEach(showtime => {
-                const startTime = new Date(showtime.start_time);
-                html += `
-                                                                                                        <div class="glass-effect rounded-xl p-4 card-hover cursor-pointer" onclick="selectShowtimeForTicket(${showtime.id}, '${startTime.toLocaleString('tr-TR')}', '${showtime.hall.name}', ${showtime.price || 45})">
-                                                                                                            <h4 class="text-lg font-semibold text-white mb-2">${showtime.hall.name}</h4>
-                                                                                                            <p class="text-emerald-400 font-bold text-lg">${startTime.toLocaleString('tr-TR')}</p>
-                                                                                                            <p class="text-purple-300 text-sm mt-1">₺${showtime.price || 45}/kişi</p>
-                                                                                                        </div>
-                                                                                                    `;
+                try {
+                    // API'den gelen zaman string'ini al
+                    let timeStr = showtime.start_time;
+                    
+                    // API'den gelen zamanı parse et
+                    const startTime = new Date(timeStr);
+                    if (isNaN(startTime.getTime())) {
+                        console.error('Geçersiz tarih:', showtime.start_time);
+                        return;
+                    }
+                    
+                    const formattedDate = startTime.toLocaleDateString('tr-TR', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                    });
+                    
+                    // Saat ve dakikayı direkt al (timezone conversion olmadan)
+                    const hours = String(startTime.getUTCHours()).padStart(2, '0');
+                    const minutes = String(startTime.getUTCMinutes()).padStart(2, '0');
+                    const formattedTime = `${hours}:${minutes}`;
+                    const hallName = showtime.hall?.name || 'Salon';
+                    const price = showtime.price || 45;
+                    const displayText = `${formattedTime} - ${hallName}`;
+                    
+                    html += `
+                        <div class="glass-effect rounded-xl p-4 card-hover cursor-pointer" 
+                             onclick="selectShowtimeForTicket(${showtime.id}, '${startTime.toISOString()}', '${hallName}', ${price})">
+                            <h4 class="text-lg font-semibold text-white mb-2">${hallName}</h4>
+                            <p class="text-emerald-400 font-bold text-lg">${formattedTime}</p>
+                            <p class="text-gray-400 text-xs mb-1">${formattedDate}</p>
+                            <p class="text-purple-300 text-sm mt-1">₺${price}/kişi</p>
+                        </div>
+                    `;
+                } catch (e) {
+                    console.error('Seans render hatası:', e, showtime);
+                }
             });
 
-            showtimeGrid.innerHTML = html;
+            showtimeGrid.innerHTML = html || '<p class="text-white text-center col-span-full">Seans bulunamadı.</p>';
         }
 
         async function selectShowtimeForTicket(showtimeId, startTime, hallName, price) {
             selectedShowtime = { id: showtimeId, startTime: startTime, hall: hallName, price: price };
             currentTicketStep = 4;
             updateTicketSteps();
+
+            // Koltuk seçimlerini sıfırla
+            selectedSeats = [];
+            updateSelectedSeatsInfo();
 
             document.getElementById('selectedShowtimeInfo').innerHTML = `
                                                                                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -713,14 +894,7 @@
                                                                                                     </div>
                                                                                                 `;
 
-            try {
-                const response = await axios.get(`/api/showtimes/${showtimeId}/available-seats`);
-                const seatData = response.data.data;
-                renderSeatMap(seatData);
-            } catch (error) {
-                console.error('Koltuklar yüklenemedi:', error);
-                renderMockSeatMap();
-            }
+            await loadTicketTypes();
         }
 
         function renderSeatMap(seatData) {
@@ -802,12 +976,14 @@
             if (existingIndex !== -1) {
                 selectedSeats.splice(existingIndex, 1);
             } else {
-                if (selectedSeats.length < 6) {
-                    selectedSeats.push({ id: seatId, code: seatCode });
-                } else {
-                    alert('Maksimum 6 koltuk seçebilirsiniz!');
+                const seatLimit = Math.min(getTotalTicketCount() || MAX_TICKETS_PER_ORDER, MAX_TICKETS_PER_ORDER);
+
+                if (selectedSeats.length >= seatLimit) {
+                    alert(`Maksimum ${seatLimit} koltuk seçebilirsiniz!`);
                     return;
                 }
+
+                selectedSeats.push({ id: seatId, code: seatCode });
             }
 
             // ✅ Daha güvenilir kontrol - API'yi her zaman dene
@@ -851,25 +1027,89 @@
 
         function updateSelectedSeatsInfo() {
             const info = document.getElementById('selectedSeatsInfo');
-            const continueBtn = document.getElementById('continueToTicketTypes');
+            const requirementInfo = document.getElementById('seatRequirementInfo');
+            const continueBtn = document.getElementById('continueToPayment');
+            const requiredSeats = getTotalTicketCount();
 
-            if (selectedSeats.length === 0) {
-                info.textContent = 'Seçili koltuk yok';
+            if (info) {
+                info.textContent = selectedSeats.length === 0
+                    ? 'Seçili koltuk yok'
+                    : `${selectedSeats.length} koltuk seçili: ${selectedSeats.map(s => s.code).join(', ')}`;
+            }
+
+            if (!requirementInfo || !continueBtn) {
+                return;
+            }
+
+            if (requiredSeats === 0) {
+                requirementInfo.textContent = 'Devam etmek için önce bilet tiplerini seçin.';
+                requirementInfo.classList.remove('text-emerald-300', 'text-red-400');
+                requirementInfo.classList.add('text-gray-300');
+                continueBtn.classList.add('hidden');
+                return;
+            }
+
+            if (selectedSeats.length === requiredSeats) {
+                requirementInfo.textContent = 'Harika! Bilet ve koltuk sayıları eşleşti.';
+                requirementInfo.classList.remove('text-gray-300', 'text-red-400');
+                requirementInfo.classList.add('text-emerald-300');
+                continueBtn.classList.remove('hidden');
+            } else if (selectedSeats.length < requiredSeats) {
+                const diff = requiredSeats - selectedSeats.length;
+                requirementInfo.textContent = `Devam etmek için ${diff} koltuk daha seçin.`;
+                requirementInfo.classList.remove('text-gray-300', 'text-emerald-300');
+                requirementInfo.classList.add('text-red-400');
                 continueBtn.classList.add('hidden');
             } else {
-                info.textContent = `${selectedSeats.length} koltuk seçili: ${selectedSeats.map(s => s.code).join(', ')}`;
-                continueBtn.classList.remove('hidden');
+                const diff = selectedSeats.length - requiredSeats;
+                requirementInfo.textContent = `Lütfen ${diff} koltuğu iptal edin.`;
+                requirementInfo.classList.remove('text-gray-300', 'text-emerald-300');
+                requirementInfo.classList.add('text-red-400');
+                continueBtn.classList.add('hidden');
             }
         }
 
-        function goToTicketTypes() {
+        function enforceSeatLimit() {
+            const requiredSeats = getTotalTicketCount();
+            if (requiredSeats === 0) return;
+
+            const maxAllowed = Math.min(requiredSeats, MAX_TICKETS_PER_ORDER);
+            let trimmed = false;
+
+            while (selectedSeats.length > maxAllowed) {
+                selectedSeats.pop();
+                trimmed = true;
+            }
+
+            if (trimmed) {
+                renderCurrentSeatMap();
+            }
+
+            updateSelectedSeatsInfo();
+        }
+
+        async function goToSeatSelection() {
+            if (!selectedShowtime) {
+                alert('Lütfen önce seans seçin!');
+                return;
+            }
+
+            const totalTickets = getTotalTicketCount();
+
+            if (totalTickets === 0) {
+                alert('Devam etmek için en az bir bilet seçmelisiniz.');
+                return;
+            }
+
             currentTicketStep = 5;
             updateTicketSteps();
-            loadTicketTypes();
+            renderCurrentSeatMap();
+            updateSelectedSeatsInfo();
         }
 
         async function loadTicketTypes() {
             try {
+                selectedTicketTypes = {};
                 const response = await axios.get(`/api/tickets/prices/${selectedShowtime.id}`);
                 console.log('API Response:', response.data);
 
@@ -889,6 +1129,8 @@
                 // ✅ customerTypes parametresi ile çağır
                 renderTicketTypeSelection(customerTypes);
                 renderPriceInfo(customerTypes);
+                updateTicketTypeSummary();
+                updateTotalPrice();
 
             } catch (error) {
                 console.error('Fiyat bilgileri alınamadı:', error);
@@ -911,6 +1153,8 @@
 
                 renderTicketTypeSelection(mockTypes);
                 renderPriceInfo(mockTypes);
+                updateTicketTypeSummary();
+                updateTotalPrice();
             }
         }
 
@@ -966,17 +1210,21 @@
             container.innerHTML = html;
         }
 
+        function getTotalTicketCount() {
+            return Object.values(selectedTicketTypes).reduce((sum, count) => sum + count, 0);
+        }
+
         function changeTicketCount(ticketType, change) {
             if (!selectedTicketTypes[ticketType]) {
                 selectedTicketTypes[ticketType] = 0;
             }
 
             const newCount = selectedTicketTypes[ticketType] + change;
-            const totalTickets = Object.values(selectedTicketTypes).reduce((sum, count) => sum + count, 0) + change;
+            const proposedTotal = getTotalTicketCount() + change;
 
             if (newCount < 0) return;
-            if (totalTickets > selectedSeats.length) {
-                alert(`Maksimum ${selectedSeats.length} bilet seçebilirsiniz!`);
+            if (proposedTotal > MAX_TICKETS_PER_ORDER) {
+                alert(`Maksimum ${MAX_TICKETS_PER_ORDER} bilet seçebilirsiniz!`);
                 return;
             }
 
@@ -985,22 +1233,20 @@
 
             updateTicketTypeSummary();
             updateTotalPrice();
+            enforceSeatLimit();
         }
 
         function updateTicketTypeSummary() {
             const countElement = document.getElementById('selectedTicketCount');
             const summaryElement = document.getElementById('ticketTypeSummary');
-            const continueButton = document.getElementById('continueToPayment');
+            const continueButton = document.getElementById('continueToSeatSelection');
 
-            const totalCount = Object.values(selectedTicketTypes).reduce((sum, count) => sum + count, 0);
+            const totalCount = getTotalTicketCount();
             countElement.textContent = totalCount;
 
             if (totalCount === 0) {
                 summaryElement.textContent = 'Hiç bilet seçilmedi';
-                continueButton.disabled = true;
-            } else if (totalCount !== selectedSeats.length) {
-                summaryElement.textContent = `Uyarı: ${selectedSeats.length} koltuk seçtiniz ama ${totalCount} bilet seçtiniz!`;
-                summaryElement.classList.add('text-red-400');
+                summaryElement.classList.remove('text-red-400');
                 continueButton.disabled = true;
             } else {
                 const summary = Object.entries(selectedTicketTypes)
@@ -1031,6 +1277,18 @@
         }
 
         function goToPayment() {
+            const totalTickets = getTotalTicketCount();
+
+            if (totalTickets === 0) {
+                alert('Ödeme adımına geçmek için önce bilet seçmelisiniz.');
+                return;
+            }
+
+            if (selectedSeats.length !== totalTickets) {
+                alert('Seçtiğiniz koltuk sayısı ile bilet sayısı eşleşmiyor!');
+                return;
+            }
+
             currentTicketStep = 6;
             updateTicketSteps();
             updateOrderSummary();
@@ -1241,4 +1499,5 @@
             }
         }
     </script>
+@endsection
 @endsection

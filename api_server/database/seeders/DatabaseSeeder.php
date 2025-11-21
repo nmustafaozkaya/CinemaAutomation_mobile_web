@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🎬 Film sistemi...');
         $this->call([
             Movies\MovieImportSeeder::class,
+            Movies\Movies2025Seeder::class, // 2025 filmleri
             Movies\FutureMoviesSeeder::class, 
         ]);
 

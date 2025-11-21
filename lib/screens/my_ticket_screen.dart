@@ -246,7 +246,9 @@ class TicketCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    ticket.showtime.movie.posterUrl,
+                    ApiConnection.resolveMediaUrl(
+                      ticket.showtime.movie.posterUrl,
+                    ),
                     width: 60,
                     height: 90,
                     fit: BoxFit.cover,
@@ -432,7 +434,8 @@ class TicketCard extends StatelessWidget {
   }
 
   String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    final localTime = time.toLocal();
+    return '${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}';
   }
 
   String _getCustomerTypeText(String type) {

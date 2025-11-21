@@ -96,6 +96,31 @@
             color: white;
         }
 
+        /* Select dropdown styling */
+        select {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        select option {
+            background-color: #1f2937 !important;
+            color: white !important;
+            padding: 8px;
+        }
+
+        select option:hover,
+        select option:focus,
+        select option:checked {
+            background-color: #374151 !important;
+            color: white !important;
+        }
+
+        /* Select dropdown açıldığında */
+        select:focus option {
+            background-color: #1f2937 !important;
+            color: white !important;
+        }
+
         @keyframes spin {
             to {
                 transform: rotate(360deg);
@@ -114,11 +139,16 @@
     <nav class="glass-effect sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-film text-white text-lg"></i>
-                    </div>
-                    <h1 class="text-xl font-bold text-white">Cinema Automation</h1>
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-90 transition-opacity">
+                        <div class="w-12 h-12 rounded-full bg-white/10 border-2 border-emerald-400/60 shadow-md flex items-center justify-center p-1.5">
+                            <img src="{{ asset('images/logo.png') }}" alt="Cinema Automation" class="w-full h-full object-contain rounded-full" style="display: block !important;" onerror="console.error('Logo yüklenemedi:', this.src); this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="display: none;" class="w-full h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                                <i class="fas fa-film text-white text-lg"></i>
+                            </div>
+                        </div>
+                        <h1 class="text-xl font-bold text-white">Cinema Automation</h1>
+                    </a>
                 </div>
                 <!-- ✅ Role-based navigation -->
                 <div class="hidden md:flex space-x-8">

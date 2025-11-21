@@ -7,7 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'package:sinema_uygulamasi/components/user.dart';
 import 'package:sinema_uygulamasi/components/user_preferences.dart';
-import 'package:sinema_uygulamasi/screens/login_screen.dart';
+import 'package:sinema_uygulamasi/screens/home.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,10 +22,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   var passwordController = TextEditingController();
   var rePasswordController = TextEditingController();
   var phoneController = TextEditingController();
+  DateTime? birthDate;
+  String? selectedGender;
   Future<void> registerAndSaveUserRecord() async {
     // Şifrelerin eşleşip eşleşmediğini kontrol et
     if (passwordController.text.trim() != rePasswordController.text.trim()) {
-      Fluttertoast.showToast(msg: "Şifreler uyuşmuyor!");
+      Fluttertoast.showToast(msg: "Şifreler eşleşmiyor!");
       return;
     }
 
@@ -38,13 +40,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       },
     );
 
-    var body = jsonEncode({
+    Map<String, dynamic> bodyData = {
       'name': nameController.text.trim(),
       'email': emailController.text.trim(),
       'password': passwordController.text.trim(),
       'password_confirmation': rePasswordController.text.trim(),
-      'phone': phoneController.text.trim(),
-    });
+    };
+
+    // Opsiyonel alanları ekle
+    if (phoneController.text.trim().isNotEmpty) {
+      bodyData['phone'] = phoneController.text.trim();
+    }
+    if (birthDate != null) {
+      bodyData['birth_date'] = birthDate!.toIso8601String().split('T')[0];
+    }
+    if (selectedGender != null && selectedGender!.isNotEmpty) {
+      bodyData['gender'] = selectedGender;
+    }
+
+    var body = jsonEncode(bodyData);
 
     try {
       var res = await http.post(
@@ -68,15 +82,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Fluttertoast.showToast(msg: 'Kayıt başarılı!');
 
           var userData = resBodyOfSignUp['data']['user'];
+          var token = resBodyOfSignUp['data']['token'];
 
           User user = User.fromJson(userData);
 
+          // Token'ı kaydet
+          await UserPreferences.saveToken(token);
+          
+          // Kullanıcı bilgilerini kaydet
           await UserPreferences.saveData(user);
+          
+          // Remember me'yi aktif et
+          await UserPreferences.setRememberMe(true);
 
           if (mounted) {
-            Navigator.pushReplacement(
+            // Ana sayfaya yönlendir
+            Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              MaterialPageRoute(
+                builder: (context) => HomePage(currentUser: user),
+              ),
+              (route) => false, // Önceki tüm sayfaları temizle
             );
           }
         } else {
@@ -136,7 +162,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     RoundedInputField(
                       controller: nameController,
-                      hintText: 'Name',
+                      hintText: 'Ad Soyad',
                       icon: Icons.person,
                       isEmail: false,
                       isPassword: false,
@@ -144,24 +170,104 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     RoundedInputField(
                       controller: emailController,
-                      hintText: 'E-mail',
+                      hintText: 'Email',
                       icon: Icons.mail,
                       isEmail: true,
                       isPassword: false,
                       onChange: (value) {},
                     ),
-                    // 3. Add the input field to the UI
                     RoundedInputField(
                       controller: phoneController,
-                      hintText: 'Phone',
+                      hintText: 'Telefon',
                       icon: Icons.phone,
                       isEmail: false,
                       isPassword: false,
                       onChange: (value) {},
                     ),
+                    // Doğum Tarihi
+                    InkWell(
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now().subtract(const Duration(days: 1)),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: const ColorScheme.light(
+                                  primary: Color(0xFF5FCFAF),
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            birthDate = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(29),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today, color: Color(0xFF5FCFAF)),
+                            const SizedBox(width: 15),
+                            Text(
+                              birthDate == null
+                                  ? 'Doğum Tarihi'
+                                  : '${birthDate!.day.toString().padLeft(2, '0')} ${birthDate!.month.toString().padLeft(2, '0')} ${birthDate!.year}',
+                              style: TextStyle(
+                                color: birthDate == null ? Colors.grey : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Cinsiyet
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(29),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedGender,
+                          isExpanded: true,
+                          hint: const Row(
+                            children: [
+                              Icon(Icons.person, color: Color(0xFF5FCFAF)),
+                              SizedBox(width: 15),
+                              Text('Seçiniz', style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF5FCFAF)),
+                          items: const [
+                            DropdownMenuItem(value: 'male', child: Text('Erkek')),
+                            DropdownMenuItem(value: 'female', child: Text('Kadın')),
+                            DropdownMenuItem(value: 'other', child: Text('Diğer')),
+                          ],
+                          onChanged: (String? value) {
+                            setState(() {
+                              selectedGender = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
                     RoundedInputField(
                       controller: passwordController,
-                      hintText: 'Password',
+                      hintText: 'Şifre',
                       icon: Icons.lock,
                       isEmail: false,
                       isPassword: true,
@@ -169,18 +275,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     RoundedInputField(
                       controller: rePasswordController,
-                      hintText: 'Repeat Password',
+                      hintText: 'Şifre Tekrar',
                       icon: Icons.lock,
                       isEmail: false,
                       isPassword: true,
                       onChange: (value) {},
                     ),
                     RoundedButton(
-                      text: 'Register',
+                      text: 'Kayıt Ol',
                       onPressed: () {
                         if (rePasswordController.text.trim() !=
                             passwordController.text.trim()) {
-                          Fluttertoast.showToast(msg: 'Passwords are not same');
+                          Fluttertoast.showToast(msg: 'Şifreler eşleşmiyor!');
                         } else {
                           registerAndSaveUserRecord();
                         }
@@ -189,14 +295,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
+                        Navigator.pop(context);
                       },
-                      child: const Text("Already have an account? Login"),
+                      child: const Text("Zaten hesabınız var mı? Giriş yapın"),
                     ),
                   ],
                 ),

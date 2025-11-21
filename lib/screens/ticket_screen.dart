@@ -26,6 +26,7 @@ class TicketSelectionScreen extends StatefulWidget {
 }
 
 class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
+  static const double _serviceFeePerTicket = 2.0;
   List<TicketType> ticketTypes = [];
   String basePrice = "0";
   Map<int, int> selectedCounts = {};
@@ -78,6 +79,11 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
     }
     return total;
   }
+
+  double get serviceFeeTotal =>
+      totalSelectedTickets * _serviceFeePerTicket;
+
+  double get grandTotal => totalPrice + serviceFeeTotal;
 
   bool get anySelected => selectedCounts.values.any((count) => count > 0);
 
@@ -306,7 +312,36 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Total:',
+                              totalSelectedTickets > 0
+                                  ? 'Hizmet Bedeli (${totalSelectedTickets} x ${_serviceFeePerTicket.toStringAsFixed(2)} ₺)'
+                                  : 'Hizmet Bedeli (₺${_serviceFeePerTicket.toStringAsFixed(2)} / bilet)',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColorStyle.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              '${serviceFeeTotal.toStringAsFixed(2)} ₺',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColorStyle.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Divider(
+                          color: AppColorStyle.textSecondary.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Toplam (hizmet bedeli dahil):',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
@@ -314,7 +349,7 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                               ),
                             ),
                             Text(
-                              '${totalPrice.toStringAsFixed(2)} ₺',
+                              '${grandTotal.toStringAsFixed(2)} ₺',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,

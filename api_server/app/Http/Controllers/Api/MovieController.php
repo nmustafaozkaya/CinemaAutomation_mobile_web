@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Cinema;
 use App\Models\Movie;
+use App\Models\FutureMovie;
 use App\Models\Showtime;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Carbon\Carbon;
 
 class MovieController extends Controller
 {
@@ -18,10 +20,27 @@ class MovieController extends Controller
     {
         $query = Movie::query();
 
+        // ✅ NOW SHOWING: Sadece release_date'i bugün veya öncesi olan filmler
+        // release_date DATE tipinde ve Carbon cast ediliyor, bu yüzden whereDate kullanabiliriz
+        $today = now()->startOfDay();
+        
+        // DATE tipi Carbon'a cast edildiği için whereDate direkt çalışır
+        // Ayrıca string formatında saklanan tarihler için de STR_TO_DATE kontrolü ekliyoruz
+        $query->where(function($q) use ($today) {
+            // Carbon date cast için (DATE tipi)
+            $q->whereDate('release_date', '<=', $today)
+              // Eğer string formatında saklanıyorsa (d-m-Y formatı)
+              ->orWhereRaw("STR_TO_DATE(release_date, '%d-%m-%Y') <= ?", [$today->format('Y-m-d')])
+              // NULL değerler için - bunlar Now Showing olarak kabul edilir
+              ->orWhereNull('release_date');
+        });
+
         // Arama filtresi
         if ($request->filled('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%')
+            $query->where(function($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%')
                   ->orWhere('description', 'like', '%' . $request->search . '%');
+            });
         }
 
         // Tür filtresi
@@ -31,7 +50,10 @@ class MovieController extends Controller
 
         // Yıl filtresi
         if ($request->filled('year')) {
-            $query->whereYear('release_date', $request->year);
+            $query->where(function($q) use ($request) {
+                $q->whereYear('release_date', $request->year)
+                  ->orWhereRaw("YEAR(STR_TO_DATE(release_date, '%d-%m-%Y')) = ?", [$request->year]);
+            });
         }
 
         // IMDB rating filtresi
@@ -42,22 +64,241 @@ class MovieController extends Controller
         // Durum filtresi
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        } else {
+            // Varsayılan olarak sadece aktif filmler
+            $query->where('status', 'active');
+        }
+
+        // Şehir filtresi - Bu şehirdeki sinemalarda gösterilen filmler
+        if ($request->filled('city_id') && $request->city_id != '0') {
+            $cityId = (int) $request->city_id;
+            \Log::info('MovieController - Şehir filtresi aktif:', ['city_id' => $cityId]);
+            
+            $query->whereHas('showtimes', function ($q) use ($cityId) {
+                $q->where('status', 'active')
+                  ->where('start_time', '>', now())
+                  ->whereHas('hall.cinema', function ($cq) use ($cityId) {
+                      $cq->where('city_id', $cityId);
+                  });
+            });
+        } else {
+            \Log::info('MovieController - Şehir filtresi yok, tüm filmler');
         }
 
         // Sıralama
         $sortBy = $request->get('sort_by', 'release_date');
         $sortDirection = $request->get('sort_direction', 'desc');
-        $query->orderBy($sortBy, $sortDirection);
+        
+        // Release date için özel sıralama
+        if ($sortBy === 'release_date') {
+            $query->orderByRaw("STR_TO_DATE(release_date, '%Y-%m-%d') DESC, STR_TO_DATE(release_date, '%d-%m-%Y') DESC");
+        } else {
+            $query->orderBy($sortBy, $sortDirection);
+        }
 
-        // Sayfalama - 100 film için optimize edildi
-        $perPage = $request->get('per_page', 100);
-        $movies = $query->paginate($perPage);
+        // Sayfalama - Toplam 100 film için limit kullan
+        // Eğer total_movies parametresi varsa, bu toplam film sayısıdır (örn: 100)
+        // ve bu sayıya göre Now Showing ve Coming Soon'a dağıtılacak
+        $totalMovies = $request->get('total_movies', null);
+        
+        if ($totalMovies !== null) {
+            // Toplam film sayısı belirtilmişse, sadece limit uygula (sayfalama yok)
+            $limit = min((int)$totalMovies, 100);
+            $movies = $query->limit($limit)->get();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Movies retrieved successfully',
+                'data' => [
+                    'data' => $movies,
+                    'total' => $movies->count(),
+                    'current_page' => 1,
+                    'per_page' => $limit,
+                ]
+            ]);
+        } else {
+            // Normal sayfalama
+            $perPage = $request->get('per_page', 100);
+            $movies = $query->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Movies retrieved successfully',
-            'data' => $movies
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Movies retrieved successfully',
+                'data' => $movies
+            ]);
+        }
+    }
+
+    /**
+     * Get distributed movies - Toplam 100 filmi tarihe göre dağıt
+     * Now Showing ve Coming Soon filmlerini birleştirip toplam 100 film döndür
+     * Tarihi geçen filmler kesinlikle Coming Soon'a atılmaz
+     */
+    public function distributed(Request $request): JsonResponse
+    {
+        try {
+            $today = now()->startOfDay();
+            $totalLimit = 100; // Toplam 100 film
+            
+            // Şehir filtresi
+            $cityId = $request->filled('city_id') && $request->city_id != '0' ? (int)$request->city_id : null;
+            
+            // ✅ NOW SHOWING: release_date <= bugün (bugün dahil veya geçmiş)
+            // Sadece movies tablosundan çek - tarihi geçen filmler burada
+            $nowShowingQuery = Movie::where('status', 'active')
+                ->where(function($q) use ($today) {
+                    // DATE tipi Carbon cast için
+                    $q->whereDate('release_date', '<=', $today)
+                      // String formatı (d-m-Y)
+                      ->orWhereRaw("STR_TO_DATE(release_date, '%d-%m-%Y') <= STR_TO_DATE(?, '%Y-%m-%d')", [$today->format('Y-m-d')])
+                      // NULL değerler - bunlar Now Showing olarak kabul edilir
+                      ->orWhereNull('release_date');
+                });
+            
+            // Şehir filtresi varsa uygula
+            if ($cityId) {
+                $nowShowingQuery->whereHas('showtimes', function ($q) use ($cityId) {
+                    $q->where('status', 'active')
+                      ->where('start_time', '>', now())
+                      ->whereHas('hall.cinema', function ($cq) use ($cityId) {
+                          $cq->where('city_id', $cityId);
+                      });
+                });
+            }
+            
+            // ✅ COMING SOON: release_date > bugün (KESİNLİKLE gelecekte olmalı)
+            // Hem FutureMovie hem de Movie tablosundan gelecek tarihli filmleri çek
+            // Tarihi geçen filmler kesinlikle Coming Soon'a GİTMEZ
+            
+            // FutureMovie tablosundan gelecek tarihli filmler
+            $comingSoonQuery = FutureMovie::where(function($q) use ($today) {
+                // DATE tipi Carbon cast için - KESİNLİKLE bugünden SONRA
+                $q->whereDate('release_date', '>', $today)
+                  // String formatı (d-m-Y) - KESİNLİKLE bugünden SONRA
+                  ->orWhereRaw("STR_TO_DATE(release_date, '%d-%m-%Y') > STR_TO_DATE(?, '%Y-%m-%d')", [$today->format('Y-m-d')]);
+            });
+            
+            // Movie tablosundan gelecek tarihli filmler (bunlar da Coming Soon'a gider)
+            $futureMoviesFromMoviesTable = Movie::where('status', 'active')
+                ->where(function($q) use ($today) {
+                    // KESİNLİKLE bugünden SONRA olmalı - tarihi geçen filmler buraya GİRMEZ
+                    $q->whereDate('release_date', '>', $today)
+                      ->orWhereRaw("STR_TO_DATE(release_date, '%d-%m-%Y') > STR_TO_DATE(?, '%Y-%m-%d')", [$today->format('Y-m-d')]);
+                });
+            
+            // Şehir filtresi varsa Movie tablosundaki gelecek filmlere de uygula
+            if ($cityId) {
+                $futureMoviesFromMoviesTable->whereHas('showtimes', function ($q) use ($cityId) {
+                    $q->where('status', 'active')
+                      ->where('start_time', '>', now())
+                      ->whereHas('hall.cinema', function ($cq) use ($cityId) {
+                          $cq->where('city_id', $cityId);
+                      });
+                });
+            }
+            
+            // Toplam film sayılarını kontrol et
+            $nowShowingCount = $nowShowingQuery->count();
+            $comingSoonCount = $comingSoonQuery->count();
+            $futureMoviesFromMoviesCount = $futureMoviesFromMoviesTable->count();
+            $totalComingSoon = $comingSoonCount + $futureMoviesFromMoviesCount;
+            $totalAvailable = $nowShowingCount + $totalComingSoon;
+            
+            // Toplam 100 filme kadar dağıt - Dinamik oranlar
+            if ($totalAvailable <= $totalLimit) {
+                // Toplam 100'den az varsa hepsini al
+                $nowShowingLimit = $nowShowingCount;
+                $comingSoonLimit = $totalComingSoon;
+            } else {
+                // Dinamik oranlar - mevcut film sayısına göre dağıt
+                // Eğer Coming Soon filmleri çoksa, daha fazla Coming Soon al
+                // Eğer azsa, daha az Coming Soon al
+                if ($totalComingSoon >= 50) {
+                    // Coming Soon çoksa: %40 Now Showing, %60 Coming Soon
+                    $nowShowingLimit = min(floor($totalLimit * 0.4), $nowShowingCount);
+                    $comingSoonLimit = min($totalLimit - $nowShowingLimit, $totalComingSoon);
+                } elseif ($totalComingSoon >= 30) {
+                    // Orta seviye: %50-50
+                    $nowShowingLimit = min(floor($totalLimit * 0.5), $nowShowingCount);
+                    $comingSoonLimit = min($totalLimit - $nowShowingLimit, $totalComingSoon);
+                } else {
+                    // Coming Soon azsa: %60-70 Now Showing, %30-40 Coming Soon
+                    $nowShowingLimit = min(floor($totalLimit * 0.65), $nowShowingCount);
+                    $comingSoonLimit = min($totalLimit - $nowShowingLimit, $totalComingSoon);
+                }
+                
+                // Minimum garantisi
+                if ($comingSoonLimit < 5 && $totalComingSoon >= 5 && $nowShowingLimit > 60) {
+                    $comingSoonLimit = min(5, $totalComingSoon);
+                    $nowShowingLimit = $totalLimit - $comingSoonLimit;
+                }
+                if ($nowShowingLimit < 10 && $nowShowingCount >= 10 && $comingSoonLimit > 80) {
+                    $nowShowingLimit = min(10, $nowShowingCount);
+                    $comingSoonLimit = $totalLimit - $nowShowingLimit;
+                }
+            }
+            
+            // Now Showing filmlerini çek - sadece release_date <= bugün olanlar (tarihi geçen veya bugün olanlar)
+            $nowShowingMovies = $nowShowingQuery
+                ->orderByRaw("STR_TO_DATE(release_date, '%Y-%m-%d') DESC, STR_TO_DATE(release_date, '%d-%m-%Y') DESC")
+                ->limit($nowShowingLimit)
+                ->get();
+            
+            // Coming Soon filmlerini çek - hem FutureMovie hem Movie tablosundan, KESİNLİKLE gelecekteki filmler
+            // Önce FutureMovie'den, sonra Movie'den
+            $comingSoonLimitFromFuture = min($comingSoonLimit, $comingSoonCount);
+            $comingSoonLimitFromMovies = $comingSoonLimit - $comingSoonLimitFromFuture;
+            
+            $comingSoonMoviesFromFuture = $comingSoonQuery
+                ->orderByRaw("STR_TO_DATE(release_date, '%Y-%m-%d') ASC, STR_TO_DATE(release_date, '%d-%m-%Y') ASC")
+                ->limit($comingSoonLimitFromFuture)
+                ->get();
+            
+            $comingSoonMoviesFromMovies = $futureMoviesFromMoviesTable
+                ->orderByRaw("STR_TO_DATE(release_date, '%Y-%m-%d') ASC, STR_TO_DATE(release_date, '%d-%m-%Y') ASC")
+                ->limit($comingSoonLimitFromMovies)
+                ->get();
+            
+            // İki kaynaktan gelen filmleri birleştir
+            $comingSoonMovies = $comingSoonMoviesFromFuture->concat($comingSoonMoviesFromMovies);
+            
+            // Coming Soon filmlerine ekstra bilgiler ekle
+            $comingSoonMovies->transform(function ($movie) {
+                if (method_exists($movie, 'getDaysUntilReleaseAttribute')) {
+                    $movie->days_until_release = $movie->days_until_release;
+                    $movie->status_label = $movie->status_label;
+                }
+                return $movie;
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Distributed movies retrieved successfully',
+                'data' => [
+                    'now_showing' => [
+                        'data' => $nowShowingMovies,
+                        'total' => $nowShowingMovies->count(),
+                    ],
+                    'coming_soon' => [
+                        'data' => $comingSoonMovies,
+                        'total' => $comingSoonMovies->count(),
+                    ],
+                    'total' => $nowShowingMovies->count() + $comingSoonMovies->count(),
+                    'distribution' => [
+                        'now_showing_count' => $nowShowingMovies->count(),
+                        'coming_soon_count' => $comingSoonMovies->count(),
+                    ]
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('MovieController::distributed error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve distributed movies',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

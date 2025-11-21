@@ -4,6 +4,19 @@
         <i class="fas fa-film mr-2 text-yellow-400"></i>Film Seçiniz
     </h3>
     
+    <!-- Şehir Filtresi -->
+    <div class="max-w-md mx-auto mb-6">
+        <label class="block text-white text-sm font-medium mb-2 text-center">
+            <i class="fas fa-map-marker-alt mr-2 text-green-400"></i>Şehir Seçiniz (İsteğe Bağlı)
+        </label>
+        <select id="movieCityFilter" onchange="window.movieSelection.filterByCity(this.value)"
+            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-green-400 transition-all"
+            style="color: white; background-color: rgba(255, 255, 255, 0.1);">
+            <option value="" style="background-color: #1f2937; color: white;">Tüm Şehirler</option>
+            <!-- Cities will be loaded here -->
+        </select>
+    </div>
+
     <!-- Search Box -->
     <div class="max-w-md mx-auto mb-6">
         <div class="relative">
@@ -75,18 +88,50 @@ class MovieSelection {
         this.filteredMovies = [];
         this.currentGenre = '';
         this.currentSearch = '';
+        this.currentCityId = '';
         this.loadingElement = document.getElementById('movieLoadingState');
         this.gridElement = document.getElementById('ticketMovieGrid');
         this.emptyElement = document.getElementById('movieEmptyState');
+        this.cityFilterElement = document.getElementById('movieCityFilter');
     }
 
-    async loadMovies() {
+    async loadCities() {
+        try {
+            const response = await axios.get('/api/cities');
+            const cities = response.data.data || [];
+            
+            if (this.cityFilterElement) {
+                let html = '<option value="" style="background-color: #1f2937; color: white;">Tüm Şehirler</option>';
+                cities.forEach(city => {
+                    html += `<option value="${city.id}" style="background-color: #1f2937; color: white;">${city.name}</option>`;
+                });
+                this.cityFilterElement.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('Şehirler yüklenemedi:', error);
+        }
+    }
+
+    async loadMovies(cityId = '') {
         try {
             this.showLoading();
             
-            const response = await axios.get('/api/movies?per_page=100');
+            let url = '/api/movies?per_page=100';
+            // cityId boş string değilse ve geçerli bir değerse ekle
+            if (cityId && cityId !== '' && cityId !== '0') {
+                url += `&city_id=${cityId}`;
+                console.log('MovieSelection - Şehir filtresi aktif:', cityId);
+            } else {
+                console.log('MovieSelection - Şehir filtresi yok, tüm filmler yükleniyor');
+            }
+            
+            console.log('MovieSelection - API URL:', url);
+            const response = await axios.get(url);
+            console.log('MovieSelection - API Response:', response.data);
+            
             this.movies = response.data.data.data || response.data.data;
             this.filteredMovies = [...this.movies];
+            console.log('MovieSelection - Film sayısı:', this.movies.length);
             
             if (this.movies.length === 0) {
                 this.showEmpty();
@@ -100,6 +145,11 @@ class MovieSelection {
             this.renderMockMovies();
             this.showGrid();
         }
+    }
+
+    filterByCity(cityId) {
+        this.currentCityId = cityId;
+        this.loadMovies(cityId);
     }
 
     // Search functionality
@@ -161,10 +211,13 @@ class MovieSelection {
     clearFilters() {
         this.currentGenre = '';
         this.currentSearch = '';
+        this.currentCityId = '';
         document.getElementById('movieSearchInput').value = '';
+        if (this.cityFilterElement) {
+            this.cityFilterElement.value = '';
+        }
         this.updateGenreButtons('');
-        this.filteredMovies = [...this.movies];
-        this.renderMovies(this.movies);
+        this.loadMovies(); // Tüm filmleri yeniden yükle
     }
 
     renderMovies(movies) {
@@ -265,6 +318,7 @@ class MovieSelection {
 // Initialize movie selection when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     window.movieSelection = new MovieSelection();
+    window.movieSelection.loadCities();
     window.movieSelection.loadMovies();
     
     // Setup keyboard shortcuts

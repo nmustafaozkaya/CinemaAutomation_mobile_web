@@ -6,6 +6,7 @@ import 'package:sinema_uygulamasi/components/seat.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:intl/intl.dart';
 import 'package:sinema_uygulamasi/components/showtimes.dart';
@@ -137,25 +138,106 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   }
 
   Future<CinemaSeatResponse> getAvailableSeats(int showtimeId) async {
-    try {
-      final response = await http.get(
-        Uri.parse(ApiConnection.getAvailableSeatsUrl(showtimeId)),
-      );
+    final uri = Uri.parse(ApiConnection.getAvailableSeatsUrl(showtimeId));
+    FormatException? lastJsonError;
 
-      if (response.statusCode == 200) {
-        if (response.body.isEmpty) {
-          throw Exception('Empty response received from server.');
-        }
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        return CinemaSeatResponse.fromJson(jsonResponse);
-      } else {
-        throw Exception(
-          'Server error: ${response.statusCode}. response: ${response.body}',
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await http.get(
+          uri,
+          headers: const {
+            'Accept': 'application/json',
+            'Connection': 'close',
+          },
         );
+
+        if (response.statusCode == 200) {
+          if (response.bodyBytes.isEmpty) {
+            throw Exception('Empty response received from server.');
+          }
+
+          final Map<String, dynamic> jsonResponse =
+              _decodeSeatJson(response.bodyBytes);
+
+          return CinemaSeatResponse.fromJson(jsonResponse);
+        } else {
+          throw Exception(
+            'Server error: ${response.statusCode}. response: ${response.body}',
+          );
+        }
+      } on FormatException catch (e) {
+        lastJsonError = e;
+        if (attempt == 0) {
+          await Future.delayed(const Duration(milliseconds: 250));
+          continue;
+        }
+        throw Exception(
+          'Seat data parse error: ${e.message}',
+        );
+      } catch (e) {
+        throw Exception('Error while fetching seat data: $e');
       }
-    } catch (e) {
-      throw Exception('Error while fetching seat data: $e');
     }
+
+    throw Exception(
+      'Error while fetching seat data: ${lastJsonError?.message ?? 'Unknown error'}',
+    );
+  }
+
+  Map<String, dynamic> _decodeSeatJson(Uint8List bodyBytes) {
+    String rawBody = utf8.decode(bodyBytes, allowMalformed: true).trim();
+
+    if (rawBody.isEmpty) {
+      throw const FormatException('Empty JSON body received.');
+    }
+
+    try {
+      final decoded = json.decode(rawBody);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      throw FormatException(
+        'Unexpected JSON root type: ${decoded.runtimeType}',
+      );
+    } on FormatException {
+      final repaired = _attemptRepairJson(rawBody);
+      if (repaired != null) {
+        final decoded = json.decode(repaired);
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+      }
+      rethrow;
+    }
+  }
+
+  String? _attemptRepairJson(String rawBody) {
+    if (rawBody.isEmpty) return null;
+
+    final lastBraceIndex = rawBody.lastIndexOf('}');
+    if (lastBraceIndex == -1) return null;
+
+    var candidate = rawBody.substring(0, lastBraceIndex + 1);
+
+    final openCount = _countOccurrences(candidate, '{');
+    final closeCount = _countOccurrences(candidate, '}');
+
+    if (openCount == 0) return null;
+
+    if (openCount > closeCount) {
+      final buffer = StringBuffer(candidate);
+      final missing = openCount - closeCount;
+      for (var i = 0; i < missing; i++) {
+        buffer.write('}');
+      }
+      candidate = buffer.toString();
+    }
+
+    return candidate;
+  }
+
+  int _countOccurrences(String source, String pattern) {
+    return RegExp(RegExp.escape(pattern)).allMatches(source).length;
   }
 
   Future<bool> reserveSeat(Seat seat) async {
@@ -438,10 +520,13 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
               children: [
                 ...sortedRows.map((row) {
                   final seats = groupedSeats[row]!;
+                  final seatButtons =
+                      seats.map((seat) => buildSeatButton(seat)).toList();
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           width: 30,
@@ -457,7 +542,12 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        ...seats.map((seat) => buildSeatButton(seat)),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(children: seatButtons),
+                          ),
+                        ),
                       ],
                     ),
                   );

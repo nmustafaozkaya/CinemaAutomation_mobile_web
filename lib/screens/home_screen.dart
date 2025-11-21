@@ -8,61 +8,229 @@ import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:sinema_uygulamasi/screens/movie_details.dart';
 import 'package:sinema_uygulamasi/components/get_promotions.dart';
 import 'package:sinema_uygulamasi/screens/movies_screen.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
 
 Widget buildMoviePoster(String posterUrl) {
+  // Poster URL'ini temizle ve kontrol et
   if (posterUrl.isEmpty ||
       posterUrl == 'N/A' ||
-      (!posterUrl.endsWith('.jpg') && !posterUrl.endsWith('.png'))) {
+      posterUrl.trim().isEmpty ||
+      posterUrl == 'null') {
     return Container(
       color: Colors.grey.shade300,
       child: const Center(
         child: Icon(Icons.image_not_supported, size: 60, color: Colors.grey),
       ),
     );
-  } else {
-    return Image.network(
-      posterUrl,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: Colors.grey.shade300,
-          child: const Center(
-            child: Icon(Icons.broken_image, size: 60, color: Colors.grey),
+  }
+
+  // URL'yi çözümle
+  final resolvedUrl = ApiConnection.resolveMediaUrl(posterUrl);
+
+  // Geçerli URL kontrolü - http/https ile başlamalı
+  final isValidUrl =
+      resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://');
+
+  if (!isValidUrl) {
+    debugPrint('Geçersiz poster URL: $resolvedUrl');
+    return Container(
+      color: Colors.grey.shade300,
+      child: const Center(
+        child: Icon(Icons.image_not_supported, size: 60, color: Colors.grey),
+      ),
+    );
+  }
+
+  return Image.network(
+    resolvedUrl,
+    fit: BoxFit.cover,
+    width: double.infinity,
+    height: double.infinity,
+    loadingBuilder: (context, child, loadingProgress) {
+      if (loadingProgress == null) return child;
+      return Container(
+        color: Colors.grey.shade300,
+        child: Center(
+          child: CircularProgressIndicator(
+            value: loadingProgress.expectedTotalBytes != null
+                ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                : null,
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+    errorBuilder: (context, error, stackTrace) {
+      debugPrint('Poster yükleme hatası: $error - URL: $resolvedUrl');
+      return Container(
+        color: Colors.grey.shade300,
+        child: const Center(
+          child: Icon(Icons.broken_image, size: 60, color: Colors.grey),
+        ),
+      );
+    },
+  );
 }
 
-Future<List<Movie>> fetchMovies(String url) async {
-  final response = await http.get(Uri.parse(url));
-
-  if (response.statusCode == 200) {
-    final Map<String, dynamic> data = jsonDecode(response.body);
-
-    if (data['success'] == true &&
-        data['data'] is Map<String, dynamic> &&
-        data['data']['data'] is List) {
-      final List<dynamic> moviesJson = data['data']['data'];
-
-      return moviesJson
-          .map((json) => Movie.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } else {
-      throw Exception('API response format error or success is false: $data');
-    }
-  } else {
-    throw Exception(
-      'Failed to load movies from $url with status code: ${response.statusCode}',
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late Future<List<Movie>> _nowShowingMoviesFuture;
+  late Future<List<Movie>> _comingSoonMoviesFuture;
+  static const int _maxRetries = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDistributedMovies();
+  }
+
+  void _loadDistributedMovies() {
+    // Distributed API'yi kullan - toplam 100 filmi tarihe göre dağıtır
+    // Cache-busting için timestamp ekle
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    String url = '${ApiConnection.distributedMovies}?_t=$timestamp';
+
+    // Distributed API'den hem Now Showing hem Coming Soon filmlerini al
+    _nowShowingMoviesFuture = _fetchDistributedMovies(url, true);
+    _comingSoonMoviesFuture = _fetchDistributedMovies(url, false);
+  }
+
+  Future<List<Movie>> _fetchDistributedMovies(
+    String url,
+    bool isNowShowing, {
+    int retryAttempt = 0,
+  }) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache',
+            },
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw TimeoutException('İstek zaman aşımına uğradı');
+            },
+          );
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        try {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+          if (data['success'] == true && data['data'] != null) {
+            final responseData = data['data'] as Map<String, dynamic>;
+
+            if (isNowShowing) {
+              final nowShowingData =
+                  responseData['now_showing'] as Map<String, dynamic>?;
+              final moviesJson =
+                  nowShowingData?['data'] as List<dynamic>? ?? [];
+              final movies = moviesJson
+                  .map((json) {
+                    try {
+                      return Movie.fromJson(json as Map<String, dynamic>);
+                    } catch (e) {
+                      debugPrint('⚠️ Film parse hatası: $e');
+                      return null;
+                    }
+                  })
+                  .whereType<Movie>()
+                  .toList();
+              return movies;
+            } else {
+              final comingSoonData =
+                  responseData['coming_soon'] as Map<String, dynamic>?;
+              final moviesJson =
+                  comingSoonData?['data'] as List<dynamic>? ?? [];
+              final movies = moviesJson
+                  .map((json) {
+                    try {
+                      return Movie.fromJson(json as Map<String, dynamic>);
+                    } catch (e) {
+                      debugPrint('⚠️ Film parse hatası: $e');
+                      return null;
+                    }
+                  })
+                  .whereType<Movie>()
+                  .toList();
+              return movies;
+            }
+          }
+        } catch (e) {
+          debugPrint('⚠️ JSON parse hatası: $e');
+          // JSON parse hatası - retry yap
+          if (retryAttempt < _maxRetries) {
+            debugPrint(
+              '⚠️ Retry yapılıyor... (${retryAttempt + 1}/$_maxRetries)',
+            );
+            await Future.delayed(
+              Duration(milliseconds: 500 * (retryAttempt + 1)),
+            );
+            return _fetchDistributedMovies(
+              url,
+              isNowShowing,
+              retryAttempt: retryAttempt + 1,
+            );
+          }
+        }
+      } else if (response.statusCode != 200) {
+        debugPrint('⚠️ HTTP hatası: ${response.statusCode}');
+        // HTTP hatası - retry yap
+        if (retryAttempt < _maxRetries) {
+          debugPrint(
+            '⚠️ Retry yapılıyor... (${retryAttempt + 1}/$_maxRetries)',
+          );
+          await Future.delayed(
+            Duration(milliseconds: 500 * (retryAttempt + 1)),
+          );
+          return _fetchDistributedMovies(
+            url,
+            isNowShowing,
+            retryAttempt: retryAttempt + 1,
+          );
+        }
+      }
+      return [];
+    } on TimeoutException catch (e) {
+      debugPrint('⚠️ Timeout hatası: $e');
+      // Timeout - retry yap
+      if (retryAttempt < _maxRetries) {
+        debugPrint('⚠️ Retry yapılıyor... (${retryAttempt + 1}/$_maxRetries)');
+        await Future.delayed(Duration(milliseconds: 500 * (retryAttempt + 1)));
+        return _fetchDistributedMovies(
+          url,
+          isNowShowing,
+          retryAttempt: retryAttempt + 1,
+        );
+      }
+      return [];
+    } catch (e) {
+      debugPrint('⚠️ _fetchDistributedMovies hatası: $e');
+      // Diğer hatalar - retry yap
+      if (retryAttempt < _maxRetries) {
+        debugPrint('⚠️ Retry yapılıyor... (${retryAttempt + 1}/$_maxRetries)');
+        await Future.delayed(Duration(milliseconds: 500 * (retryAttempt + 1)));
+        return _fetchDistributedMovies(
+          url,
+          isNowShowing,
+          retryAttempt: retryAttempt + 1,
+        );
+      }
+      return [];
+    }
+  }
 
   // Vizyondaki Filmler bölümü
   Widget showMoviesContent(BuildContext context) {
@@ -110,7 +278,8 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         FutureBuilder<List<Movie>>(
-          future: fetchMovies(ApiConnection.movies),
+          key: ValueKey('now_showing_${_nowShowingMoviesFuture.hashCode}'),
+          future: _nowShowingMoviesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
@@ -120,12 +289,56 @@ class HomeScreen extends StatelessWidget {
             } else if (snapshot.hasError) {
               return SizedBox(
                 height: 180,
-                child: Center(child: Text("Hata: ${snapshot.error}")),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Hata: ${snapshot.error}",
+                      style: const TextStyle(
+                        color: AppColorStyle.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _loadDistributedMovies();
+                        });
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tekrar Dene'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColorStyle.primaryAccent,
+                      ),
+                    ),
+                  ],
+                ),
               );
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const SizedBox(
+              return SizedBox(
                 height: 180,
-                child: Center(child: Text("Film bulunamadı.")),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Film bulunamadı.",
+                      style: TextStyle(color: AppColorStyle.textSecondary),
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _loadDistributedMovies();
+                        });
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tekrar Dene'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColorStyle.primaryAccent,
+                      ),
+                    ),
+                  ],
+                ),
               );
             } else {
               final movies = snapshot.data!;
@@ -214,7 +427,8 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         FutureBuilder<List<Movie>>(
-          future: fetchMovies(ApiConnection.futureMovies),
+          key: ValueKey('coming_soon_${_comingSoonMoviesFuture.hashCode}'),
+          future: _comingSoonMoviesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
@@ -224,12 +438,56 @@ class HomeScreen extends StatelessWidget {
             } else if (snapshot.hasError) {
               return SizedBox(
                 height: 180,
-                child: Center(child: Text("Hata: ${snapshot.error}")),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Hata: ${snapshot.error}",
+                      style: const TextStyle(
+                        color: AppColorStyle.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _loadDistributedMovies();
+                        });
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tekrar Dene'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColorStyle.primaryAccent,
+                      ),
+                    ),
+                  ],
+                ),
               );
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const SizedBox(
+              return SizedBox(
                 height: 180,
-                child: Center(child: Text("Film bulunamadı.")),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Film bulunamadı.",
+                      style: TextStyle(color: AppColorStyle.textSecondary),
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _loadDistributedMovies();
+                        });
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tekrar Dene'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColorStyle.primaryAccent,
+                      ),
+                    ),
+                  ],
+                ),
               );
             } else {
               final movies = snapshot.data!;
@@ -474,5 +732,10 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }

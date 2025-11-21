@@ -17,6 +17,13 @@ class Cinema extends Model
         'city_id'
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'deleted_at',
+        'pivot'
+    ];
+
     public function city()
     {
         return $this->belongsTo(City::class);

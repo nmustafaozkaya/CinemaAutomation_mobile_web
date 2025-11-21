@@ -76,6 +76,27 @@ class Tax {
 }
 
 class TaxService {
+  static Tax _defaultServiceFee() {
+    final now = DateTime.now().toIso8601String();
+    return Tax(
+      id: -1,
+      name: 'Hizmet Bedeli',
+      type: 'fixed',
+      rate: '2.00',
+      status: 'active',
+      priority: 1,
+      description: 'Bilet başına hizmet bedeli',
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
+  static bool _isServiceFee(Tax tax) {
+    return tax.name.toLowerCase().contains('hizmet');
+  }
+
+  static Tax fallbackServiceFee() => _defaultServiceFee();
+
   static Future<List<Tax>> fetchTaxes() async {
     try {
       final response = await http.get(
@@ -91,27 +112,12 @@ class TaxService {
         final TaxResponse taxResponse = TaxResponse.fromJson(jsonData);
 
         if (taxResponse.success) {
-          List<Tax> taxes = taxResponse.data;
+          List<Tax> taxes = taxResponse.data
+              .where(_isServiceFee)
+              .toList();
 
-          bool hasKDV = taxes.any(
-            (tax) =>
-                tax.name.toLowerCase().contains('kdv') ||
-                tax.description.toLowerCase().contains('kdv'),
-          );
-
-          if (!hasKDV) {
-            Tax kdvTax = Tax(
-              id: 999,
-              name: 'KDV',
-              type: 'percentage',
-              rate: '20.00',
-              status: 'active',
-              priority: 1,
-              description: 'Katma Değer Vergisi %20',
-              createdAt: DateTime.now().toIso8601String(),
-              updatedAt: DateTime.now().toIso8601String(),
-            );
-            taxes.insert(0, kdvTax);
+          if (taxes.isEmpty) {
+            taxes = [_defaultServiceFee()];
           }
 
           return taxes;
@@ -145,11 +151,16 @@ class TaxService {
     }
   }
 
-  static double calculateTaxAmount(Tax tax, double baseAmount) {
+  static double calculateTaxAmount(
+    Tax tax,
+    double baseAmount, {
+    int ticketCount = 1,
+  }) {
     switch (tax.type) {
       case 'percentage':
         return baseAmount * (double.parse(tax.rate) / 100);
       case 'fixed':
+        return double.parse(tax.rate) * ticketCount;
       case 'fixed_total':
         return double.parse(tax.rate);
       default:
@@ -157,12 +168,20 @@ class TaxService {
     }
   }
 
-  static double calculateTotalTax(List<Tax> taxes, double baseAmount) {
+  static double calculateTotalTax(
+    List<Tax> taxes,
+    double baseAmount, {
+    int ticketCount = 1,
+  }) {
     double totalTax = 0.0;
 
     for (Tax tax in taxes) {
       if (tax.status == 'active') {
-        totalTax += calculateTaxAmount(tax, baseAmount);
+        totalTax += calculateTaxAmount(
+          tax,
+          baseAmount,
+          ticketCount: ticketCount,
+        );
       }
     }
 
@@ -175,35 +194,7 @@ class ReservationScreenTaxLoader {
     try {
       return await TaxService.fetchActiveTaxesSorted();
     } catch (_) {
-      return [
-        Tax(
-          id: 1,
-          name: 'KDV',
-          type: 'percentage',
-          rate: '20.00',
-          status: 'active',
-          priority: 1,
-          description: 'Katma Değer Vergisi %20',
-        ),
-        Tax(
-          id: 2,
-          name: 'Hizmet Bedeli',
-          type: 'fixed',
-          rate: '2.00',
-          status: 'active',
-          priority: 2,
-          description: 'Bilet başına hizmet bedeli',
-        ),
-        Tax(
-          id: 3,
-          name: 'İşlem Ücreti',
-          type: 'fixed_total',
-          rate: '5.00',
-          status: 'active',
-          priority: 3,
-          description: 'Toplam işlem ücreti',
-        ),
-      ];
+      return [TaxService._defaultServiceFee()];
     }
   }
 }

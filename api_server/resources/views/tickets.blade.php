@@ -164,7 +164,8 @@
 
             if (window.cinemaSelection) {
                 window.cinemaSelection.showSelectedMovie(selectedMovie);
-                await window.cinemaSelection.loadCinemas();
+                const preferredCityId = window.movieSelection?.currentCityId || '';
+                await window.cinemaSelection.loadCinemas(preferredCityId);
             }
         }
 
@@ -196,30 +197,71 @@
             // Load showtimes
             try {
                 const response = await axios.get(`/api/showtimes?movie_id=${selectedMovie.id}&cinema_id=${cinemaId}`);
-                const showtimes = response.data.data.data || response.data.data;
+                // Response format: { success: true, data: [...] } veya { success: true, data: { data: [...] } }
+                let showtimes = [];
+                if (response.data.success && response.data.data) {
+                    if (Array.isArray(response.data.data)) {
+                        showtimes = response.data.data;
+                    } else if (response.data.data.data && Array.isArray(response.data.data.data)) {
+                        showtimes = response.data.data.data;
+                    }
+                }
                 renderShowtimes(showtimes);
             } catch (error) {
                 console.error('Seanslar yüklenemedi:', error);
-                renderMockShowtimes();
+                renderShowtimes([]);
             }
         }
         function renderShowtimes(showtimes) {
             const showtimeGrid = document.getElementById('showtimeGrid');
             let html = '';
 
+            if (!showtimes || showtimes.length === 0) {
+                html = '<p class="text-white text-center col-span-full">Bu sinemada seçili film için seans bulunamadı.</p>';
+                showtimeGrid.innerHTML = html;
+                return;
+            }
+
             showtimes.forEach(showtime => {
-                const startTime = new Date(showtime.start_time);
-                html += `
-                                                                                    <div class="glass-effect rounded-xl p-4 card-hover cursor-pointer"
-                                                                                         onclick="selectShowtimeForTicket(${showtime.id}, '${startTime.toLocaleString('tr-TR')}', '${showtime.hall.name}', ${showtime.price || 45})">
-                                                                                        <h4 class="text-lg font-semibold text-white mb-2">${showtime.hall.name}</h4>
-                                                                                        <p class="text-emerald-400 font-bold text-lg">${startTime.toLocaleString('tr-TR')}</p>
-                                                                                        <p class="text-purple-300 text-sm mt-1">₺${showtime.price || 45}/kişi</p>
-                                                                                    </div>
-                                                                                `;
+                try {
+                    // API'den gelen zaman string'ini al
+                    let timeStr = showtime.start_time;
+                    
+                    // API'den gelen zamanı parse et
+                    const startTime = new Date(timeStr);
+                    if (isNaN(startTime.getTime())) {
+                        console.error('Geçersiz tarih:', showtime.start_time);
+                        return;
+                    }
+                    
+                    const formattedDate = startTime.toLocaleDateString('tr-TR', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                    });
+                    
+                    // Saat ve dakikayı direkt al (timezone conversion olmadan)
+                    const hours = String(startTime.getUTCHours()).padStart(2, '0');
+                    const minutes = String(startTime.getUTCMinutes()).padStart(2, '0');
+                    const formattedTime = `${hours}:${minutes}`;
+                    const hallName = showtime.hall?.name || 'Salon';
+                    const price = showtime.price || 45;
+                    
+                    html += `
+                        <div class="glass-effect rounded-xl p-4 card-hover cursor-pointer"
+                             onclick="selectShowtimeForTicket(${showtime.id}, '${startTime.toISOString()}', '${hallName}', ${price})">
+                            <h4 class="text-lg font-semibold text-white mb-2">${hallName}</h4>
+                            <p class="text-emerald-400 font-bold text-lg">${formattedTime}</p>
+                            <p class="text-gray-400 text-xs mb-1">${formattedDate}</p>
+                            <p class="text-purple-300 text-sm mt-1">₺${price}/kişi</p>
+                        </div>
+                    `;
+                } catch (e) {
+                    console.error('Seans render hatası:', e, showtime);
+                }
             });
 
-            showtimeGrid.innerHTML = html;
+            showtimeGrid.innerHTML = html || '<p class="text-white text-center col-span-full">Seans bulunamadı.</p>';
         }
 
         function renderMockShowtimes() {
@@ -235,6 +277,10 @@
             selectedShowtime = { id: showtimeId, startTime: startTime, hall: hallName, price: price };
             currentTicketStep = 4;
             updateTicketSteps();
+
+            if (window.seatMap) {
+                window.seatMap.reset();
+            }
 
             // Show selected showtime info
             document.getElementById('selectedShowtimeInfo').innerHTML = `
@@ -263,41 +309,9 @@
                                                                                 </div>
                                                                             `;
 
-            // Load seats
-            if (window.seatMap) {
-                window.seatMap.setShowtime(selectedShowtime);
-                await window.seatMap.loadSeats(showtimeId);
-            }
-        }
-
-        // Navigation functions called by components
-        function goToTicketTypes() {
-            // ✅ Koltukları kontrol et
-            if (!window.seatMap || window.seatMap.selectedSeats.length === 0) {
-                alert('Lütfen önce koltuk seçimi yapın!');
-                return;
-            }
-
-            // ✅ goToNextStep kullan, resetDataForStep çağırma
-            goToNextStep(5);
-
             if (window.paymentForm) {
-                window.paymentForm.loadTicketTypes(selectedShowtime.id);
-            }
-        }
-
-        function goToPayment() {
-            // ✅ goToNextStep kullan
-            goToNextStep(6);
-
-            if (window.paymentForm) {
-                window.paymentForm.generateOrderSummary();
-            }
-        }
-
-        function completeSale() {
-            if (window.paymentForm) {
-                window.paymentForm.processPayment();
+                window.paymentForm.reset();
+                await window.paymentForm.loadTicketTypes(showtimeId);
             }
         }
 

@@ -10,24 +10,22 @@ use Illuminate\Http\JsonResponse;
 class TaxController extends Controller
 {
     /**
-     * Get active taxes
+     * Get only the service fee (Hizmet Bedeli)
      */
     public function index(): JsonResponse
     {
         try {
-            $taxes = Tax::where('status', 'active')
-                       ->orderBy('priority')
-                       ->get();
+            $serviceFee = $this->resolveServiceFee();
 
             return response()->json([
                 'success' => true,
-                'data' => $taxes
+                'data' => [$serviceFee]
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Vergiler yüklenirken hata oluştu: ' . $e->getMessage()
+                'message' => 'Hizmet bedeli yüklenirken hata oluştu: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -46,44 +44,22 @@ class TaxController extends Controller
             $subtotal = $request->subtotal;
             $ticketCount = $request->ticket_count;
 
-            // Aktif vergileri al
-            $taxes = Tax::where('status', 'active')
-                       ->orderBy('priority')
-                       ->get();
-
-            $taxDetails = [];
-            $totalTaxAmount = 0;
-
-            foreach ($taxes as $tax) {
-                $taxAmount = 0;
-
-                if ($tax->type === 'percentage') {
-                    $taxAmount = ($subtotal * $tax->rate) / 100;
-                } elseif ($tax->type === 'fixed') {
-                    $taxAmount = $tax->rate * $ticketCount;
-                } elseif ($tax->type === 'fixed_total') {
-                    $taxAmount = $tax->rate;
-                }
-
-                $taxDetails[] = [
-                    'name' => $tax->name,
-                    'type' => $tax->type,
-                    'rate' => $tax->rate,
-                    'amount' => round($taxAmount, 2)
-                ];
-
-                $totalTaxAmount += $taxAmount;
-            }
-
-            $total = $subtotal + $totalTaxAmount;
+            $serviceFee = $this->resolveServiceFee();
+            $feeAmount = $this->calculateServiceFeeAmount($serviceFee, $ticketCount, $subtotal);
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'subtotal' => round($subtotal, 2),
-                    'taxes' => $taxDetails,
-                    'total_tax_amount' => round($totalTaxAmount, 2),
-                    'total' => round($total, 2),
+                    'taxes' => [[
+                        'name' => $serviceFee['name'],
+                        'type' => $serviceFee['type'],
+                        'rate' => $serviceFee['rate'],
+                        'amount' => round($feeAmount, 2),
+                        'description' => $serviceFee['description'] ?? 'Hizmet bedeli'
+                    ]],
+                    'total_tax_amount' => round($feeAmount, 2),
+                    'total' => round($subtotal + $feeAmount, 2),
                     'ticket_count' => $ticketCount
                 ]
             ]);
@@ -91,9 +67,45 @@ class TaxController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Vergi hesaplaması yapılırken hata oluştu: ' . $e->getMessage()
+                'message' => 'Hizmet bedeli hesaplanırken hata oluştu: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function resolveServiceFee(): array
+    {
+        $serviceFee = Tax::where('status', 'active')
+            ->whereRaw('LOWER(name) = ?', ['hizmet bedeli'])
+            ->orderBy('priority')
+            ->first();
+
+        if ($serviceFee) {
+            return $serviceFee->toArray();
+        }
+
+        return [
+            'id' => null,
+            'name' => 'Hizmet Bedeli',
+            'type' => 'fixed',
+            'rate' => 2.00,
+            'status' => 'active',
+            'priority' => 1,
+            'description' => 'Bilet başına hizmet bedeli',
+            'created_at' => now()->toISOString(),
+            'updated_at' => now()->toISOString(),
+        ];
+    }
+
+    private function calculateServiceFeeAmount(array $serviceFee, int $ticketCount, float $subtotal): float
+    {
+        $rate = (float) ($serviceFee['rate'] ?? 0);
+        $type = $serviceFee['type'] ?? 'fixed';
+
+        return match ($type) {
+            'percentage' => ($subtotal * $rate) / 100,
+            'fixed_total' => $rate,
+            default => $rate * $ticketCount, // fixed per ticket
+        };
     }
 }
 

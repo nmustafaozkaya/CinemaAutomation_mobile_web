@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'package:sinema_uygulamasi/components/cinemas.dart';
+import 'package:sinema_uygulamasi/components/city_filter_provider.dart';
+import 'package:sinema_uygulamasi/screens/cinema_movies_screen.dart';
 
 class CinemaScreen extends StatefulWidget {
   const CinemaScreen({super.key});
@@ -20,6 +22,10 @@ class _CinemaScreenState extends State<CinemaScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   String? _error;
+  final CityFilterProvider _cityFilter = CityFilterProvider();
+
+  // Şehir adından cityId'yi bulmak için map
+  Map<String, int> _cityNameToIdMap = {};
 
   @override
   void initState() {
@@ -29,35 +35,142 @@ class _CinemaScreenState extends State<CinemaScreen> {
 
   Future<void> fetchCinemas() async {
     try {
-      final response = await http.get(Uri.parse(ApiConnection.cinemas));
+      final client = http.Client();
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      try {
+        final request = http.Request('GET', Uri.parse(ApiConnection.cinemas));
+        request.headers['Accept'] = 'application/json';
+        request.headers['Content-Type'] = 'application/json';
 
-        if (jsonResponse['success'] == true && jsonResponse['data'] is List) {
-          final List<dynamic> data = jsonResponse['data'];
-          final cinemas = data
-              .map((cinemaJson) => Cinema.fromJson(cinemaJson))
-              .toList();
+        // Daha uzun timeout süresi (30 saniye)
+        final streamedResponse = await client
+            .send(request)
+            .timeout(
+              const Duration(seconds: 30),
+              onTimeout: () {
+                throw Exception(
+                  'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.',
+                );
+              },
+            );
 
-          final cityNames = cinemas.map((e) => e.cityName).toSet().toList()
-            ..sort();
+        // Response'u tam olarak oku
+        final response = await http.Response.fromStream(streamedResponse);
 
-          setState(() {
-            _allCinemas = cinemas;
-            _filteredCinemas = cinemas;
-            _cities = ['All', ...cityNames];
-            _isLoading = false;
-          });
+        if (response.statusCode == 200) {
+          // Response body'nin tam olduğundan emin ol
+          if (response.bodyBytes.isEmpty) {
+            throw Exception('Sunucudan boş yanıt alındı.');
+          }
+
+          // UTF-8 decoding
+          String decodedBody;
+          try {
+            decodedBody = utf8.decode(
+              response.bodyBytes,
+              allowMalformed: false,
+            );
+          } catch (e) {
+            // UTF-8 decode hatası durumunda alternatif
+            decodedBody = response.body;
+          }
+
+          // JSON'un tam olduğunu kontrol et
+          if (decodedBody.trim().isEmpty) {
+            throw Exception('Sunucudan boş yanıt alındı.');
+          }
+
+          // JSON parse etme
+          Map<String, dynamic> jsonResponse;
+          try {
+            jsonResponse = json.decode(decodedBody) as Map<String, dynamic>;
+          } on FormatException catch (e) {
+            // JSON parse hatası - response'u logla (debug için)
+            throw Exception(
+              'JSON parse hatası: ${e.message}. '
+              'Response uzunluğu: ${decodedBody.length} karakter. '
+              'Son 200 karakter: ${decodedBody.length > 200 ? decodedBody.substring(decodedBody.length - 200) : decodedBody}',
+            );
+          }
+
+          if (jsonResponse['success'] == true && jsonResponse['data'] is List) {
+            final List<dynamic> data = jsonResponse['data'];
+
+            // Cinema nesnelerini güvenli bir şekilde oluştur
+            final cinemas = <Cinema>[];
+            for (final cinemaJson in data) {
+              try {
+                if (cinemaJson is Map<String, dynamic>) {
+                  cinemas.add(Cinema.fromJson(cinemaJson));
+                }
+              } catch (e) {
+                // Tek bir sinema parse edilemezse atla ve devam et
+                debugPrint('Sinema parse hatası: $e');
+                continue;
+              }
+            }
+
+            final cityNames =
+                cinemas
+                    .map((e) => e.cityName)
+                    .where(
+                      (name) =>
+                          name.isNotEmpty &&
+                          name != 'Bilinmeyen' &&
+                          name != 'Bilinmeyen Şehir',
+                    )
+                    .toSet()
+                    .toList()
+                  ..sort();
+
+            // Şehir adından cityId'ye map oluştur
+            final cityNameToIdMap = <String, int>{};
+            for (final cinema in cinemas) {
+              if (cinema.cityName.isNotEmpty &&
+                  cinema.cityName != 'Bilinmeyen' &&
+                  cinema.cityName != 'Bilinmeyen Şehir' &&
+                  !cityNameToIdMap.containsKey(cinema.cityName)) {
+                cityNameToIdMap[cinema.cityName] = cinema.cityId;
+              }
+            }
+
+            setState(() {
+              _allCinemas = cinemas;
+              _filteredCinemas = cinemas;
+              _cities = ['All', ...cityNames];
+              _cityNameToIdMap = cityNameToIdMap;
+              _isLoading = false;
+              _error = null;
+            });
+          } else {
+            throw Exception(
+              'Beklenmeyen API yanıtı formatı. '
+              'Success: ${jsonResponse['success']}, '
+              'Data tipi: ${jsonResponse['data']?.runtimeType}',
+            );
+          }
         } else {
-          throw Exception('Beklenmeyen API yanıtı formatı.');
+          throw Exception(
+            'Sunucu hatası: ${response.statusCode}. '
+            'Yanıt: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}',
+          );
         }
-      } else {
-        throw Exception('Sunucu hatası: ${response.statusCode}');
+      } finally {
+        client.close();
       }
+    } on http.ClientException catch (e) {
+      setState(() {
+        _error = 'Bağlantı hatası: ${e.message}';
+        _isLoading = false;
+      });
+    } on FormatException catch (e) {
+      setState(() {
+        _error = 'Veri formatı hatası: ${e.message}';
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = 'Hata: ${e.toString()}';
         _isLoading = false;
       });
     }
@@ -144,6 +257,17 @@ class _CinemaScreenState extends State<CinemaScreen> {
                       if (value != null) {
                         setState(() => _selectedCity = value);
                         _filterCinemas(_searchController.text);
+
+                        // Şehir seçildiğinde global state'e kaydet
+                        if (value == 'All') {
+                          _cityFilter.clearCityFilter();
+                        } else {
+                          // Şehir adından cityId'yi bul
+                          final cityId = _cityNameToIdMap[value];
+                          if (cityId != null) {
+                            _cityFilter.setCityFilter(cityId, value);
+                          }
+                        }
                       }
                     },
                   ),
@@ -199,6 +323,22 @@ class _CinemaScreenState extends State<CinemaScreen> {
                                 vertical: 6,
                               ),
                               child: ListTile(
+                                onTap: () {
+                                  // Seçilen sinemanın şehir filtresini ayarla
+                                  _cityFilter.setCityFilter(
+                                    cinema.cityId,
+                                    cinema.cityName,
+                                  );
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CinemaMoviesScreen(
+                                        selectedCinema: cinema,
+                                      ),
+                                    ),
+                                  );
+                                },
                                 title: Text(
                                   cinema.cinemaName,
                                   style: const TextStyle(

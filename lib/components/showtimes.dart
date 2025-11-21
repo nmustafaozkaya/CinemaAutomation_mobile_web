@@ -19,9 +19,21 @@ class Showtime {
   });
 
   factory Showtime.fromJson(Map<String, dynamic> json) {
+    // API'den gelen zaman string'ini al ve olduğu gibi kullan
+    String timeStr = json['start_time']?.toString() ?? '';
+    
+    DateTime startTime;
+    try {
+      // API'den ne geliyorsa onu parse et, timezone conversion yapma
+      startTime = DateTime.parse(timeStr);
+    } catch (e) {
+      // Fallback: current time
+      startTime = DateTime.now();
+    }
+    
     return Showtime(
       id: json['id'],
-      startTime: DateTime.parse(json['start_time']),
+      startTime: startTime,
       price: json['price'],
       movie: Movie.fromJson(json['movie']),
       cinemaId: json['hall']['cinema']['id'],
@@ -29,8 +41,13 @@ class Showtime {
     );
   }
 
-  DateTime get dateOnly =>
-      DateTime(startTime.year, startTime.month, startTime.day);
+  DateTime get dateOnly {
+    // startTime zaten local timezone'a çevrildi
+    return DateTime(startTime.year, startTime.month, startTime.day);
+  }
 
-  String get timeOnly => DateFormat('HH:mm').format(startTime);
+  String get timeOnly {
+    // startTime zaten local timezone'a çevrildi
+    return DateFormat('HH:mm').format(startTime);
+  }
 }
