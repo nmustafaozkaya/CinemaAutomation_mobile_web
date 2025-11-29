@@ -80,19 +80,20 @@ class TaxService {
     final now = DateTime.now().toIso8601String();
     return Tax(
       id: -1,
-      name: 'Hizmet Bedeli',
+      name: 'Service Fee',
       type: 'fixed',
       rate: '2.00',
       status: 'active',
       priority: 1,
-      description: 'Bilet başına hizmet bedeli',
+      description: 'Service fee per ticket',
       createdAt: now,
       updatedAt: now,
     );
   }
 
   static bool _isServiceFee(Tax tax) {
-    return tax.name.toLowerCase().contains('hizmet');
+    final lowerName = tax.name.toLowerCase();
+    return lowerName.contains('hizmet') || lowerName.contains('service');
   }
 
   static Tax fallbackServiceFee() => _defaultServiceFee();

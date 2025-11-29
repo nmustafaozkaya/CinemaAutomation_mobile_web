@@ -36,24 +36,10 @@ class PermissionSeeder extends Seeder
     {
         $this->command->info('🔗 İzinler rollere atanıyor...');
 
-        // Super Admin - tüm izinler
-        $superAdminRole = Role::where('name', 'super_admin')->first();
-        if ($superAdminRole) {
-            $superAdminRole->permissions()->sync(Permission::pluck('id'));
-        }
-
-        // Admin - sadece bazı yönetimsel izinler
+        // Admin - tüm yönetimsel izinler
         $adminRole = Role::where('name', 'admin')->first();
         if ($adminRole) {
-            $adminPermissions = Permission::whereIn('name', [
-                'view_movies',
-                'manage_movies',
-                'manage_showtimes',
-                'view_reports',
-                'manage_users',
-                'manage_cinemas',
-            ])->get();
-            $adminRole->permissions()->sync($adminPermissions->pluck('id'));
+            $adminRole->permissions()->sync(Permission::pluck('id'));
         }
 
         // Customer - sadece görüntüleme

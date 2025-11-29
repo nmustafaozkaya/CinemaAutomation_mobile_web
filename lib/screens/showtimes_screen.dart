@@ -57,7 +57,7 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
     final response = await http.get(url);
     if (response.statusCode != 200) {
       throw Exception(
-        'API başvurusunda hata oluştu. Kod: ${response.statusCode}',
+        'API request failed. Code: ${response.statusCode}',
       );
     }
 
@@ -90,14 +90,14 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
         try {
           showtimeList = await _fetchShowtimePayload(fallbackUrl);
         } catch (fallbackError) {
-          debugPrint('Fallback showtime isteği başarısız: $fallbackError');
+          debugPrint('Fallback showtime request failed: $fallbackError');
         }
       }
 
       if (showtimeList.isEmpty) {
         setState(() {
           _errorMessage =
-              "Bu sinemada seçtiğiniz film için şu anda aktif seans görünmüyor. Lütfen farklı bir tarih veya sinema deneyin.";
+              "No active showtimes exist for this movie at the selected cinema right now. Please try a different date or cinema.";
           _isLoading = false;
         });
         return;
@@ -129,10 +129,10 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
         _errorMessage = null;
       });
     } catch (e, stack) {
-      debugPrint('Showtimes yüklenirken hata: $e\n$stack');
+      debugPrint('Error while loading showtimes: $e\n$stack');
       setState(() {
         _errorMessage =
-            "Seans bilgileri alınırken beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.";
+            "An unexpected error occurred while fetching showtimes. Please try again.";
         _isLoading = false;
       });
     }
@@ -148,7 +148,7 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
         itemBuilder: (context, index) {
           final date = _uniqueDates[index];
           final isSelected = _selectedDate == date;
-          final formattedDate = DateFormat('dd MMM, EEE', 'tr_TR').format(date);
+          final formattedDate = DateFormat('dd MMM, EEE', 'en_US').format(date);
 
           return GestureDetector(
             onTap: () => setState(() => _selectedDate = date),
@@ -186,7 +186,7 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
     if (_selectedDate == null) {
       return const Center(
         child: Text(
-          'Lütfen bir tarih seçin.',
+          'Please select a date.',
           style: TextStyle(color: AppColorStyle.textSecondary),
         ),
       );
@@ -202,7 +202,7 @@ class _ShowtimesScreenState extends State<ShowtimesScreen> {
     if (showtimesForDate.isEmpty) {
       return const Center(
         child: Text(
-          'Bu tarihte seans bulunmamaktadır.',
+          'No showtimes available on this date.',
           style: TextStyle(color: AppColorStyle.textSecondary),
         ),
       );

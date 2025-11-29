@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'package:sinema_uygulamasi/components/rounded_button.dart';
 import 'package:sinema_uygulamasi/components/rounded_input_field.dart';
-import 'package:sinema_uygulamasi/components/square_box.dart';
 import 'package:sinema_uygulamasi/components/user.dart';
 import 'package:sinema_uygulamasi/components/user_preferences.dart';
 import 'package:sinema_uygulamasi/constant/app_text_style.dart';
@@ -27,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> loginUserNow() async {
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      Fluttertoast.showToast(msg: 'Email ve şifre boş olamaz');
+      Fluttertoast.showToast(msg: 'Email and password cannot be empty');
       return;
     }
 
@@ -62,20 +61,17 @@ class _LoginScreenState extends State<LoginScreen> {
         var resBody = jsonDecode(res.body);
 
         if (resBody['success'] == true) {
-          Fluttertoast.showToast(msg: 'Giriş başarılı!');
+          Fluttertoast.showToast(msg: 'Login successful!');
           emailController.clear();
           passwordController.clear();
 
           var user = User.fromJson(resBody['data']['user']);
 
-          if (rememberMe) {
-            await UserPreferences.saveData(user);
-            await UserPreferences.saveToken(resBody['data']['token']);
-            await UserPreferences.setRememberMe(true);
-          } else {
-            await UserPreferences.setRememberMe(false);
-            await UserPreferences.saveToken(resBody['data']['token']);
-          }
+          // Her durumda kullanıcı ve token bilgisini kaydet
+          // "Remember me" sadece otomatik giriş tercihine etki eder
+          await UserPreferences.saveData(user);
+          await UserPreferences.saveToken(resBody['data']['token']);
+          await UserPreferences.setRememberMe(rememberMe);
 
           Future.delayed(const Duration(seconds: 1), () {
             if (mounted) {
@@ -89,20 +85,20 @@ class _LoginScreenState extends State<LoginScreen> {
           });
         } else {
           Fluttertoast.showToast(
-            msg: resBody['message'] ?? 'Giriş başarısız',
+            msg: resBody['message'] ?? 'Login failed',
             toastLength: Toast.LENGTH_LONG,
           );
         }
       } else if (res.statusCode == 401) {
         Fluttertoast.showToast(
-          msg: 'Email veya şifre hatalı!',
+          msg: 'Incorrect email or password!',
           toastLength: Toast.LENGTH_LONG,
         );
       } else {
         var resBody = jsonDecode(res.body);
         Fluttertoast.showToast(
           msg:
-              'Sunucu hatası: ${res.statusCode} - ${resBody['message'] ?? 'Bilinmeyen hata'}',
+              'Server error: ${res.statusCode} - ${resBody['message'] ?? 'Unknown error'}',
           toastLength: Toast.LENGTH_LONG,
         );
       }
@@ -113,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       Fluttertoast.showToast(
-        msg: 'Bağlantı hatası: $e',
+        msg: 'Connection error: $e',
         toastLength: Toast.LENGTH_LONG,
       );
     }
@@ -218,47 +214,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-                ],
-              ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        indent: 50,
-                        thickness: 0.5,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 5),
-                      child: Text(
-                        ' Or Continue with ',
-                        style: AppTextStyle.middleDescriptionText,
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        endIndent: 50,
-                        thickness: 0.5,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  SquareBox(imagePath: 'assets/logo/google.jpg'),
-                  SizedBox(width: 25),
-                  SquareBox(imagePath: 'assets/logo/apple.png'),
                 ],
               ),
               Row(

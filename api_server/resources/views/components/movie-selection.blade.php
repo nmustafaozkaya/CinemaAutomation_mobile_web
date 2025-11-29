@@ -1,18 +1,18 @@
-<!-- Step 1: Film Seçimi -->
+<!-- Step 1: Movie Selection -->
 <div id="ticketStep1" class="ticket-step">
     <h3 class="text-2xl font-bold text-white mb-6 text-center">
-        <i class="fas fa-film mr-2 text-yellow-400"></i>Film Seçiniz
+        <i class="fas fa-film mr-2 text-yellow-400"></i>Select a Movie
     </h3>
     
-    <!-- Şehir Filtresi -->
+    <!-- City Filter -->
     <div class="max-w-md mx-auto mb-6">
         <label class="block text-white text-sm font-medium mb-2 text-center">
-            <i class="fas fa-map-marker-alt mr-2 text-green-400"></i>Şehir Seçiniz (İsteğe Bağlı)
+            <i class="fas fa-map-marker-alt mr-2 text-green-400"></i>Select a City (Optional)
         </label>
         <select id="movieCityFilter" onchange="window.movieSelection.filterByCity(this.value)"
             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-green-400 transition-all"
             style="color: white; background-color: rgba(255, 255, 255, 0.1);">
-            <option value="" style="background-color: #1f2937; color: white;">Tüm Şehirler</option>
+            <option value="" style="background-color: #1f2937; color: white;">All Cities</option>
             <!-- Cities will be loaded here -->
         </select>
     </div>
@@ -25,40 +25,16 @@
             </div>
             <input type="text" 
                    id="movieSearchInput" 
-                   placeholder="Film adı veya türü arayın..." 
+                   placeholder="Search by title or genre..." 
                    class="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-yellow-400 transition-all"
                    oninput="window.movieSelection.handleSearch(this.value)">
-        </div>
-        
-        <!-- Filter Buttons -->
-        <div class="flex flex-wrap gap-2 mt-4 justify-center">
-            <button onclick="window.movieSelection.filterByGenre('')" 
-                    class="genre-filter active px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full text-sm hover:bg-yellow-500/30 transition-all">
-                Tümü
-            </button>
-            <button onclick="window.movieSelection.filterByGenre('Action')" 
-                    class="genre-filter px-3 py-1 bg-white/10 text-gray-300 rounded-full text-sm hover:bg-white/20 transition-all">
-                Aksiyon
-            </button>
-            <button onclick="window.movieSelection.filterByGenre('Drama')" 
-                    class="genre-filter px-3 py-1 bg-white/10 text-gray-300 rounded-full text-sm hover:bg-white/20 transition-all">
-                Drama
-            </button>
-            <button onclick="window.movieSelection.filterByGenre('Comedy')" 
-                    class="genre-filter px-3 py-1 bg-white/10 text-gray-300 rounded-full text-sm hover:bg-white/20 transition-all">
-                Komedi
-            </button>
-            <button onclick="window.movieSelection.filterByGenre('Sci-Fi')" 
-                    class="genre-filter px-3 py-1 bg-white/10 text-gray-300 rounded-full text-sm hover:bg-white/20 transition-all">
-                Sci-Fi
-            </button>
         </div>
     </div>
     
     <!-- Loading State -->
     <div id="movieLoadingState" class="text-center py-12">
         <div class="loading w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p class="text-white">Filmler yükleniyor...</p>
+        <p class="text-white">Loading movies...</p>
     </div>
     
     <!-- Movies Grid -->
@@ -71,11 +47,11 @@
         <div class="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fas fa-film text-gray-400 text-3xl"></i>
         </div>
-        <h4 class="text-xl font-bold text-white mb-2">Film Bulunamadı</h4>
-        <p class="text-gray-400 mb-4">Aradığınız kriterlere uygun film bulunamadı.</p>
+        <h4 class="text-xl font-bold text-white mb-2">No Movies Found</h4>
+        <p class="text-gray-400 mb-4">We couldn’t find any movies that match your filters.</p>
         <button onclick="window.movieSelection.clearFilters()" 
                 class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium">
-            <i class="fas fa-refresh mr-2"></i>Filtreleri Temizle
+            <i class="fas fa-refresh mr-2"></i>Clear Filters
         </button>
     </div>
 </div>
@@ -101,14 +77,14 @@ class MovieSelection {
             const cities = response.data.data || [];
             
             if (this.cityFilterElement) {
-                let html = '<option value="" style="background-color: #1f2937; color: white;">Tüm Şehirler</option>';
+                let html = '<option value="" style="background-color: #1f2937; color: white;">All Cities</option>';
                 cities.forEach(city => {
                     html += `<option value="${city.id}" style="background-color: #1f2937; color: white;">${city.name}</option>`;
                 });
                 this.cityFilterElement.innerHTML = html;
             }
         } catch (error) {
-            console.error('Şehirler yüklenemedi:', error);
+            console.error('Cities failed to load:', error);
         }
     }
 
@@ -117,12 +93,12 @@ class MovieSelection {
             this.showLoading();
             
             let url = '/api/movies?per_page=100';
-            // cityId boş string değilse ve geçerli bir değerse ekle
+            // Append city filter when provided
             if (cityId && cityId !== '' && cityId !== '0') {
                 url += `&city_id=${cityId}`;
-                console.log('MovieSelection - Şehir filtresi aktif:', cityId);
+                console.log('MovieSelection - City filter enabled:', cityId);
             } else {
-                console.log('MovieSelection - Şehir filtresi yok, tüm filmler yükleniyor');
+                console.log('MovieSelection - No city filter, loading every movie');
             }
             
             console.log('MovieSelection - API URL:', url);
@@ -131,17 +107,17 @@ class MovieSelection {
             
             this.movies = response.data.data.data || response.data.data;
             this.filteredMovies = [...this.movies];
-            console.log('MovieSelection - Film sayısı:', this.movies.length);
+            console.log('MovieSelection - Movie count:', this.movies.length);
             
             if (this.movies.length === 0) {
                 this.showEmpty();
             } else {
-                this.renderMovies(this.movies.slice(0, 100)); // Tüm 100 filmi göster
+                this.renderMovies(this.movies.slice(0, 100)); // Show entire 100-movie batch
                 this.showGrid();
             }
             
         } catch (error) {
-            console.error('Filmler yüklenemedi:', error);
+            console.error('Movies could not be loaded:', error);
             this.renderMockMovies();
             this.showGrid();
         }
@@ -200,7 +176,7 @@ class MovieSelection {
             button.classList.add('bg-white/10', 'text-gray-300');
             
             const buttonGenre = button.textContent.trim();
-            if ((selectedGenre === '' && buttonGenre === 'Tümü') || 
+            if ((selectedGenre === '' && buttonGenre === 'All') || 
                 buttonGenre === selectedGenre) {
                 button.classList.add('active', 'bg-yellow-500/20', 'text-yellow-300');
                 button.classList.remove('bg-white/10', 'text-gray-300');
@@ -217,7 +193,7 @@ class MovieSelection {
             this.cityFilterElement.value = '';
         }
         this.updateGenreButtons('');
-        this.loadMovies(); // Tüm filmleri yeniden yükle
+        this.loadMovies(); // Reload every movie
     }
 
     renderMovies(movies) {
@@ -243,7 +219,7 @@ class MovieSelection {
                         <div class="absolute inset-0 bg-black bg-opacity-20 rounded-xl"></div>
                     </div>
                     <h4 class="text-lg font-bold text-white mb-2">${movie.title}</h4>
-                    <p class="text-purple-300 text-sm">${movie.genre} • ${movie.duration} dk</p>
+                    <p class="text-purple-300 text-sm">${movie.genre} • ${movie.duration} min</p>
                     <p class="text-yellow-400 mt-2">
                         <i class="fas fa-star mr-1"></i>${movie.imdb_raiting || movie.imdb_rating || 'N/A'}
                     </p>

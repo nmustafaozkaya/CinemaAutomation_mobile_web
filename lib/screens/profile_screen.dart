@@ -21,7 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColorStyle.scaffoldBackground,
       appBar: AppBar(
         title: const Text(
-          'Profil',
+          'Profile',
           style: TextStyle(
             color: AppColorStyle.textPrimary,
             fontWeight: FontWeight.bold,
@@ -79,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 30),
             const Text(
-              'Hesap Ayarları',
+              'Account Settings',
               style: TextStyle(
                 color: AppColorStyle.textPrimary,
                 fontWeight: FontWeight.bold,
@@ -94,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColorStyle.secondaryAccent,
               ),
               title: const Text(
-                'Bilgilerini Düzenle',
+                'Edit Details',
                 style: TextStyle(color: AppColorStyle.textPrimary),
               ),
               trailing: const Icon(
@@ -102,11 +102,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColorStyle.textSecondary,
               ),
               onTap: () {
-                // SnackBar'ı düzeltildi
+                // Snackbar placeholder until settings implemented
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("Bilgilerimi Düzenle yakında gelecek"),
-                    duration: Duration(seconds: 2), // Kısa gösterim süresi
+                    content: Text("Edit details is coming soon"),
+                    duration: Duration(seconds: 2), // Short display duration
                   ),
                 );
               },
@@ -117,7 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColorStyle.secondaryAccent,
               ),
               title: const Text(
-                'Şifreni Değiştir',
+                'Change Password',
                 style: TextStyle(color: AppColorStyle.textPrimary),
               ),
               trailing: const Icon(
@@ -127,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("Şifre Değiştirme yakında gelecek"),
+                    content: Text("Password change is coming soon"),
                     duration: Duration(seconds: 2),
                   ),
                 );
@@ -139,7 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColorStyle.secondaryAccent,
               ),
               title: const Text(
-                'Ödeme Yöntemleri',
+                'Payment Methods',
                 style: TextStyle(color: AppColorStyle.textPrimary),
               ),
               trailing: const Icon(
@@ -149,7 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("Ödeme Yöntemleri yakında gelecek"),
+                    content: Text("Payment methods are coming soon"),
                     duration: Duration(seconds: 2),
                   ),
                 );
@@ -158,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
 
             const Text(
-              'Otomatik Filmlerim',
+              'My Movies',
               style: TextStyle(
                 color: AppColorStyle.textPrimary,
                 fontWeight: FontWeight.bold,
@@ -170,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ListTile(
               leading: const Icon(Icons.favorite, color: Colors.redAccent),
               title: const Text(
-                'Favori Otomatik Filmler',
+                'Favorite Movies',
                 style: TextStyle(color: AppColorStyle.textPrimary),
               ),
               trailing: const Icon(
@@ -180,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("Favori Otomatik Filmler yakında gelecek"),
+                    content: Text("Favorite movies are coming soon"),
                     duration: Duration(seconds: 2),
                   ),
                 );
@@ -189,7 +189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
 
             const Text(
-              'Biletlerim',
+              'My Tickets',
               style: TextStyle(
                 color: AppColorStyle.textPrimary,
                 fontWeight: FontWeight.bold,
@@ -203,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColorStyle.secondaryAccent,
               ),
               title: const Text(
-                'Geçmiş Biletler',
+                'My Tickets',
                 style: TextStyle(color: AppColorStyle.textPrimary),
               ),
               trailing: const Icon(
@@ -219,34 +219,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(
-                FontAwesomeIcons.calendarCheck,
-                color: AppColorStyle.secondaryAccent,
-              ),
-              title: const Text(
-                'Gelecek Biletler',
-                style: TextStyle(color: AppColorStyle.textPrimary),
-              ),
-              trailing: const Icon(
-                Icons.arrow_forward_ios,
-                color: AppColorStyle.textSecondary,
-              ),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Gelecek Biletler yakında gelecek"),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-            ),
             const SizedBox(height: 24),
 
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(
-                'Çıkış Yap',
+                'Log Out',
                 style: TextStyle(
                   color: Colors.red,
                   fontWeight: FontWeight.w600,

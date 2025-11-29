@@ -14,9 +14,9 @@ class Seat extends Model
     use HasFactory;
 
     // Status sabitleri
-    const STATUS_AVAILABLE = 'available';
-    const STATUS_OCCUPIED = 'occupied';
-    const STATUS_PENDING = 'pending';
+    const STATUS_AVAILABLE = 'Blank';
+    const STATUS_OCCUPIED = 'Filled';
+    const STATUS_PENDING = 'In Another Basket';
 
     protected $fillable = [
         'hall_id',
@@ -132,14 +132,14 @@ class Seat extends Model
     public function getStatusLabel(): string
     {
         if ($this->status === self::STATUS_PENDING && $this->isReservationExpired()) {
-            return 'Boş'; // Süresi dolmuş pending'i boş göster
+            return 'Blank'; // Süresi dolmuş pending'i Blank göster
         }
 
         return match($this->status) {
-            self::STATUS_AVAILABLE => 'Boş',
-            self::STATUS_OCCUPIED => 'Dolu',
-            self::STATUS_PENDING => 'Beklemede (' . $this->getRemainingMinutes() . ' dk)',
-            default => 'Bilinmiyor'
+            self::STATUS_AVAILABLE => 'Blank',
+            self::STATUS_OCCUPIED => 'Filled',
+            self::STATUS_PENDING => 'In Another Basket (' . $this->getRemainingMinutes() . ' dk)',
+            default => 'Unknown'
         };
     }
 
@@ -147,14 +147,14 @@ class Seat extends Model
     public function getStatusColor(): string
     {
         if ($this->status === self::STATUS_PENDING && $this->isReservationExpired()) {
-            return 'green'; // Süresi dolmuş pending'i yeşil göster
+            return '#10b981'; // Süresi dolmuş pending'i yeşil göster
         }
 
         return match($this->status) {
-            self::STATUS_AVAILABLE => 'green',
-            self::STATUS_OCCUPIED => 'red',
-            self::STATUS_PENDING => 'yellow',
-            default => 'gray'
+            self::STATUS_AVAILABLE => '#10b981',
+            self::STATUS_OCCUPIED => '#cbcbcb',
+            self::STATUS_PENDING => '#ff4061',
+            default => '#gray'
         };
     }
 

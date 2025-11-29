@@ -165,10 +165,10 @@
                 };
 
                 const customerTypeLabels = {
-                    'adult': 'Yetişkin',
-                    'student': 'Öğrenci',
-                    'senior': 'Emekli',
-                    'child': 'Çocuk'
+                    'adult': 'Adult',
+                    'student': 'Student',
+                    'senior': 'Retired',
+                    'child': 'Child'
                 };
 
                 html += `

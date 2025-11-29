@@ -10,18 +10,18 @@
                         class="w-20 h-20 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-user-plus text-white text-2xl"></i>
                     </div>
-                    <h2 class="text-3xl font-bold text-white mb-2">Kayıt Ol</h2>
-                    <p class="text-gray-300">Yeni hesap oluşturun</p>
+                    <h2 class="text-3xl font-bold text-white mb-2">Sign Up</h2>
+                    <p class="text-gray-300">Create a new account</p>
                 </div>
 
                 <form id="registerForm" class="space-y-6">
                     <div>
                         <label class="block text-white text-sm font-medium mb-2">
-                            <i class="fas fa-user mr-2"></i>Ad Soyad
+                            <i class="fas fa-user mr-2"></i>Full Name
                         </label>
                         <input type="text" id="name"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
-                            placeholder="Ad Soyad" required>
+                            placeholder="Full name" required>
                     </div>
 
                     <div>
@@ -35,16 +35,16 @@
 
                     <div>
                         <label class="block text-white text-sm font-medium mb-2">
-                            <i class="fas fa-phone mr-2"></i>Telefon
+                            <i class="fas fa-phone mr-2"></i>Phone
                         </label>
                         <input type="tel" id="phone"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
-                            placeholder="Telefon">
+                            placeholder="Phone number">
                     </div>
 
                     <div>
                         <label class="block text-white text-sm font-medium mb-2">
-                            <i class="fas fa-calendar mr-2"></i>Doğum Tarihi
+                            <i class="fas fa-calendar mr-2"></i>Date of Birth
                         </label>
                         <input type="date" id="birth_date"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
@@ -53,33 +53,33 @@
 
                     <div>
                         <label class="block text-white text-sm font-medium mb-2">
-                            <i class="fas fa-venus-mars mr-2"></i>Cinsiyet
+                            <i class="fas fa-venus-mars mr-2"></i>Gender
                         </label>
                         <select id="gender"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all">
-                            <option value="">Seçiniz</option>
-                            <option value="male">Erkek</option>
-                            <option value="female">Kadın</option>
-                            <option value="other">Diğer</option>
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
                         </select>
                     </div>
 
                     <div>
                         <label class="block text-white text-sm font-medium mb-2">
-                            <i class="fas fa-lock mr-2"></i>Şifre
+                            <i class="fas fa-lock mr-2"></i>Password
                         </label>
                         <input type="password" id="password"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
-                            placeholder="Şifre" required>
+                            placeholder="Password" required>
                     </div>
 
                     <div>
                         <label class="block text-white text-sm font-medium mb-2">
-                            <i class="fas fa-lock mr-2"></i>Şifre Tekrar
+                            <i class="fas fa-lock mr-2"></i>Confirm Password
                         </label>
                         <input type="password" id="password_confirmation"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
-                            placeholder="Şifre Tekrar" required>
+                            placeholder="Confirm password" required>
                     </div>
 
                     <div class="flex items-center">
@@ -87,15 +87,14 @@
                             class="w-4 h-4 text-emerald-600 bg-transparent border-white/20 rounded focus:ring-emerald-500"
                             required>
                         <label for="terms" class="ml-2 text-sm text-gray-300">
-                            <a href="#" class="text-emerald-400 hover:text-emerald-300">Kullanım Koşulları</a>'nı ve
-                            <a href="#" class="text-emerald-400 hover:text-emerald-300">Gizlilik Politikası</a>'nı kabul
-                            ediyorum
+                            I accept the <a href="#" class="text-emerald-400 hover:text-emerald-300">Terms of Use</a> and
+                            <a href="#" class="text-emerald-400 hover:text-emerald-300">Privacy Policy</a>
                         </label>
                     </div>
 
                     <button type="submit"
                         class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105">
-                        <i class="fas fa-user-plus mr-2"></i>Kayıt Ol
+                        <i class="fas fa-user-plus mr-2"></i>Sign Up
                     </button>
                 </form>
 
@@ -103,9 +102,9 @@
 
                 <div class="mt-8 text-center">
                     <p class="text-gray-400 text-sm">
-                        Zaten hesabınız var mı?
+                        Already have an account?
                         <a href="/login" class="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
-                            Giriş yapın
+                            Sign in
                         </a>
                     </p>
                 </div>
@@ -113,13 +112,13 @@
                 <!-- Info Box -->
                 <div class="mt-6 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
                     <h4 class="text-emerald-300 font-medium mb-2 text-center">
-                        <i class="fas fa-info-circle mr-2"></i>Kayıt Avantajları
+                        <i class="fas fa-info-circle mr-2"></i>Sign-up Benefits
                     </h4>
                     <ul class="text-sm text-emerald-200 space-y-1">
-                        <li><i class="fas fa-check mr-2"></i>Bilet satın alma</li>
-                        <li><i class="fas fa-check mr-2"></i>Bilet geçmişini görüntüleme</li>
-                        <li><i class="fas fa-check mr-2"></i>Hızlı rezervasyon</li>
-                        <li><i class="fas fa-check mr-2"></i>Özel kampanyalardan haberdar olma</li>
+                        <li><i class="fas fa-check mr-2"></i>Buy tickets</li>
+                        <li><i class="fas fa-check mr-2"></i>View ticket history</li>
+                        <li><i class="fas fa-check mr-2"></i>Book in seconds</li>
+                        <li><i class="fas fa-check mr-2"></i>Get notified about special offers</li>
                     </ul>
                 </div>
             </div>
@@ -128,18 +127,18 @@
             <div class="mt-8 grid grid-cols-3 gap-4">
                 <div class="glass-effect p-4 rounded-xl text-center">
                     <i class="fas fa-shield-alt text-emerald-400 text-2xl mb-2"></i>
-                    <p class="text-white text-sm font-medium">Güvenli</p>
+                    <p class="text-white text-sm font-medium">Secure</p>
                     <p class="text-gray-400 text-xs">256-bit SSL</p>
                 </div>
                 <div class="glass-effect p-4 rounded-xl text-center">
                     <i class="fas fa-rocket text-emerald-400 text-2xl mb-2"></i>
-                    <p class="text-white text-sm font-medium">Hızlı</p>
-                    <p class="text-gray-400 text-xs">Anında kayıt</p>
+                    <p class="text-white text-sm font-medium">Fast</p>
+                    <p class="text-gray-400 text-xs">Instant sign up</p>
                 </div>
                 <div class="glass-effect p-4 rounded-xl text-center">
                     <i class="fas fa-gift text-emerald-400 text-2xl mb-2"></i>
-                    <p class="text-white text-sm font-medium">Avantajlı</p>
-                    <p class="text-gray-400 text-xs">Özel fırsatlar</p>
+                    <p class="text-white text-sm font-medium">Perks</p>
+                    <p class="text-gray-400 text-xs">Exclusive offers</p>
                 </div>
             </div>
         </div>
@@ -160,22 +159,22 @@
 
             // Validation
             if (!name || !email || !password || !passwordConfirmation) {
-                showMessage('Lütfen zorunlu alanları doldurun!', 'error');
+                showMessage('Please fill in all required fields!', 'error');
                 return;
             }
 
             if (password.length < 8) {
-                showMessage('Şifre en az 8 karakter olmalıdır!', 'error');
+                showMessage('Password must be at least 8 characters!', 'error');
                 return;
             }
 
             if (password !== passwordConfirmation) {
-                showMessage('Şifreler eşleşmiyor!', 'error');
+                showMessage('Passwords do not match!', 'error');
                 return;
             }
 
             if (!terms) {
-                showMessage('Kullanım koşullarını kabul etmelisiniz!', 'error');
+                showMessage('You must accept the terms first!', 'error');
                 return;
             }
 
@@ -202,7 +201,7 @@
                     // Token'ı kaydet
                     localStorage.setItem('token', response.data.data.token);
 
-                    showMessage('Kayıt başarılı! Yönlendiriliyorsunuz...', 'success');
+                    showMessage('Registration successful! Redirecting...', 'success');
 
                     // Session login da yap (opsiyonel)
                     setTimeout(async () => {
@@ -238,7 +237,7 @@
                     const firstError = Object.values(errors)[0][0];
                     showMessage(firstError, 'error');
                 } else {
-                    showMessage('Kayıt sırasında bir hata oluştu!', 'error');
+                    showMessage('Something went wrong during registration!', 'error');
                 }
             }
         });
@@ -246,13 +245,13 @@
         function showLoading() {
             const button = document.querySelector('button[type="submit"]');
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Kayıt yapılıyor...';
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing you up...';
         }
 
         function hideLoading() {
             const button = document.querySelector('button[type="submit"]');
             button.disabled = false;
-            button.innerHTML = '<i class="fas fa-user-plus mr-2"></i>Kayıt Ol';
+            button.innerHTML = '<i class="fas fa-user-plus mr-2"></i>Sign Up';
         }
 
         function showMessage(message, type) {

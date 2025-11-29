@@ -20,7 +20,7 @@ class MovieListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (movies.isEmpty) {
-      return const Center(child: Text('Film bulunamadı.'));
+      return const Center(child: Text('No movies found.'));
     }
 
     return ListView.builder(

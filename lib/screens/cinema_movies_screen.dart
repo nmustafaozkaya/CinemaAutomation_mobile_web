@@ -53,7 +53,7 @@ class _CinemaMoviesScreenState extends State<CinemaMoviesScreen> {
               const Duration(seconds: 30),
               onTimeout: () {
                 throw Exception(
-                  'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.',
+                  'Request timed out. Please try again.',
                 );
               },
             );
@@ -63,8 +63,8 @@ class _CinemaMoviesScreenState extends State<CinemaMoviesScreen> {
 
         if (response.statusCode != 200) {
           throw Exception(
-            'Sunucu hatası: ${response.statusCode}. '
-            'Yanıt: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}',
+            'Server error: ${response.statusCode}. '
+            'Response: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}',
           );
         }
 
@@ -127,16 +127,16 @@ class _CinemaMoviesScreenState extends State<CinemaMoviesScreen> {
           jsonResponse = json.decode(cleanedBody) as Map<String, dynamic>;
         } catch (e) {
           if (e is FormatException) {
-            debugPrint('❌ JSON parse hatası: ${e.message}');
-            debugPrint('Response uzunluğu: ${decodedBody.length} karakter');
+            debugPrint('❌ JSON parse error: ${e.message}');
+            debugPrint('Response length: ${decodedBody.length} characters');
             if (e.offset != null && e.offset! < decodedBody.length) {
               final start = (e.offset! - 100).clamp(0, decodedBody.length);
               final end = (e.offset! + 100).clamp(0, decodedBody.length);
-              debugPrint('Hata pozisyonu: ${e.offset}, çevresi: ${decodedBody.substring(start, end)}');
+              debugPrint('Error position: ${e.offset}, context: ${decodedBody.substring(start, end)}');
             }
           }
           setState(() {
-            _errorMessage = 'Filmler alınırken hata oluştu. Lütfen tekrar deneyin.';
+            _errorMessage = 'An error occurred while fetching movies. Please try again.';
             _isLoading = false;
           });
           return;
@@ -146,7 +146,7 @@ class _CinemaMoviesScreenState extends State<CinemaMoviesScreen> {
           setState(() {
             _movies = [];
             _isLoading = false;
-            _errorMessage = jsonResponse['message'] ?? 'Film bulunamadı.';
+            _errorMessage = jsonResponse['message'] ?? 'No movies found.';
           });
           return;
         }
@@ -198,17 +198,17 @@ class _CinemaMoviesScreenState extends State<CinemaMoviesScreen> {
       }
     } on http.ClientException catch (e) {
       setState(() {
-        _errorMessage = 'Bağlantı hatası: ${e.message}';
+        _errorMessage = 'Connection error: ${e.message}';
         _isLoading = false;
       });
     } on FormatException catch (e) {
       setState(() {
-        _errorMessage = 'Veri formatı hatası: ${e.message}';
+        _errorMessage = 'Data format error: ${e.message}';
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Filmler alınamadı: ${e.toString()}';
+        _errorMessage = 'Unable to load movies: ${e.toString()}';
         _isLoading = false;
       });
     }
@@ -262,7 +262,7 @@ class _CinemaMoviesScreenState extends State<CinemaMoviesScreen> {
       backgroundColor: AppColorStyle.scaffoldBackground,
       appBar: AppBar(
         title: Text(
-          '${widget.selectedCinema.cinemaName} - Filmler',
+          '${widget.selectedCinema.cinemaName} - Movies',
           style: const TextStyle(color: AppColorStyle.textPrimary),
         ),
         backgroundColor: AppColorStyle.appBarColor,
@@ -297,7 +297,7 @@ class _CinemaMoviesScreenState extends State<CinemaMoviesScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Bu sinemada gösterimde olan film bulunamadı.',
+                    'No movies are currently showing at this cinema.',
                     style: TextStyle(color: AppColorStyle.textSecondary),
                   ),
                   const SizedBox(height: 16),
@@ -305,7 +305,7 @@ class _CinemaMoviesScreenState extends State<CinemaMoviesScreen> {
                     onPressed: () {
                       _fetchMoviesForCinema();
                     },
-                    child: const Text('Tekrar Dene'),
+                    child: const Text('Try Again'),
                   ),
                 ],
               ),

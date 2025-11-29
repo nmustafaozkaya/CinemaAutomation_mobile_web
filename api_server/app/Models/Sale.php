@@ -60,10 +60,10 @@ class Sale extends Model
 
         $summary = [];
         $typeNames = [
-            'adult' => 'Yetişkin',
-            'student' => 'Öğrenci',
-            'senior' => 'Emekli',
-            'child' => 'Çocuk'
+            'adult' => 'Adult',
+            'student' => 'Student',
+            'senior' => 'Retired',
+            'child' => 'Child'
         ];
 
         foreach ($this->ticket_breakdown as $type => $count) {

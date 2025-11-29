@@ -67,19 +67,19 @@ class User extends Authenticatable
         return $this->hasMany(Sale::class);
     }
 
-    public function isSuperAdmin()
-    {
-        return $this->role_id === 1;
-    }
-
     public function isAdmin()
     {
-        return $this->role_id === 2;
+        return $this->role?->name === 'admin';
     }
 
     public function isCustomer()
     {
-        return $this->role_id === 3;
+        return $this->role?->name === 'customer';
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->role?->name === 'super_admin' || $this->role?->name === 'admin';
     }
 
     // İzin kontrolü için

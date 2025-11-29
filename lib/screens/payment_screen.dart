@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
@@ -50,6 +51,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String? _userToken;
   String _paymentMethod = 'card';
   bool _isLoading = false;
+  bool _isFirstPurchase = false;
+
+  // Mobil platform kontrolü (sadece Android / iOS için ilk alışveriş indirimi)
+  bool get _isMobilePlatform =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
+  bool get _isEligibleForFirstPurchaseDiscount =>
+      _isMobilePlatform && _isFirstPurchase;
+
+  double get _firstPurchaseDiscountRate => 0.30; // %30
+
+  double get _firstPurchaseDiscountAmount =>
+      _isEligibleForFirstPurchaseDiscount ? widget.finalTotal * _firstPurchaseDiscountRate : 0.0;
+
+  double get _effectiveFinalTotal =>
+      (widget.finalTotal - _firstPurchaseDiscountAmount).clamp(0, double.infinity);
 
   @override
   void initState() {
@@ -68,8 +87,68 @@ class _PaymentScreenState extends State<PaymentScreen> {
         if (currentUser != null) {
           _nameController.text = currentUser!.name;
           _emailController.text = currentUser!.email;
+          if (currentUser!.phone != null && currentUser!.phone!.isNotEmpty) {
+            _phoneController.text = currentUser!.phone!;
+          }
         }
       });
+    }
+
+    // Kullanıcının daha önce bileti var mı kontrol et (ilk alışveriş indirimi için)
+    if (fetchedToken != null && fetchedToken.isNotEmpty) {
+      await _checkFirstPurchase(fetchedToken);
+    }
+  }
+
+  /// Kullanıcının hiç bileti yoksa ilk alışveriş için %30 indirim uygular.
+  /// Sadece mobil platformlarda geçerlidir.
+  Future<void> _checkFirstPurchase(String token) async {
+    if (!_isMobilePlatform) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConnection.myTickets),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final body = response.body.trim();
+        if (body.startsWith('{') || body.startsWith('[')) {
+          final dynamic jsonData = json.decode(body);
+
+          int totalTickets = 0;
+
+          // Laravel paginator: { success: true, data: { total: X, data: [...] } }
+          if (jsonData is Map<String, dynamic>) {
+            final data = jsonData['data'];
+            if (data is Map<String, dynamic>) {
+              final totalField = data['total'];
+              if (totalField is num) {
+                totalTickets = totalField.toInt();
+              } else if (data['data'] is List) {
+                totalTickets = (data['data'] as List).length;
+              }
+            } else if (data is List) {
+              totalTickets = data.length;
+            }
+          } else if (jsonData is List) {
+            totalTickets = jsonData.length;
+          }
+
+          if (mounted) {
+            setState(() {
+              _isFirstPurchase = totalTickets == 0;
+            });
+          }
+        }
+      }
+    } catch (_) {
+      // Sessizce yutuyoruz; indirim zorunlu değil, hata durumunda normal fiyat devam eder.
+    } finally {
+      // Hata olsa da kullanıcı normal fiyat üzerinden devam edebilir.
     }
   }
 
@@ -122,19 +201,39 @@ class _PaymentScreenState extends State<PaymentScreen> {
             "rate": rate,
             "amount": double.parse(amount.toStringAsFixed(2)),
             "formatted_name": isPerTicket
-                ? "${tax.name} (${tax.rate} ₺ x ${widget.selectedSeats.length} bilet)"
+                ? "${tax.name} (${tax.rate} ₺ x ${widget.selectedSeats.length} tickets)"
                 : "${tax.name} (${tax.rate})",
           };
         })
         .toList();
 
-    return {
+    final originalTotal =
+        double.parse(widget.finalTotal.toStringAsFixed(2));
+
+    final discountAmount =
+        double.parse(_firstPurchaseDiscountAmount.toStringAsFixed(2));
+    final totalAfterDiscount =
+        double.parse(_effectiveFinalTotal.toStringAsFixed(2));
+
+    final payload = {
       "subtotal": double.parse(widget.totalPrice.toStringAsFixed(2)),
       "taxes": taxList,
       "total_tax_amount": double.parse(widget.taxAmount.toStringAsFixed(2)),
-      "total": double.parse(widget.finalTotal.toStringAsFixed(2)),
+      // Toplam tutar; ilk alışveriş indirimi varsa indirimli toplam
+      "total": totalAfterDiscount,
       "ticket_count": widget.selectedSeats.length,
     };
+
+    if (_isEligibleForFirstPurchaseDiscount && discountAmount > 0) {
+      payload["first_purchase_discount"] = {
+        "rate": _firstPurchaseDiscountRate * 100, // yüzde olarak
+        "amount": discountAmount,
+        "original_total": originalTotal,
+        "description": "Mobile first purchase promotion",
+      };
+    }
+
+    return payload;
   }
 
   Future<void> _submitPayment() async {
@@ -144,7 +243,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Hata: Giriş yapılmamış. Lütfen tekrar giriş yapın.'),
+            content: Text('Error: Not logged in. Please sign in again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -180,7 +279,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Ödeme başarıyla tamamlandı!'),
+              content: Text('Payment completed successfully!'),
               backgroundColor: Colors.green,
             ),
           );
@@ -197,7 +296,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Yetkilendirme hatası. Lütfen tekrar giriş yapın.'),
+              content: Text('Authorization error. Please sign in again.'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -206,7 +305,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Hata: ${response.statusCode}\n${response.body}'),
+              content: Text('Error: ${response.statusCode}\n${response.body}'),
               backgroundColor: Colors.red,
             ),
           );
@@ -216,7 +315,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Bağlantı hatası: $e'),
+            content: Text('Connection error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -231,7 +330,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Scaffold(
       backgroundColor: AppColorStyle.scaffoldBackground,
       appBar: AppBar(
-        title: const Text("Ödeme Ekranı"),
+        title: const Text("Payment"),
         backgroundColor: AppColorStyle.appBarColor,
         foregroundColor: AppColorStyle.textPrimary,
       ),
@@ -262,7 +361,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Otomatik Film ve Seans Bilgileri',
+              'Movie & Showtime Details',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -271,15 +370,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Otomatik Film: ${widget.movie.title}',
+              'Movie: ${widget.movie.title}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
             Text(
-              'Otomatik Sinema: ${widget.cinema.cinemaName}',
+              'Cinema: ${widget.cinema.cinemaName}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
             Text(
-              'Koltuklar: ${widget.selectedSeats.map((s) => s.displayName).join(', ')}',
+              'Seats: ${widget.selectedSeats.map((s) => s.displayName).join(', ')}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
           ],
@@ -298,7 +397,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Bilet Özeti',
+              'Ticket Summary',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -307,26 +406,47 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Bilet Sayısı: ${widget.selectedSeats.length}',
+              'Ticket Count: ${widget.selectedSeats.length}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
             Text(
-              'Ara Toplam: ₺${widget.totalPrice.toStringAsFixed(2)}',
+              'Subtotal: ₺${widget.totalPrice.toStringAsFixed(2)}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
             Text(
-              'Hizmet Bedeli: ₺${widget.taxAmount.toStringAsFixed(2)}',
+              'Service Fee: ₺${widget.taxAmount.toStringAsFixed(2)}',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
-            const Divider(height: 20, thickness: 1),
-            Text(
-              'Toplam: ₺${widget.finalTotal.toStringAsFixed(2)}',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColorStyle.textPrimary,
+            if (_isEligibleForFirstPurchaseDiscount) ...[
+              const SizedBox(height: 8),
+              Text(
+                'First Mobile Purchase Discount (30%): -₺${_firstPurchaseDiscountAmount.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: Colors.greenAccent.shade200,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+            ],
+            const Divider(height: 20, thickness: 1),
+            if (_isEligibleForFirstPurchaseDiscount) ...[
+              Text(
+                'Total (After Discount): ₺${_effectiveFinalTotal.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColorStyle.textPrimary,
+                ),
+              ),
+            ] else ...[
+              Text(
+                'Total: ₺${widget.finalTotal.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColorStyle.textPrimary,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -338,7 +458,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Müşteri Bilgileri',
+          'Customer Information',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -348,36 +468,36 @@ class _PaymentScreenState extends State<PaymentScreen> {
         const SizedBox(height: 10),
         _buildTextField(
           _nameController,
-          'Ad Soyad',
+          'Full Name',
           Icons.person,
           validator: (val) =>
-              val == null || val.isEmpty ? 'Ad soyad giriniz' : null,
+              val == null || val.isEmpty ? 'Please enter your full name' : null,
         ),
         const SizedBox(height: 16),
         _buildTextField(
           _emailController,
-          'E-posta',
+          'Email',
           Icons.email,
           keyboardType: TextInputType.emailAddress,
           validator: (val) {
-            if (val == null || val.isEmpty) return 'E-posta giriniz';
-            if (!val.contains('@')) return 'Geçerli bir e-posta giriniz';
+            if (val == null || val.isEmpty) return 'Please enter your email';
+            if (!val.contains('@')) return 'Enter a valid email address';
             return null;
           },
         ),
         const SizedBox(height: 16),
         _buildTextField(
           _phoneController,
-          'Telefon',
+          'Phone',
           Icons.phone,
           hintText: '05XXXXXXXXX',
           keyboardType: TextInputType.phone,
           validator: (val) {
             if (val == null || val.isEmpty) {
-              return 'Telefon numarası giriniz';
+              return 'Please enter a phone number';
             }
             if (!RegExp(r'^05\d{9}$').hasMatch(val)) {
-              return 'Geçerli bir telefon numarası giriniz';
+              return 'Enter a valid phone number';
             }
             return null;
           },
@@ -413,12 +533,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildPaymentOptions() {
+    final isCompact = MediaQuery.of(context).size.width < 360;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
         Text(
-          'Ödeme Yöntemi',
+          'Payment Method',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -431,27 +552,120 @@ class _PaymentScreenState extends State<PaymentScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment<String>(
-                      value: 'card',
-                      label: Text('Kredi Kartı'),
-                    ),
-                    ButtonSegment<String>(value: 'cash', label: Text('Nakit')),
-                  ],
-                  selected: {_paymentMethod},
-                  onSelectionChanged: (selection) {
-                    setState(() {
-                      _paymentMethod = selection.first;
-                    });
-                  },
-                ),
+                padding: const EdgeInsets.all(12.0),
+                child: isCompact
+                    ? Column(
+                        children: [
+                          _buildPaymentMethodTile(
+                            value: 'card',
+                            icon: Icons.credit_card,
+                            label: 'Credit Card',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildPaymentMethodTile(
+                            value: 'cash',
+                            icon: Icons.payments_outlined,
+                            label: 'Cash',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildPaymentMethodTile(
+                            value: 'online',
+                            icon: Icons.phonelink_setup,
+                            label: 'Online Payment',
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _buildPaymentMethodTile(
+                              value: 'card',
+                              icon: Icons.credit_card,
+                              label: 'Credit Card',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildPaymentMethodTile(
+                              value: 'cash',
+                              icon: Icons.payments_outlined,
+                              label: 'Cash',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildPaymentMethodTile(
+                              value: 'online',
+                              icon: Icons.phonelink_setup,
+                              label: 'Online Payment',
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPaymentMethodTile({
+    required String value,
+    required IconData icon,
+    required String label,
+  }) {
+    final isSelected = _paymentMethod == value;
+    return InkWell(
+      onTap: () {
+        setState(() => _paymentMethod = value);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColorStyle.secondaryAccent.withValues(alpha: 0.2)
+              : AppColorStyle.appBarColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            width: 2,
+            color: isSelected
+                ? AppColorStyle.secondaryAccent
+                : AppColorStyle.primaryAccent.withValues(alpha: 0.5),
+          ),
+        ),
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected
+                    ? AppColorStyle.secondaryAccent
+                    : AppColorStyle.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isSelected
+                        ? AppColorStyle.secondaryAccent
+                        : AppColorStyle.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -471,7 +685,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: _isLoading
             ? const CircularProgressIndicator(color: Colors.white)
             : Text(
-                'Ödemeyi Tamamla (₺${widget.finalTotal.toStringAsFixed(2)})',
+                'Complete Payment (₺${_effectiveFinalTotal.toStringAsFixed(2)})',
                 style: const TextStyle(fontSize: 16),
               ),
       ),

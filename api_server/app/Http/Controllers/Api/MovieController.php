@@ -10,6 +10,7 @@ use App\Models\Showtime;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class MovieController extends Controller
 {
@@ -115,7 +116,8 @@ class MovieController extends Controller
                     'current_page' => 1,
                     'per_page' => $limit,
                 ]
-            ]);
+            ], 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                ->header('Content-Type', 'application/json; charset=utf-8');
         } else {
             // Normal sayfalama
             $perPage = $request->get('per_page', 100);
@@ -125,7 +127,8 @@ class MovieController extends Controller
                 'success' => true,
                 'message' => 'Movies retrieved successfully',
                 'data' => $movies
-            ]);
+            ], 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                ->header('Content-Type', 'application/json; charset=utf-8');
         }
     }
 
@@ -261,15 +264,10 @@ class MovieController extends Controller
             
             // İki kaynaktan gelen filmleri birleştir
             $comingSoonMovies = $comingSoonMoviesFromFuture->concat($comingSoonMoviesFromMovies);
-            
-            // Coming Soon filmlerine ekstra bilgiler ekle
-            $comingSoonMovies->transform(function ($movie) {
-                if (method_exists($movie, 'getDaysUntilReleaseAttribute')) {
-                    $movie->days_until_release = $movie->days_until_release;
-                    $movie->status_label = $movie->status_label;
-                }
-                return $movie;
-            });
+
+            // ✅ Double-check classification to avoid swapped lists on mobile
+            $nowShowingMovies = $this->filterMoviesByCategory($nowShowingMovies, $today, 'now_showing');
+            $comingSoonMovies = $this->filterMoviesByCategory($comingSoonMovies, $today, 'coming_soon');
             
             return response()->json([
                 'success' => true,
@@ -289,7 +287,8 @@ class MovieController extends Controller
                         'coming_soon_count' => $comingSoonMovies->count(),
                     ]
                 ]
-            ]);
+            ], 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                ->header('Content-Type', 'application/json; charset=utf-8');
             
         } catch (\Exception $e) {
             \Log::error('MovieController::distributed error: ' . $e->getMessage());
@@ -572,5 +571,91 @@ public function getShowtimesForMovie(string $movieId, Request $request): JsonRes
         ], 500);
     }
 }
-    
+
+    /**
+     * Normalize release date strings/carbon instances coming from different models.
+     */
+    private function normalizeReleaseDate(mixed $value): ?Carbon
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        if ($value instanceof Carbon) {
+            return $value->copy()->startOfDay();
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value)->startOfDay();
+        }
+
+        $stringValue = is_string($value) ? trim($value) : (string) $value;
+
+        if ($stringValue === '') {
+            return null;
+        }
+
+        $formats = [
+            'Y-m-d',
+            'Y-m-d H:i:s',
+            'd-m-Y',
+            'd/m/Y',
+            'm/d/Y',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                return Carbon::createFromFormat($format, $stringValue)->startOfDay();
+            } catch (\Throwable $th) {
+                continue;
+            }
+        }
+
+        try {
+            return Carbon::parse($stringValue)->startOfDay();
+        } catch (\Throwable $th) {
+            return null;
+        }
+    }
+
+    /**
+     * Ensures that a collection only contains items that belong to the desired category.
+     */
+    private function filterMoviesByCategory(Collection $collection, Carbon $today, string $category): Collection
+    {
+        return $collection->filter(function ($movie) use ($today, $category) {
+            $releaseDate = $this->normalizeReleaseDate($movie->release_date ?? null);
+            $isNowShowing = !$releaseDate || $releaseDate->lessThanOrEqualTo($today);
+            $isComingSoon = $releaseDate && $releaseDate->greaterThan($today);
+
+            if ($category === 'now_showing' && $isNowShowing) {
+                $movie->category = 'now_showing';
+                return true;
+            }
+
+            if ($category === 'coming_soon' && $isComingSoon) {
+                $movie->category = 'coming_soon';
+                $movie->days_until_release = $movie->days_until_release
+                    ?? $this->calculateDaysUntilRelease($releaseDate);
+                return true;
+            }
+
+            return false;
+        })->values();
+    }
+
+    private function calculateDaysUntilRelease(?Carbon $releaseDate): ?int
+    {
+        if (!$releaseDate) {
+            return null;
+        }
+
+        $today = now()->startOfDay();
+
+        if ($releaseDate->lessThanOrEqualTo($today)) {
+            return 0;
+        }
+
+        return $today->diffInDays($releaseDate);
+    }
 }

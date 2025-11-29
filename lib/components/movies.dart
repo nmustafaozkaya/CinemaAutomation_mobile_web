@@ -119,36 +119,120 @@ DateTime parseDate(dynamic dateStr) {
   }
 }
 
-Future<List<Movie>> fetchMovies(String url) async {
+Future<List<Movie>> fetchMovies(
+  String url, {
+  int retryCount = 0,
+  int maxRetries = 3,
+}) async {
   try {
     // Web'le aynı endpoint kullan - basit ve temiz JSON döndürür
-    final response = await http.get(
-      Uri.parse(url),
-      headers: const {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    ).timeout(
-      const Duration(seconds: 30),
-      onTimeout: () {
-        throw TimeoutException('İstek zaman aşımına uğradı');
-      },
-    );
+    final response = await http
+        .get(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
+          },
+        )
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException('İstek zaman aşımına uğradı');
+          },
+        );
 
     if (response.statusCode != 200) {
       debugPrint('⚠️ HTTP hatası: ${response.statusCode}');
+      // Retry mekanizması
+      if (retryCount < maxRetries) {
+        debugPrint('⚠️ Retrying... (${retryCount + 1}/$maxRetries)');
+        await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+        return fetchMovies(
+          url,
+          retryCount: retryCount + 1,
+          maxRetries: maxRetries,
+        );
+      }
       return [];
     }
 
     if (response.body.isEmpty) {
+      // Retry mekanizması
+      if (retryCount < maxRetries) {
+        debugPrint(
+          '⚠️ Empty response, retrying... (${retryCount + 1}/$maxRetries)',
+        );
+        await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+        return fetchMovies(
+          url,
+          retryCount: retryCount + 1,
+          maxRetries: maxRetries,
+        );
+      }
       return [];
     }
 
-    // JSON parse - web'deki gibi basit
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    // JSON string'i temizle - Unicode ve escape karakterlerini düzelt
+    String cleanedJson = sanitizeJsonString(response.body);
+
+    // "Unexpected end of input" hatasını kontrol et - JSON eksik/kesik olabilir
+    if (cleanedJson.trim().isEmpty ||
+        (!cleanedJson.trim().endsWith('}') &&
+            !cleanedJson.trim().endsWith(']'))) {
+      debugPrint('⚠️ JSON eksik görünüyor, retrying...');
+      if (retryCount < maxRetries) {
+        await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+        return fetchMovies(
+          url,
+          retryCount: retryCount + 1,
+          maxRetries: maxRetries,
+        );
+      }
+      return [];
+    }
+
+    // JSON parse - temizlenmiş JSON'u kullan
+    Map<String, dynamic> data;
+    try {
+      data = jsonDecode(cleanedJson) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('⚠️ JSON parse hatası (sanitize sonrası): $e');
+      // Eğer sanitize sonrası da parse edilemezse, orijinal JSON'u dene
+      try {
+        data = jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (e2) {
+        debugPrint('⚠️ Orijinal JSON da parse edilemedi: $e2');
+        // Retry mekanizması
+        if (retryCount < maxRetries) {
+          debugPrint(
+            '⚠️ JSON parse error, retrying... (${retryCount + 1}/$maxRetries)',
+          );
+          await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+          return fetchMovies(
+            url,
+            retryCount: retryCount + 1,
+            maxRetries: maxRetries,
+          );
+        }
+        return [];
+      }
+    }
 
     // Response yapısını kontrol et
     if (data['success'] != true && data['success'] != null) {
+      // Retry mekanizması
+      if (retryCount < maxRetries) {
+        debugPrint(
+          '⚠️ Invalid response, retrying... (${retryCount + 1}/$maxRetries)',
+        );
+        await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+        return fetchMovies(
+          url,
+          retryCount: retryCount + 1,
+          maxRetries: maxRetries,
+        );
+      }
       return [];
     }
 
@@ -180,12 +264,44 @@ Future<List<Movie>> fetchMovies(String url) async {
     return movies;
   } on TimeoutException {
     debugPrint('⚠️ Request timeout');
+    // Retry mekanizması
+    if (retryCount < maxRetries) {
+      debugPrint('⚠️ Timeout, retrying... (${retryCount + 1}/$maxRetries)');
+      await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+      return fetchMovies(
+        url,
+        retryCount: retryCount + 1,
+        maxRetries: maxRetries,
+      );
+    }
     return [];
   } on FormatException catch (e) {
     debugPrint('⚠️ JSON parse hatası: $e');
+    // Retry mekanizması
+    if (retryCount < maxRetries) {
+      debugPrint(
+        '⚠️ JSON parse error, retrying... (${retryCount + 1}/$maxRetries)',
+      );
+      await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+      return fetchMovies(
+        url,
+        retryCount: retryCount + 1,
+        maxRetries: maxRetries,
+      );
+    }
     return [];
   } catch (e) {
     debugPrint('⚠️ fetchMovies hatası: $e');
+    // Retry mekanizması
+    if (retryCount < maxRetries) {
+      debugPrint('⚠️ Error, retrying... (${retryCount + 1}/$maxRetries)');
+      await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+      return fetchMovies(
+        url,
+        retryCount: retryCount + 1,
+        maxRetries: maxRetries,
+      );
+    }
     return [];
   }
 }
@@ -193,23 +309,22 @@ Future<List<Movie>> fetchMovies(String url) async {
 String sanitizeJsonString(String input) {
   var result = input;
 
-  // Octal kaçışlarını (ör. \013) Unicode biçimine çevir
-  result = result.replaceAllMapped(RegExp(r'\\([0-7]{1,3})'), (match) {
-    final octal = match.group(1);
-    if (octal == null) {
-      return match.group(0) ?? '';
+  // Önce geçersiz unicode escape'leri düzelt (ör. \u0fcm => \u0fcm, \u013 => \u0013)
+  // 1-3 haneli unicode escape'leri 4 haneye tamamla, ama sonrasında harf varsa onu koru
+  result = result.replaceAllMapped(RegExp(r'\\u([0-9A-Fa-f]{1,3})([a-zA-Z])'), (
+    match,
+  ) {
+    final hexDigits = match.group(1);
+    final letter = match.group(2);
+    if (hexDigits != null && letter != null) {
+      // 4 haneye tamamla ve harfi koru
+      final padded = hexDigits.padLeft(4, '0');
+      return '\\u$padded$letter';
     }
-
-    final intValue = int.tryParse(octal, radix: 8);
-    if (intValue == null) {
-      return match.group(0) ?? '';
-    }
-
-    final hex = intValue.toRadixString(16).padLeft(4, '0');
-    return '\\u$hex';
+    return match.group(0) ?? '';
   });
 
-  // Eksik uzunluktaki Unicode kaçışlarını tamamla (ör. \u013 => \u0013)
+  // 1-3 haneli unicode escape'leri 4 haneye tamamla (harf yoksa)
   result = result.replaceAllMapped(
     RegExp(r'\\u([0-9A-Fa-f]{1,3})(?![0-9A-Fa-f])'),
     (match) {
@@ -217,17 +332,102 @@ String sanitizeJsonString(String input) {
       if (hexDigits == null) {
         return match.group(0) ?? '';
       }
-
+      // 4 haneye tamamla
       final padded = hexDigits.padLeft(4, '0');
       return '\\u$padded';
     },
   );
+
+  // Geçersiz escape sequence'leri düzelt (ör. \00fczle => \u00fc)
+  // Pattern: \0[0-9a-fA-F]{1,3}[a-zA-Z] şeklindeki hataları düzelt
+  result = result.replaceAllMapped(RegExp(r'\\(0[0-9a-fA-F]{1,3})([a-zA-Z])'), (
+    match,
+  ) {
+    final hexPart = match.group(1);
+    final letter = match.group(2);
+    if (hexPart != null && letter != null) {
+      // Octal olarak parse et ve unicode'a çevir
+      try {
+        final intValue = int.tryParse(hexPart, radix: 8);
+        if (intValue != null && intValue >= 0 && intValue <= 255) {
+          final hex = intValue.toRadixString(16).padLeft(4, '0');
+          return '\\u$hex$letter';
+        }
+      } catch (e) {
+        // Parse edilemezse olduğu gibi bırak
+      }
+    }
+    return match.group(0) ?? '';
+  });
+
+  // Geçersiz escape sequence'leri düzelt (ör. \00fczle => \u00fc)
+  // Pattern: \0[0-9]{1,3}[a-zA-Z] şeklindeki hataları düzelt (sadece rakam)
+  result = result.replaceAllMapped(RegExp(r'\\(0[0-9]{1,3})([a-zA-Z])'), (
+    match,
+  ) {
+    final octalPart = match.group(1);
+    final letter = match.group(2);
+    if (octalPart != null && letter != null) {
+      // Octal olarak parse et ve unicode'a çevir
+      try {
+        final intValue = int.tryParse(octalPart, radix: 8);
+        if (intValue != null && intValue >= 0 && intValue <= 255) {
+          final hex = intValue.toRadixString(16).padLeft(4, '0');
+          return '\\u$hex$letter';
+        }
+      } catch (e) {
+        // Parse edilemezse olduğu gibi bırak
+      }
+    }
+    return match.group(0) ?? '';
+  });
+
+  // Octal kaçışlarını (ör. \013) Unicode biçimine çevir
+  result = result.replaceAllMapped(RegExp(r'\\([0-7]{1,3})(?![0-9A-Fa-f])'), (
+    match,
+  ) {
+    final octal = match.group(1);
+    if (octal == null) {
+      return match.group(0) ?? '';
+    }
+
+    final intValue = int.tryParse(octal, radix: 8);
+    if (intValue == null || intValue < 0 || intValue > 255) {
+      return match.group(0) ?? '';
+    }
+
+    final hex = intValue.toRadixString(16).padLeft(4, '0');
+    return '\\u$hex';
+  });
 
   // Eksik virgül düzeltmeleri (ör. "id":83"title" => "id":83,"title")
   result = result.replaceAllMapped(
     RegExp(r'":(\d+)"([a-zA-Z_][a-zA-Z0-9_]*)'),
     (match) {
       return '":${match.group(1)},"${match.group(2)}';
+    },
+  );
+
+  // Eksik tırnak düzeltmeleri (ör. "status":upcoming" => "status":"upcoming")
+  result = result.replaceAllMapped(
+    RegExp(
+      r'"([a-zA-Z_][a-zA-Z0-9_]*)"\s*:\s*([a-zA-Z_][a-zA-Z0-9_]*)"([,}\]])',
+    ),
+    (match) {
+      final key = match.group(1);
+      final value = match.group(2);
+      final ending = match.group(3);
+      if (key != null && value != null && ending != null) {
+        // Eğer değer sayı, boolean veya null değilse, tırnak ekle
+        if (int.tryParse(value) == null &&
+            double.tryParse(value) == null &&
+            value != 'true' &&
+            value != 'false' &&
+            value != 'null') {
+          return '"$key":"$value"$ending';
+        }
+      }
+      return match.group(0) ?? '';
     },
   );
 

@@ -54,12 +54,12 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
           isLoading = false;
         });
       } else {
-        throw Exception("Sunucudan geçersiz yanıt");
+        throw Exception("Invalid response from server");
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Bilet türleri alınamadı.")),
+          const SnackBar(content: Text("Could not load ticket types.")),
         );
       }
       setState(() {
@@ -80,8 +80,7 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
     return total;
   }
 
-  double get serviceFeeTotal =>
-      totalSelectedTickets * _serviceFeePerTicket;
+  double get serviceFeeTotal => totalSelectedTickets * _serviceFeePerTicket;
 
   double get grandTotal => totalPrice + serviceFeeTotal;
 
@@ -120,7 +119,7 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
         backgroundColor: AppColorStyle.appBarColor,
         iconTheme: IconThemeData(color: AppColorStyle.textPrimary),
         title: Text(
-          'Select Ticket',
+          'Select Ticket Type',
           style: TextStyle(color: AppColorStyle.textPrimary),
         ),
       ),
@@ -313,8 +312,8 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                           children: [
                             Text(
                               totalSelectedTickets > 0
-                                  ? 'Hizmet Bedeli (${totalSelectedTickets} x ${_serviceFeePerTicket.toStringAsFixed(2)} ₺)'
-                                  : 'Hizmet Bedeli (₺${_serviceFeePerTicket.toStringAsFixed(2)} / bilet)',
+                                  ? 'Service fee ($totalSelectedTickets x ${_serviceFeePerTicket.toStringAsFixed(2)} ₺)'
+                                  : 'Service fee (₺${_serviceFeePerTicket.toStringAsFixed(2)} / ticket)',
                               style: TextStyle(
                                 fontSize: 16,
                                 color: AppColorStyle.textSecondary,
@@ -341,7 +340,7 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Toplam (hizmet bedeli dahil):',
+                              'Total (incl. service fee):',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
@@ -368,7 +367,7 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: anySelected
-                            ? AppColorStyle.primaryAccent
+                            ? Colors.amber
                             : Colors.grey.shade700,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -392,10 +391,10 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                             }
                           : null,
                       child: Text(
-                        'Proceed',
+                        'Continue to Seat Selection',
                         style: TextStyle(
                           fontSize: 18,
-                          color: AppColorStyle.textPrimary,
+                          color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

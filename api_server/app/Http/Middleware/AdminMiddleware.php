@@ -16,8 +16,8 @@ class AdminMiddleware
 
         $user = Auth::user();
         
-        // Admin veya Super Admin değilse
-        if (!$user->isAdmin() && !$user->isSuperAdmin()) {
+        // Admin değilse yetkilendirme hatası göster
+        if (!$user->isAdmin()) {
             return redirect('/')->with('error', 'Bu sayfaya erişim yetkiniz bulunmamaktadır.');
         }
 

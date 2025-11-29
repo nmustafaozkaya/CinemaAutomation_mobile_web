@@ -35,10 +35,10 @@ class Ticket extends Model
     public function getCustomerTypeLabel()
     {
         $labels = [
-            self::CUSTOMER_TYPE_ADULT => 'Tam Bilet',
-            self::CUSTOMER_TYPE_STUDENT => 'Öğrenci',
-            self::CUSTOMER_TYPE_SENIOR => 'Emekli',
-            self::CUSTOMER_TYPE_CHILD => 'Çocuk'
+            self::CUSTOMER_TYPE_ADULT => 'Adult',
+            self::CUSTOMER_TYPE_STUDENT => 'Student',
+            self::CUSTOMER_TYPE_SENIOR => 'Retired',
+            self::CUSTOMER_TYPE_CHILD => 'Child'
         ];
 
         return $labels[$this->customer_type] ?? 'Bilinmiyor';

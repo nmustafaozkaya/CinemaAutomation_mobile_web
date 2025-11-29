@@ -1,5 +1,5 @@
 class ApiConnection {
-  static const hostConnection = 'http://10.100.6.116:8000/api';
+  static const hostConnection = 'http://10.0.2.2:8000/api';
 
   static String resolveMediaUrl(String url) {
     if (url.isEmpty) return url;

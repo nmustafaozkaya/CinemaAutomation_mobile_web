@@ -27,7 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> registerAndSaveUserRecord() async {
     // Şifrelerin eşleşip eşleşmediğini kontrol et
     if (passwordController.text.trim() != rePasswordController.text.trim()) {
-      Fluttertoast.showToast(msg: "Şifreler eşleşmiyor!");
+      Fluttertoast.showToast(msg: "Passwords do not match!");
       return;
     }
 
@@ -79,7 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         if (resBodyOfSignUp['success'] == true) {
-          Fluttertoast.showToast(msg: 'Kayıt başarılı!');
+          Fluttertoast.showToast(msg: 'Registration successful!');
 
           var userData = resBodyOfSignUp['data']['user'];
           var token = resBodyOfSignUp['data']['token'];
@@ -108,14 +108,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         } else {
           Fluttertoast.showToast(
             msg:
-                'Hata: ${resBodyOfSignUp['message'] ?? 'Bilinmeyen bir hata oluştu.'}',
+                'Error: ${resBodyOfSignUp['message'] ?? 'An unknown error occurred.'}',
             toastLength: Toast.LENGTH_LONG,
           );
         }
       } else if (res.statusCode == 422) {
         // Sunucudan gelen validasyon hatalarını daha anlaşılır göster
         final errors = resBodyOfSignUp['errors'] as Map<String, dynamic>;
-        String errorMessage = "Lütfen hataları düzeltin:\n";
+        String errorMessage = "Please fix the following issues:\n";
         errors.forEach((key, value) {
           errorMessage += "- ${value[0]}\n";
         });
@@ -126,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else {
         Fluttertoast.showToast(
           msg:
-              'Sunucu hatası: ${res.statusCode} - ${resBodyOfSignUp['message'] ?? 'Bilinmeyen hata'}',
+              'Server error: ${res.statusCode} - ${resBodyOfSignUp['message'] ?? 'Unknown error'}',
           toastLength: Toast.LENGTH_LONG,
         );
       }
@@ -137,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       Fluttertoast.showToast(
-        msg: "Bağlantı hatası: $e",
+        msg: "Connection error: $e",
         toastLength: Toast.LENGTH_LONG,
       );
     }
@@ -162,7 +162,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     RoundedInputField(
                       controller: nameController,
-                      hintText: 'Ad Soyad',
+                      hintText: 'Full Name',
                       icon: Icons.person,
                       isEmail: false,
                       isPassword: false,
@@ -178,7 +178,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     RoundedInputField(
                       controller: phoneController,
-                      hintText: 'Telefon',
+                      hintText: 'Phone',
                       icon: Icons.phone,
                       isEmail: false,
                       isPassword: false,
@@ -222,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             const SizedBox(width: 15),
                             Text(
                               birthDate == null
-                                  ? 'Doğum Tarihi'
+                                  ? 'Date of Birth'
                                   : '${birthDate!.day.toString().padLeft(2, '0')} ${birthDate!.month.toString().padLeft(2, '0')} ${birthDate!.year}',
                               style: TextStyle(
                                 color: birthDate == null ? Colors.grey : Colors.black87,
@@ -248,14 +248,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             children: [
                               Icon(Icons.person, color: Color(0xFF5FCFAF)),
                               SizedBox(width: 15),
-                              Text('Seçiniz', style: TextStyle(color: Colors.grey)),
+                              Text('Select', style: TextStyle(color: Colors.grey)),
                             ],
                           ),
                           icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF5FCFAF)),
                           items: const [
-                            DropdownMenuItem(value: 'male', child: Text('Erkek')),
-                            DropdownMenuItem(value: 'female', child: Text('Kadın')),
-                            DropdownMenuItem(value: 'other', child: Text('Diğer')),
+                            DropdownMenuItem(value: 'male', child: Text('Male')),
+                            DropdownMenuItem(value: 'female', child: Text('Female')),
+                            DropdownMenuItem(value: 'other', child: Text('Other')),
                           ],
                           onChanged: (String? value) {
                             setState(() {
@@ -267,7 +267,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     RoundedInputField(
                       controller: passwordController,
-                      hintText: 'Şifre',
+                      hintText: 'Password',
                       icon: Icons.lock,
                       isEmail: false,
                       isPassword: true,
@@ -275,18 +275,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     RoundedInputField(
                       controller: rePasswordController,
-                      hintText: 'Şifre Tekrar',
+                      hintText: 'Confirm Password',
                       icon: Icons.lock,
                       isEmail: false,
                       isPassword: true,
                       onChange: (value) {},
                     ),
                     RoundedButton(
-                      text: 'Kayıt Ol',
+                      text: 'Sign Up',
                       onPressed: () {
                         if (rePasswordController.text.trim() !=
                             passwordController.text.trim()) {
-                          Fluttertoast.showToast(msg: 'Şifreler eşleşmiyor!');
+                          Fluttertoast.showToast(msg: 'Passwords do not match!');
                         } else {
                           registerAndSaveUserRecord();
                         }
@@ -297,7 +297,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: const Text("Zaten hesabınız var mı? Giriş yapın"),
+                      child: const Text("Already have an account? Sign in"),
                     ),
                   ],
                 ),

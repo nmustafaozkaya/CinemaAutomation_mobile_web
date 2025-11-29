@@ -1,12 +1,12 @@
-<!-- Step 3: Seans Seçimi -->
+<!-- Step 3: Showtime Selection -->
 <div id="ticketStep3" class="ticket-step hidden">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-2xl font-bold text-white text-center flex-1">
-            <i class="fas fa-clock mr-2 text-purple-400"></i>Seans Seçiniz
+            <i class="fas fa-clock mr-2 text-purple-400"></i>Select a Showtime
         </h3>
         <button onclick="goBackToStep(2)"
             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i>Sinema Değiştir
+            <i class="fas fa-arrow-left mr-2"></i>Change Cinema
         </button>
     </div>
 
@@ -17,7 +17,7 @@
     <div class="mb-6">
         <div class="max-w-md mx-auto">
             <label class="block text-white text-sm font-medium mb-2">
-                <i class="fas fa-calendar mr-1"></i>Tarih Seçimi
+                <i class="fas fa-calendar mr-1"></i>Select a Date
             </label>
             <input type="date" id="dateFilter" onchange="filterShowtimesByDate(this.value)"
                 class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-purple-400 transition-all"
@@ -27,16 +27,16 @@
 
     <!-- Showtime Count Info -->
     <div id="showtimeCountInfo" class="text-center mb-4">
-        <span class="text-purple-300 text-sm">
+            <span class="text-purple-300 text-sm">
             <i class="fas fa-info-circle mr-1"></i>
-            <span id="filteredShowtimeCount">0</span> seans bulundu
+            <span id="filteredShowtimeCount">0</span> showtimes found
         </span>
     </div>
 
     <!-- Loading State -->
     <div id="showtimeLoadingState" class="text-center py-12 hidden">
         <div class="loading w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p class="text-white">Seanslar yükleniyor...</p>
+        <p class="text-white">Showtimes are loading...</p>
     </div>
     <!-- Showtimes Grid -->
     <div id="showtimeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -48,24 +48,24 @@
         <div class="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fas fa-clock text-gray-400 text-3xl"></i>
         </div>
-        <h4 class="text-xl font-bold text-white mb-2">Seans Bulunamadı</h4>
-        <p class="text-gray-400">Seçilen kriterlere uygun seans bulunmuyor.</p>
+        <h4 class="text-xl font-bold text-white mb-2">No Showtimes Found</h4>
+        <p class="text-gray-400">No showtimes match your filters.</p>
         <button onclick="clearShowtimeFilters()"
             class="mt-4 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium">
-            <i class="fas fa-refresh mr-2"></i>Filtreleri Temizle
+            <i class="fas fa-refresh mr-2"></i>Clear Filters
         </button>
     </div>
 </div>
 
-<!-- Step 5: Koltuk Seçimi -->
+<!-- Step 5: Seat Selection -->
 <div id="ticketStep5" class="ticket-step hidden">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-2xl font-bold text-white text-center flex-1">
-            <i class="fas fa-couch mr-2 text-green-400"></i>Koltuk Seçiniz (Maksimum 6 adet)
+            <i class="fas fa-couch mr-2 text-green-400"></i>Pick Seats (Maximum 6)
         </h3>
         <button onclick="goBackToStep(4)"
             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i>Bilet Tipi Değiştir
+            <i class="fas fa-arrow-left mr-2"></i>Change Ticket Type
         </button>
     </div>
 
@@ -74,16 +74,18 @@
 
     <!-- Seat Map Container -->
     <div class="bg-white/10 p-6 rounded-xl">
+        <!-- Refresh Button -->
+        <div class="text-center mb-4">
+            <button onclick="window.seatMap.manualRefresh()"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                <i class="fas fa-sync-alt mr-2"></i>Refresh Seats
+            </button>
+        </div>
+        
         <!-- Screen -->
         <div class="text-center mb-6">
             <div class="bg-gray-800 text-white px-8 py-2 rounded-lg inline-block">
-                <i class="fas fa-desktop mr-2"></i>PERDE
-            </div>
-            <div class="mt-4">
-                <button onclick="window.seatMap.manualRefresh()"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                    <i class="fas fa-sync-alt mr-2"></i>Koltukları Güncelle
-                </button>
+                <i class="fas fa-desktop mr-2"></i>SCREEN
             </div>
         </div>
 
@@ -91,7 +93,7 @@
         <div id="seatLoadingState" class="text-center py-12">
             <div class="loading w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full mx-auto mb-4">
             </div>
-            <p class="text-white">Koltuklar yükleniyor...</p>
+            <p class="text-white">Seats are loading...</p>
         </div>
 
         <!-- Seat Map -->
@@ -101,26 +103,26 @@
         <div id="seatLegend" class="flex items-center justify-center space-x-8 mt-6 hidden">
             <div class="flex items-center">
                 <div class="w-6 h-6 bg-emerald-500 rounded-lg mr-2"></div>
-                <span class="text-white">Müsait</span>
+                <span class="text-white">Available</span>
             </div>
             <div class="flex items-center">
                 <div class="w-6 h-6 bg-red-500 rounded-lg mr-2"></div>
-                <span class="text-white">Dolu</span>
+                <span class="text-white">Taken</span>
             </div>
             <div class="flex items-center">
                 <div class="w-6 h-6 bg-blue-500 rounded-lg mr-2"></div>
-                <span class="text-white">Seçili</span>
+                <span class="text-white">Selected</span>
             </div>
         </div>
 
         <!-- Selected Seats Info -->
         <div class="text-center mt-4">
-            <div id="selectedSeatsInfo" class="text-white font-medium mb-2">Seçili koltuk yok</div>
+            <div id="selectedSeatsInfo" class="text-white font-medium mb-2">No seats selected</div>
             <div id="seatRequirementInfo" class="text-sm text-gray-300 mb-2"></div>
             <div id="selectedSeatsPrice" class="text-emerald-400 font-bold mb-4 hidden"></div>
             <button id="continueToPaymentStep" onclick="goToPayment()"
                 class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-bold hidden">
-                <i class="fas fa-arrow-right mr-2"></i>Ödemeye Geç
+                <i class="fas fa-arrow-right mr-2"></i>Proceed to Payment
             </button>
         </div>
     </div>
@@ -152,12 +154,12 @@
             this.autoCleanupOnLoad();
         }
         forceReset() {
-            // Tüm seçili koltukları serbest bırak
+            // Release every selected seat
             this.selectedSeats.forEach(async (seat) => {
                 try {
                     await axios.post(`/api/seats/${seat.id}/release`);
                 } catch (error) {
-                    console.error('Reset sırasında koltuk serbest bırakılamadı:', error);
+                    console.error('Seat could not be released during reset:', error);
                 }
             });
 
@@ -167,7 +169,7 @@
             this.updateSelectedSeatsInfo();
         }
 
-        //  Yumuşak reset - sadece UI'ı temizle, API'yi boşuna çağırma
+        // Soft reset - just clear the UI without hitting the API
         softReset() {
             this.selectedSeats = [];
             this.seatData = null;
@@ -185,33 +187,33 @@
             }
         }
 
-        // toggleSeat - Direk API'ye yazsın, iptal de edebilsin
+        // toggleSeat - persist via API and allow cancellations
         async toggleSeat(seatId, seatCode) {
 
             const existingIndex = this.selectedSeats.findIndex(s => s.id == seatId);
 
             if (existingIndex !== -1) {
-                //  KOLTUK İPTAL ET - API'den serbest bırak
+                // Cancel seat - release it via the API
                 try {
                     const response = await axios.post(`/api/seats/${seatId}/release`);
 
                     if (response.data.success) {
-                        // Başarılı iptal
+                        // Cancelled successfully
                         this.selectedSeats.splice(existingIndex, 1);
-                        console.log(`Koltuk ${seatCode} serbest bırakıldı`);
+                        console.log(`Seat ${seatCode} released`);
                     } else {
-                        alert('Koltuk iptal edilemedi!');
+                        alert('Seat could not be cancelled!');
                         return;
                     }
                 } catch (error) {
-                    console.error('Koltuk iptal hatası:', error);
-                    alert('Koltuk iptal edilemedi!');
+                    console.error('Seat cancellation error:', error);
+                    alert('Seat could not be cancelled!');
                     return;
                 }
             } else {
-                // KOLTUK SEÇ - API'ye direk rezerve et
+                // Select seat - reserve via the API
                 if (this.selectedSeats.length >= this.maxSeats) {
-                    alert(`Maksimum ${this.maxSeats} koltuk seçebilirsiniz!`);
+                    alert(`You can select at most ${this.maxSeats} seats!`);
                     return;
                 }
 
@@ -221,32 +223,32 @@
                     });
 
                     if (response.data.success) {
-                        // Başarılı rezervasyon
+                        // Reserved successfully
                         this.selectedSeats.push({ id: seatId, code: seatCode });
-                        console.log(`Koltuk ${seatCode} rezerve edildi`);
+                        console.log(`Seat ${seatCode} reserved`);
 
-                        // 10 dakika sonra otomatik serbest bırak
+                        // Auto release after 10 minutes
                         setTimeout(() => {
                             this.autoReleaseSeat(seatId, seatCode);
                         }, 10 * 60 * 1000); // 10 dakika
                     } else {                
-                        alert('Koltuk rezerve edilemedi! Başka biri seçmiş olabilir.');
+                        alert('Seat could not be reserved! Someone else may have taken it.');
 
                         return;
                     }
                 } catch (error) {
-                    console.error('Koltuk rezerve hatası:', error);
+                    console.error('Seat reservation error:', error);
                     if (error.response?.status === 400) {
-                        alert('Bu koltuk zaten başka biri tarafından seçilmiş!');
+                        alert('This seat has already been selected by someone else!');
                     } else {
-                        alert('Koltuk rezerve edilemedi!');
+                        alert('Seat could not be reserved!');
                     }
                     return;
                 }
             }
 
-            // UI'ı güncelle
-            await this.loadSeats(this.selectedShowtime.id); // Güncel durumu al
+            // Refresh UI
+            await this.loadSeats(this.selectedShowtime.id); // Pull latest status
             this.updateSelectedSeatsInfo();
 
             setTimeout(() => {
@@ -263,27 +265,27 @@
         }
 
 
-        //  Otomatik serbest bırakma (10 dakika sonra)
+        // Automatic release (after 10 minutes)
         async autoReleaseSeat(seatId, seatCode) {
             const seatIndex = this.selectedSeats.findIndex(s => s.id == seatId);
 
-            // Eğer koltuk hala seçili listesindeyse (satın alınmamışsa)
+            // Release only if the seat is still pending locally
             if (seatIndex !== -1) {
                 try {
                     await axios.post(`/api/seats/${seatId}/release`);
                     this.selectedSeats.splice(seatIndex, 1);
 
-                    console.log(`Koltuk ${seatCode} otomatik olarak serbest bırakıldı (10 dakika doldu)`);
+                    console.log(`Seat ${seatCode} auto released (10 minutes elapsed)`);
 
-                    // UI'ı güncelle
+                    // Refresh UI
                     await this.loadSeats(this.selectedShowtime.id);
                     this.updateSelectedSeatsInfo();
 
-                    // Kullanıcıyı uyar
-                    alert(`Koltuk ${seatCode} rezervasyon süresi dolduğu için serbest bırakıldı!`);
+                    // Notify user
+                    alert(`Seat ${seatCode} was released because the hold expired!`);
 
                 } catch (error) {
-                    console.error('Otomatik serbest bırakma hatası:', error);
+                    console.error('Automatic release error:', error);
                 }
             }
         }
@@ -291,7 +293,7 @@
         // loadSeats metodu
         async loadSeats(showtimeId) {
             try {
-                //   Koltukları yüklemeden önce cleanup yap
+                // Run cleanup before fetching seats
                 await this.autoCleanupOnLoad();
 
                 this.showLoading();
@@ -299,28 +301,28 @@
                 const response = await axios.get(`/api/showtimes/${showtimeId}/available-seats`);
                 this.seatData = response.data.data;
 
-                // Status'e göre ayır (yeni API response formatı)
+                // Split by status (new API response)
                 if (this.seatData.seats) {
                     this.renderSeatMapWithStatus();
                 } else {
-                    // Eski format için fallback
+                    // Fallback for legacy format
                     this.renderSeatMap();
                 }
 
                 this.showSeatMap();
 
             } catch (error) {
-                console.error('Koltuklar yüklenemedi:', error);
+                console.error('Seats could not be loaded:', error);
                 this.renderMockSeatMap();
                 this.showSeatMap();
             }
         }
 
-        //  Seçili koltukları mavi göster
+        // Highlight selected seats in blue
         renderSeatMapWithStatus() {
             const { available = [], occupied = [], pending = [] } = this.seatData.seats;
 
-            // Tüm koltukları birleştir
+            // Combine all seats
             const allSeats = [
                 ...available.map(s => ({ ...s, status: 'available' })),
                 ...occupied.map(s => ({ ...s, status: 'occupied' })),
@@ -341,43 +343,66 @@
                 html += `<div class="w-8 text-center font-bold text-white">${row}</div>`;
 
                 seatsByRow[row].sort((a, b) => a.number - b.number).forEach(seat => {
-                    // Bu koltuğun bizim seçili listemizde olup olmadığını kontrol et
+                    // Check whether we already selected this seat
                     const isMySelected = this.selectedSeats.some(s => s.id == seat.id);
 
-                    let bgColor = 'bg-red-500 cursor-not-allowed';
+                    let bgColor = 'style="background-color: #cbcbcb;"';
                     let hoverClass = '';
                     let clickHandler = '';
                     let statusText = this.getStatusText(seat.status);
 
                     switch (seat.status) {
+                        case 'Blank':
+                            bgColor = 'style="background-color: #10b981;"';
+                            hoverClass = 'hover:opacity-80';
+                            clickHandler = `onclick="window.seatMap.toggleSeat(${seat.id}, '${seat.row}${seat.number}')"`;
+                            break;
+                        case 'Filled':
+                            bgColor = 'style="background-color: #cbcbcb;"';
+                            statusText = 'Sold';
+                            break;
+                        case 'In Another Basket':
+                            // If we own this seat, allow cancel
+                            if (isMySelected) {
+                                bgColor = 'style="background-color: #f8e71c;"';
+                                hoverClass = 'hover:opacity-80';
+                                clickHandler = `onclick="window.seatMap.toggleSeat(${seat.id}, '${seat.row}${seat.number}')"`;
+                                statusText = 'Selected (Cancelable)';
+                            } else {
+                                bgColor = 'style="background-color: #ff4061;"';
+                                statusText = 'Reserved (Someone else)';
+                            }
+                            break;
+                        // Backward compatibility
                         case 'available':
-                            bgColor = 'bg-emerald-500 cursor-pointer';
-                            hoverClass = 'hover:bg-emerald-400';
+                            bgColor = 'style="background-color: #10b981;"';
+                            hoverClass = 'hover:opacity-80';
                             clickHandler = `onclick="window.seatMap.toggleSeat(${seat.id}, '${seat.row}${seat.number}')"`;
                             break;
                         case 'occupied':
-                            bgColor = 'bg-red-500 cursor-not-allowed';
-                            statusText = 'Satılmış';
+                            bgColor = 'style="background-color: #cbcbcb;"';
+                            statusText = 'Sold';
                             break;
                         case 'pending':
-                            // Eğer bu bizim seçtiğimiz koltuksa, mavi yap ve iptal edilebilir yap
+                            // If we own this seat, allow cancel
                             if (isMySelected) {
-                                bgColor = 'bg-blue-500 cursor-pointer';
-                                hoverClass = 'hover:bg-blue-400';
+                                bgColor = 'style="background-color: #f8e71c;"';
+                                hoverClass = 'hover:opacity-80';
                                 clickHandler = `onclick="window.seatMap.toggleSeat(${seat.id}, '${seat.row}${seat.number}')"`;
-                                statusText = 'Seçili (İptal edilebilir)';
+                                statusText = 'Selected (Cancelable)';
                             } else {
-                                bgColor = 'bg-yellow-500 cursor-not-allowed';
-                                statusText = 'Rezerve (Başkası)';
+                                bgColor = 'style="background-color: #ff4061;"';
+                                statusText = 'Reserved (Someone else)';
                             }
                             break;
                     }
 
                     html += `
-                        <button class="seat w-8 h-8 ${bgColor} ${hoverClass} text-white text-xs rounded-lg font-bold transition-all transform hover:scale-110"
+                        <button class="seat w-8 h-8 ${hoverClass} text-white text-xs rounded-lg font-bold transition-all transform hover:scale-110"
+                                ${bgColor}
                                 ${clickHandler}
                                 title="${seat.row}${seat.number} - ${statusText}">
-                            ${seat.number}
+                            ${seat.row}${seat.number}
                         </button>
                     `;
                 });
@@ -410,24 +435,27 @@
                     const isAvailable = this.seatData.available_seats.some(s => s.id === seat.id);
                     const isSelected = this.selectedSeats.some(s => s.id === seat.id);
 
-                    let bgColor = 'bg-red-500 cursor-not-allowed';
+                    let bgColor = 'style="background-color: #cbcbcb;"';
                     let hoverClass = '';
+                    let clickHandler = 'disabled';
 
                     if (isAvailable) {
-                        bgColor = 'bg-emerald-500 cursor-pointer';
-                        hoverClass = 'hover:bg-emerald-400';
+                        bgColor = 'style="background-color: #10b981;"';
+                        hoverClass = 'hover:opacity-80';
+                        clickHandler = `onclick="window.seatMap.toggleSeat(${seat.id}, '${seat.row}${seat.number}')"`;
                     }
 
                     if (isSelected) {
-                        bgColor = 'bg-blue-500';
-                        hoverClass = 'hover:bg-blue-400';
+                        bgColor = 'style="background-color: #f8e71c;"';
+                        hoverClass = 'hover:opacity-80';
                     }
 
                     html += `
-                        <button class="seat w-8 h-8 ${bgColor} ${hoverClass} text-white text-xs rounded-lg font-bold transition-all transform hover:scale-110"
-                                ${isAvailable ? `onclick="window.seatMap.toggleSeat(${seat.id}, '${seat.row}${seat.number}')"` : 'disabled'}
-                                title="${seat.row}${seat.number} - ${isAvailable ? 'Müsait' : 'Dolu'}">
-                            ${seat.number}
+                        <button class="seat w-8 h-8 ${hoverClass} text-white text-xs rounded-lg font-bold transition-all transform hover:scale-110 cursor-pointer"
+                                ${bgColor}
+                                ${isAvailable ? clickHandler : 'disabled'}
+                                title="${seat.row}${seat.number} - ${isAvailable ? 'Available' : 'Taken'}">
+                            ${seat.row}${seat.number}
                         </button>
                     `;
                 });
@@ -453,24 +481,25 @@
                     const isOccupied = Math.random() < 0.3;
                     const isSelected = this.selectedSeats.some(s => s.id === seatId);
 
-                    let bgColor = 'bg-emerald-500 cursor-pointer';
-                    let hoverClass = 'hover:bg-emerald-400';
+                    let bgColor = 'style="background-color: #10b981;"';
+                    let hoverClass = 'hover:opacity-80';
 
                     if (isOccupied) {
-                        bgColor = 'bg-red-500 cursor-not-allowed';
+                        bgColor = 'style="background-color: #cbcbcb;"';
                         hoverClass = '';
                     }
 
                     if (isSelected) {
-                        bgColor = 'bg-blue-500';
-                        hoverClass = 'hover:bg-blue-400';
+                        bgColor = 'style="background-color: #f8e71c;"';
+                        hoverClass = 'hover:opacity-80';
                     }
 
                     html += `
-                        <button class="seat w-8 h-8 ${bgColor} ${hoverClass} text-white text-xs rounded-lg font-bold transition-all transform hover:scale-110"
+                        <button class="seat w-8 h-8 ${hoverClass} text-white text-xs rounded-lg font-bold transition-all transform hover:scale-110 cursor-pointer"
+                                ${bgColor}
                                 ${!isOccupied ? `onclick="window.seatMap.toggleSeat('${seatId}', '${seatId}')"` : 'disabled'}
-                                title="${seatId} - ${isOccupied ? 'Dolu' : 'Müsait'}">
-                            ${seat}
+                                title="${seatId} - ${isOccupied ? 'Taken' : 'Available'}">
+                            ${row}${seat}
                         </button>
                     `;
                 }
@@ -481,13 +510,17 @@
             this.mapElement.innerHTML = html;
         }
 
-        // Diğer metodlar
+        // Additional helpers
         getStatusText(status) {
             switch (status) {
-                case 'available': return 'Müsait';
-                case 'occupied': return 'Satılmış';
-                case 'pending': return 'Rezerve';
-                default: return 'Bilinmiyor';
+                case 'Blank': return 'Blank';
+                case 'Filled': return 'Filled';
+                case 'In Another Basket': return 'In Another Basket';
+                // Backward compatibility
+                case 'available': return 'Available';
+                case 'occupied': return 'Sold';
+                case 'pending': return 'Reserved';
+                default: return 'Unknown';
             }
         }
 
@@ -495,11 +528,11 @@
             const requiredSeats = window.paymentForm?.getTotalTicketCount() || 0;
 
             if (this.selectedSeats.length === 0) {
-                this.infoElement.textContent = 'Seçili koltuk yok';
+                this.infoElement.textContent = 'No seats selected';
                 if (this.requirementElement) {
                     this.requirementElement.textContent = requiredSeats > 0
-                        ? `Lütfen ${requiredSeats} koltuk seçin.`
-                        : 'Devam etmek için önce bilet tiplerini seçin.';
+                        ? `Please select ${requiredSeats} seats.`
+                        : 'Select ticket types before continuing.';
                     this.requirementElement.classList.remove('text-emerald-300', 'text-red-400');
                     this.requirementElement.classList.add('text-gray-300');
                 }
@@ -509,12 +542,12 @@
                 }
             } else {
                 const seatCodes = this.selectedSeats.map(s => s.code).join(', ');
-                this.infoElement.textContent = `${this.selectedSeats.length} koltuk seçili: ${seatCodes}`;
+                this.infoElement.textContent = `${this.selectedSeats.length} seats selected: ${seatCodes}`;
 
                 // Show estimated price
                 if (this.selectedShowtime && this.selectedShowtime.price) {
                     const estimatedTotal = this.selectedSeats.length * this.selectedShowtime.price;
-                    this.priceElement.textContent = `Tahmini Toplam: ₺${estimatedTotal.toFixed(2)}`;
+                    this.priceElement.textContent = `Estimated Total: ₺${estimatedTotal.toFixed(2)}`;
                     this.priceElement.classList.remove('hidden');
                 }
 
@@ -522,8 +555,8 @@
                     if (requiredSeats > 0 && this.selectedSeats.length !== requiredSeats) {
                         const diff = requiredSeats - this.selectedSeats.length;
                         const text = diff > 0
-                            ? `Devam etmek için ${diff} koltuk daha seçin.`
-                            : `Lütfen ${Math.abs(diff)} koltuğu iptal edin.`;
+                            ? `Select ${diff} more seats to continue.`
+                            : `Please release ${Math.abs(diff)} seats.`;
                         this.requirementElement.textContent = text;
                         this.requirementElement.classList.remove('text-emerald-300', 'text-gray-300');
                         this.requirementElement.classList.add('text-red-400');
@@ -531,14 +564,14 @@
                             this.continueBtn.classList.add('hidden');
                         }
                     } else if (requiredSeats > 0) {
-                        this.requirementElement.textContent = 'Harika! Bilet sayısı ile koltuk sayısı eşleşti.';
+                        this.requirementElement.textContent = 'Great! Ticket and seat counts match.';
                         this.requirementElement.classList.remove('text-red-400', 'text-gray-300');
                         this.requirementElement.classList.add('text-emerald-300');
                         if (this.continueBtn) {
                             this.continueBtn.classList.remove('hidden');
                         }
                     } else {
-                        this.requirementElement.textContent = 'Bilet tipi belirlenmedi.';
+                        this.requirementElement.textContent = 'Ticket type not selected yet.';
                         this.requirementElement.classList.remove('text-emerald-300', 'text-red-400');
                         this.requirementElement.classList.add('text-gray-300');
                         if (this.continueBtn) {
@@ -559,25 +592,25 @@
             this.loadingElement.classList.add('hidden');
             this.mapElement.classList.remove('hidden');
 
-            // Güncellenmiş legend
+            // Updated legend
             this.legendElement.innerHTML = `
     <div class="bg-white/10 p-4 rounded-xl">
         <div class="flex flex-wrap justify-center gap-3 sm:gap-6">
             <div class="flex items-center">
-                <div class="w-4 h-4 bg-emerald-500 rounded mr-2"></div>
-                <span class="text-white text-xs sm:text-sm">Müsait</span>
+                <div class="w-4 h-4 rounded mr-2" style="background-color: #f8e71c;"></div>
+                <span class="text-white text-xs sm:text-sm">Your Selection</span>
             </div>
             <div class="flex items-center">
-                <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
-                <span class="text-white text-xs sm:text-sm">Dolu</span>
+                <div class="w-4 h-4 rounded mr-2" style="background-color: #ff4061;"></div>
+                <span class="text-white text-xs sm:text-sm">In Another Basket</span>
             </div>
             <div class="flex items-center">
-                <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
-                <span class="text-white text-xs sm:text-sm">Rezerve</span>
+                <div class="w-4 h-4 rounded mr-2" style="background-color: #cbcbcb;"></div>
+                <span class="text-white text-xs sm:text-sm">Filled</span>
             </div>
             <div class="flex items-center">
-                <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
-                <span class="text-white text-xs sm:text-sm">Seçili</span>
+                <div class="w-4 h-4 rounded mr-2" style="background-color: #10b981;"></div>
+                <span class="text-white text-xs sm:text-sm">Blank</span>
             </div>
         </div>
     </div>
@@ -586,12 +619,12 @@
         }
 
         reset() {
-            // Tüm seçili koltukları serbest bırak
+            // Release all selected seats
             this.selectedSeats.forEach(async (seat) => {
                 try {
                     await axios.post(`/api/seats/${seat.id}/release`);
                 } catch (error) {
-                    console.error('Reset sırasında koltuk serbest bırakılamadı:', error);
+                    console.error('Seat could not be released during reset:', error);
                 }
             });
 
@@ -622,41 +655,41 @@
                 const seat = this.selectedSeats.pop();
                 try {
                     await axios.post(`/api/seats/${seat.id}/release`);
-                    console.log(`Koltuk ${seat.code} limit düşürüldüğü için serbest bırakıldı`);
+                    console.log(`Seat ${seat.code} was released because the limit was reduced`);
                 } catch (error) {
-                    console.error('Koltuk serbest bırakılamadı:', error);
+                    console.error('Seat release failed:', error);
                 }
             }
         }
-        // SeatMap class'ının içine ekleyin
+        // SeatMap helper methods
         async manualRefresh() {
             if (!this.selectedShowtime) {
-                alert('Önce bir seans seçin!');
+                alert('Please select a showtime first!');
                 return;
             }
 
-            // Mevcut scroll pozisyonunu kaydet
+            // Preserve current scroll position
             const currentScrollPosition = window.pageYOffset;
 
             try {
-                // Loading göster
+                // Show loading state
                 this.showLoading();
 
-                // Koltukları yeniden yükle
+                // Reload seats
                 await this.loadSeats(this.selectedShowtime.id);
 
-                // Başarı mesajı
-                console.log('🔄 Koltuklar manuel olarak güncellendi');
+                // Success message
+                console.log('🔄 Seats refreshed manually');
 
-                // Scroll pozisyonunu geri yükle
+                // Restore scroll position
                 setTimeout(() => {
                     window.scrollTo(0, currentScrollPosition);
                     this.showSeatMap();
                 }, 100);
 
             } catch (error) {
-                console.error('Manuel güncelleme hatası:', error);
-                alert('Koltuklar güncellenirken hata oluştu!');
+                console.error('Manual refresh error:', error);
+                alert('Something went wrong while refreshing seats!');
                 this.showSeatMap();
             }
         }
@@ -746,7 +779,7 @@
         const sortedDates = Object.keys(groupedByDate).sort();
 
         if (sortedDates.length === 0) {
-            html = '<div class="col-span-full text-center text-gray-400">Seçilen kriterlere uygun seans bulunamadı.</div>';
+            html = '<div class="col-span-full text-center text-gray-400">No showtimes match your filters.</div>';
         } else {
             sortedDates.forEach(date => {
                 const dateShowtimes = groupedByDate[date];
@@ -769,10 +802,10 @@
                     // API'den gelen zaman string'ini al
                     let timeStr = showtime.start_time;
                     
-                    // API'den gelen zamanı parse et (timezone conversion YAPMA)
+                    // Parse API time without converting timezone
                     const startTime = new Date(timeStr);
                     
-                    // Saat ve dakikayı direkt al (timezone conversion olmadan)
+                    // Extract hour/minute without timezone adjustments
                     const hours = String(startTime.getUTCHours()).padStart(2, '0');
                     const minutes = String(startTime.getUTCMinutes()).padStart(2, '0');
                     const timeString = `${hours}:${minutes}`;
@@ -795,7 +828,7 @@
                                     ${startTime.toLocaleDateString('tr-TR')}
                                 </p>
                                 <p class="text-yellow-400 font-medium">
-                                    <i class="fas fa-ticket-alt mr-1"></i>₺${showtime.price || 45}/kişi
+                                    <i class="fas fa-ticket-alt mr-1"></i>₺${showtime.price || 45}/person
                                 </p>
                                 <div class="mt-2 text-xs text-gray-400">
                                     <i class="fas fa-couch mr-1"></i>
@@ -821,7 +854,7 @@
         const soldSeats = showtime.sold_seats || Math.floor(Math.random() * 30);
         const availableSeats = totalSeats - soldSeats;
 
-        return `${availableSeats} koltuk müsait`;
+        return `${availableSeats} seats available`;
     }
 
     async function loadShowtimesForCinema() {
@@ -829,7 +862,7 @@
             showShowtimeLoading();
 
             if (!selectedMovie || !selectedCinema) {
-                throw new Error('Film veya sinema seçilmedi');
+                throw new Error('Movie or cinema not selected');
             }
 
             // MovieController endpoint'ini kullan (cinema_id parametresi ile)
@@ -859,7 +892,7 @@
             }
 
         } catch (error) {
-            console.error('Seanslar yüklenemedi:', error);
+            console.error('Showtimes could not be loaded:', error);
             allShowtimes = [];
             filteredShowtimes = [];
             showEmptyShowtimes();
@@ -964,7 +997,7 @@
             if (response.data.cleaned_seats > 0) {
                 console.log(`🧹 Periodic cleanup: ${response.data.cleaned_seats} seats cleaned`);
 
-                // Eğer kullanıcı koltuk seçim sayfasındaysa, haritayı yenile
+                // If user is on the seat step, refresh the map
                 if (window.seatMap && window.seatMap.selectedShowtime) {
                     await window.seatMap.loadSeats(window.seatMap.selectedShowtime.id);
                 }
@@ -974,7 +1007,7 @@
         }
     }, 2 * 60 * 1000); // 2 dakika
 
-    // Sayfa focus'a geldiğinde cleanup
+    // Cleanup when the page regains focus
     document.addEventListener('visibilitychange', async function () {
         if (!document.hidden && window.seatMap) {
             try {
@@ -982,7 +1015,7 @@
                 if (response.data.cleaned_seats > 0) {
                     console.log(`🧹 Focus cleanup: ${response.data.cleaned_seats} seats cleaned`);
 
-                    // Koltuk haritasını yenile
+                    // Refresh the seat map
                     if (window.seatMap.selectedShowtime) {
                         await window.seatMap.loadSeats(window.seatMap.selectedShowtime.id);
                     }

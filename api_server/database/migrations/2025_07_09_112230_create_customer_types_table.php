@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('customer_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // 'Yetişkin', 'Öğrenci', 'Emekli', 'Çocuk'
+            $table->string('name'); // 'Adult', 'Student', 'Retired', 'Child'
             $table->string('code'); // 'adult', 'student', 'senior', 'child'
             $table->string('icon')->default('fa-user'); // FontAwesome ikonu
             $table->decimal('discount_rate', 5, 2)->default(0); // İndirim %'si
-            $table->string('description')->nullable(); // 'Tam bilet', '%20 indirim'
+            $table->string('description')->nullable(); // 'Full ticket', '20% discount'
             $table->boolean('is_active')->default(true);
             $table->integer('sort_order')->default(0); // Sıralama
             $table->timestamps();

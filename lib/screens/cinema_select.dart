@@ -20,8 +20,8 @@ class CinemaSelect extends StatefulWidget {
 class _CinemaSelectState extends State<CinemaSelect> {
   List<Cinema> _allCinemas = [];
   List<Cinema> _filteredCinemas = [];
-  List<String> _cities = ['Tümü'];
-  String _selectedCity = 'Tümü';
+  List<String> _cities = ['All'];
+  String _selectedCity = 'All';
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   String? _error;
@@ -46,7 +46,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
       final response = await http.get(uri).timeout(
         const Duration(seconds: 30),
         onTimeout: () {
-          throw Exception('İstek zaman aşımına uğradı');
+          throw Exception('Request timed out');
         },
       );
 
@@ -72,10 +72,10 @@ class _CinemaSelectState extends State<CinemaSelect> {
       debugPrint('Şehirler yüklenirken hata: $e');
       // Hata durumunda varsayılan şehirleri kullan
       _cityIdToNameMap = {
-        1: 'İstanbul',
+        1: 'Istanbul',
         2: 'Ankara',
         3: 'Afyonkarahisar',
-        4: 'İzmir',
+        4: 'Izmir',
         5: 'Bursa',
       };
     }
@@ -102,19 +102,20 @@ class _CinemaSelectState extends State<CinemaSelect> {
       final response = await http.get(uri).timeout(
         const Duration(seconds: 30),
         onTimeout: () {
-          throw Exception('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.');
+          throw Exception('Request timed out. Please try again.');
         },
       );
 
       if (response.statusCode != 200) {
-        throw Exception('Sunucu hatası: ${response.statusCode}');
+        throw Exception('Server error: ${response.statusCode}');
       }
 
       final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
 
       if (jsonResponse['success'] != true || jsonResponse['data'] == null) {
         setState(() {
-          _error = jsonResponse['message'] ?? 'Bu film için gösterimde olan sinema bulunamadı.';
+          _error = jsonResponse['message'] ??
+              'No cinemas are currently showing this movie.';
           _isLoading = false;
         });
         return;
@@ -125,7 +126,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
       
       if (cinemasData.isEmpty) {
         setState(() {
-          _error = "Bu film için gösterimde olan sinema bulunamadı.";
+          _error = "No cinemas are currently showing this movie.";
           _isLoading = false;
         });
         return;
@@ -154,7 +155,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
 
       if (cinemas.isEmpty) {
         setState(() {
-          _error = "Bu film için gösterimde olan sinema bulunamadı.";
+          _error = "No cinemas are currently showing this movie.";
           _isLoading = false;
         });
         return;
@@ -166,14 +167,14 @@ class _CinemaSelectState extends State<CinemaSelect> {
       setState(() {
         _allCinemas = cinemas;
         _filteredCinemas = cinemas;
-        _cities = ['Tümü', ...sortedCities];
+        _cities = ['All', ...sortedCities];
         _isLoading = false;
       });
       
     } catch (e) {
       debugPrint('fetchCinemasForMovie hatası: $e');
       setState(() {
-        _error = 'Sinema bilgileri alınamadı: ${e.toString()}';
+        _error = 'Cinema information could not be loaded: ${e.toString()}';
         _isLoading = false;
       });
     }
@@ -200,7 +201,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
             .timeout(
               const Duration(seconds: 30),
               onTimeout: () {
-                throw Exception('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.');
+                throw Exception('Request timed out. Please try again.');
               },
             );
 
@@ -208,15 +209,15 @@ class _CinemaSelectState extends State<CinemaSelect> {
 
         if (response.statusCode != 200) {
           throw Exception(
-            'Sunucu hatası: ${response.statusCode}. '
-            'Yanıt: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}',
+            'Server error: ${response.statusCode}. '
+            'Response: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}',
           );
         }
 
         if (response.bodyBytes.isEmpty) {
           setState(() {
             _isLoading = false;
-            _error = "Henüz hiç sinema bulunamadı.";
+            _error = "No cinemas found yet.";
           });
           return;
         }
@@ -238,7 +239,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
         if (decodedBody.trim().isEmpty) {
           setState(() {
             _isLoading = false;
-            _error = "Henüz hiç sinema bulunamadı.";
+            _error = "No cinemas found yet.";
           });
           return;
         }
@@ -280,7 +281,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
           await _processCinemaData(jsonResponse['data']);
         } else {
           throw Exception(
-            jsonResponse['message'] ?? 'API yanıtı formatı beklenmedik.',
+            jsonResponse['message'] ?? 'API response format was unexpected.',
           );
         }
       } finally {
@@ -288,18 +289,18 @@ class _CinemaSelectState extends State<CinemaSelect> {
       }
     } on http.ClientException catch (e) {
       setState(() {
-        _error = 'Bağlantı hatası: ${e.message}';
+        _error = 'Connection error: ${e.message}';
         _isLoading = false;
       });
     } on FormatException catch (e) {
       setState(() {
-        _error = 'Veri formatı hatası: ${e.message}';
+        _error = 'Data format error: ${e.message}';
         _isLoading = false;
       });
     } catch (e) {
       debugPrint('fetchAllCinemas hatası: $e');
       setState(() {
-        _error = 'Sinema bilgileri alınamadı: ${e.toString()}';
+        _error = 'Cinema information could not be loaded: ${e.toString()}';
         _isLoading = false;
       });
     }
@@ -313,13 +314,13 @@ class _CinemaSelectState extends State<CinemaSelect> {
     } else if (data is List) {
       showtimesList = data;
     } else {
-      throw Exception('Beklenmeyen veri formatı');
+      throw Exception('Unexpected data format');
     }
 
     if (showtimesList.isEmpty) {
       setState(() {
         _isLoading = false;
-        _error = "Henüz hiç sinema bulunamadı.";
+        _error = "No cinemas found yet.";
       });
       return;
     }
@@ -398,7 +399,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
     setState(() {
       _allCinemas = cinemas;
       _filteredCinemas = cinemas;
-      _cities = ['Tümü', ...sortedCities];
+      _cities = ['All', ...sortedCities];
       _isLoading = false;
     });
   }
@@ -411,7 +412,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
           cinema.cinemaName.toLowerCase().contains(searchLower) ||
           cinema.cinemaAddress.toLowerCase().contains(searchLower);
       final matchesCity =
-          _selectedCity == 'Tümü' || cinema.cityName == _selectedCity;
+          _selectedCity == 'All' || cinema.cityName == _selectedCity;
 
       return matchesSearch && matchesCity;
     }).toList();
@@ -430,8 +431,8 @@ class _CinemaSelectState extends State<CinemaSelect> {
       appBar: AppBar(
         title: Text(
           widget.currentMovie2 != null
-              ? '${widget.currentMovie2!.title} - Sinema Seçimi'
-              : 'Sinema Seçimi',
+              ? '${widget.currentMovie2!.title} - Cinema Selection'
+              : 'Cinema Selection',
           style: const TextStyle(color: AppColorStyle.textPrimary),
         ),
         backgroundColor: AppColorStyle.appBarColor,
@@ -477,7 +478,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
                       child: const Text(
-                        'Tekrar Dene',
+                        'Try Again',
                         style: TextStyle(color: AppColorStyle.textPrimary),
                       ),
                     ),
@@ -494,7 +495,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
                     dropdownColor: AppColorStyle.appBarColor,
                     style: const TextStyle(color: AppColorStyle.textPrimary),
                     decoration: const InputDecoration(
-                      labelText: 'Şehre Göre Filtrele',
+                      labelText: 'Filter by City',
                       labelStyle: TextStyle(color: AppColorStyle.textSecondary),
                       enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(
@@ -530,7 +531,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
                     controller: _searchController,
                     style: const TextStyle(color: AppColorStyle.textPrimary),
                     decoration: const InputDecoration(
-                      hintText: 'Sinema ara...',
+                      hintText: 'Search cinemas...',
                       hintStyle: TextStyle(color: AppColorStyle.textSecondary),
                       prefixIcon: Icon(
                         Icons.search,
@@ -563,7 +564,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
                               ),
                               SizedBox(height: 16),
                               Text(
-                                'Aramanıza uygun sinema bulunamadı.',
+                                'No cinemas match your search.',
                                 style: TextStyle(
                                   color: AppColorStyle.textPrimary,
                                   fontSize: 16,

@@ -20,15 +20,13 @@ Widget buildMoviePoster(String posterUrl) {
     );
   }
 
-  // URL'yi çözümle
   final resolvedUrl = ApiConnection.resolveMediaUrl(posterUrl);
 
-  // Geçerli URL kontrolü - http/https ile başlamalı
   final isValidUrl =
       resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://');
 
   if (!isValidUrl) {
-    debugPrint('Geçersiz poster URL: $resolvedUrl');
+    debugPrint('Invalid poster URL: $resolvedUrl');
     return Container(
       color: Colors.grey.shade300,
       child: const Center(
@@ -58,7 +56,7 @@ Widget buildMoviePoster(String posterUrl) {
       );
     },
     errorBuilder: (context, error, stackTrace) {
-      debugPrint('Poster yükleme hatası: $error - URL: $resolvedUrl');
+      debugPrint('Poster load error: $error - URL: $resolvedUrl');
       return Container(
         color: Colors.grey.shade300,
         child: const Center(
@@ -73,9 +71,11 @@ Widget _buildMovieGridSliver(
   BuildContext context,
   Future<List<Movie>> moviesFuture,
   bool isNowPlaying,
-  VoidCallback? onRetry,
-) {
+  VoidCallback? onRetry, {
+  Key? key,
+}) {
   return FutureBuilder<List<Movie>>(
+    key: key, // Unique key ekle - Future değiştiğinde widget yeniden build olur
     future: moviesFuture, // State'ten gelen Future'ı kullan
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -87,7 +87,7 @@ Widget _buildMovieGridSliver(
           ),
         );
       } else if (snapshot.hasError) {
-        debugPrint('MoviesScreen - Hata: ${snapshot.error}');
+        debugPrint('MoviesScreen - Error: ${snapshot.error}');
         return SliverFillRemaining(
           child: Center(
             child: Padding(
@@ -98,7 +98,7 @@ Widget _buildMovieGridSliver(
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    "Hata: ${snapshot.error}",
+                    "Error: ${snapshot.error}",
                     style: TextStyle(
                       color: AppColorStyle.textPrimary,
                       fontSize: 14,
@@ -108,7 +108,7 @@ Widget _buildMovieGridSliver(
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: onRetry,
-                    child: const Text('Tekrar Dene'),
+                    child: const Text('Try Again'),
                   ),
                 ],
               ),
@@ -124,13 +124,13 @@ Widget _buildMovieGridSliver(
                 const Icon(Icons.movie_outlined, size: 48, color: Colors.grey),
                 const SizedBox(height: 16),
                 const Text(
-                  "Film bulunamadı.",
+                  "No movies found.",
                   style: TextStyle(color: AppColorStyle.textPrimary),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: onRetry,
-                  child: const Text('Tekrar Dene'),
+                  child: const Text('Try Again'),
                 ),
               ],
             ),
@@ -310,6 +310,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
   bool isNowPlaying = true;
   final CityFilterProvider _cityFilter = CityFilterProvider();
   late final CityFilterListener _cityFilterListener;
+  int _loadCounter = 0; // Her yüklemede artırılacak counter
 
   void _onCategorySelected(String category) {
     setState(() {
@@ -336,10 +337,17 @@ class _MoviesScreenState extends State<MoviesScreen> {
     if (_cityFilter.hasCityFilter) {
       params.add('city_id=${_cityFilter.selectedCityId}');
     }
+    
+    // Cache-busting için timestamp ekle
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    params.add('_t=$timestamp');
 
     apiUrl = '$apiUrl?${params.join('&')}';
 
-    // Future oluştur
+    // Counter'ı artır - FutureBuilder key'ini güncellemek için
+    _loadCounter++;
+
+    // Future'ı her seferinde yeniden oluştur - cache'i bypass et
     _moviesFuture = fetchMovies(apiUrl);
   }
 
@@ -395,6 +403,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
                   _loadMovies();
                 });
               },
+              key: ValueKey('movies_${selectedCategory}_$_loadCounter'),
             ),
           ),
         ],

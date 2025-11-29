@@ -1,11 +1,11 @@
-<!-- Step 2: Sinema Seçimi -->
+<!-- Step 2: Cinema Selection -->
 <div id="ticketStep2" class="ticket-step hidden">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-2xl font-bold text-white text-center flex-1">
-            <i class="fas fa-building mr-2 text-green-400"></i>Sinema Seçiniz
+            <i class="fas fa-building mr-2 text-green-400"></i>Select a Cinema
         </h3>
         <button onclick="goBackToStep(1)" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i>Film Değiştir
+            <i class="fas fa-arrow-left mr-2"></i>Change Movie
         </button>
     </div>
 
@@ -18,12 +18,12 @@
     <div class="mb-6">
         <div class="max-w-md mx-auto">
             <label class="block text-white text-sm font-medium mb-2">
-                <i class="fas fa-map-marker-alt mr-1"></i>Şehir Filtresi (İsteğe Bağlı)
+                <i class="fas fa-map-marker-alt mr-1"></i>City Filter (Optional)
             </label>
             <select id="cityFilter" onchange="window.cinemaSelection.filterByCity(this.value)"
                 class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-green-400 transition-all"
                 style="color: white; background-color: rgba(255, 255, 255, 0.1);">
-                <option value="" style="background-color: #1f2937; color: white;">Tüm Şehirler</option>
+                <option value="" style="background-color: #1f2937; color: white;">All Cities</option>
                 <!-- Cities will be loaded here -->
             </select>
         </div>
@@ -33,14 +33,14 @@
     <div id="cinemaCountInfo" class="text-center mb-4">
         <span class="text-green-300 text-sm">
             <i class="fas fa-info-circle mr-1"></i>
-            <span id="filteredCinemaCount">0</span> sinema bulundu
+            <span id="filteredCinemaCount">0</span> cinemas found
         </span>
     </div>
 
     <!-- Loading State -->
     <div id="cinemaLoadingState" class="text-center py-12 hidden">
         <div class="loading w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p class="text-white">Sinemalar yükleniyor...</p>
+        <p class="text-white">Loading cinemas...</p>
     </div>
 
     <!-- Cinemas Grid -->
@@ -53,11 +53,11 @@
         <div class="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fas fa-building text-gray-400 text-3xl"></i>
         </div>
-        <h4 class="text-xl font-bold text-white mb-2">Sinema Bulunamadı</h4>
-        <p class="text-gray-400">Bu film için seçilen şehirde sinema bulunmuyor.</p>
+        <h4 class="text-xl font-bold text-white mb-2">No Cinemas Found</h4>
+        <p class="text-gray-400">There are no cinemas for this movie in the selected city.</p>
         <button onclick="window.cinemaSelection.clearFilters()"
             class="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium">
-            <i class="fas fa-refresh mr-2"></i>Tüm Sinemalar
+            <i class="fas fa-refresh mr-2"></i>Show All Cinemas
         </button>
     </div>
 </div>
@@ -86,7 +86,7 @@ class CinemaSelection {
             this.showLoading();
             
             if (!this.selectedMovie || !this.selectedMovie.id) {
-                throw new Error('Film seçilmedi');
+                throw new Error('No movie selected');
             }
 
             // Mevcut CinemaController metodunu kullan
@@ -95,13 +95,13 @@ class CinemaSelection {
             
             this.cinemas = data.data || [];
             
-            // Şehirleri sinemalardan çıkar ve temizle
+            // Extract unique cities from cinema payload
             this.availableCities = [];
             const cityMap = new Map();
             
             this.cinemas.forEach(cinema => {
                 if (cinema.city && cinema.city.id && cinema.city.name) {
-                    // Aynı ID'ye sahip şehirleri tekrarlamadan ekle
+                    // Avoid duplicates with the same ID
                     if (!cityMap.has(cinema.city.id)) {
                         cityMap.set(cinema.city.id, {
                             id: cinema.city.id,
@@ -111,7 +111,7 @@ class CinemaSelection {
                 }
             });
             
-            // Map'ten array'e çevir
+            // Convert map back to array
             this.availableCities = Array.from(cityMap.values());
             
             this.filteredCinemas = [...this.cinemas];
@@ -121,11 +121,11 @@ class CinemaSelection {
 
             const effectiveCityId = preferredCityId || this.currentCityFilter || '';
             
-            // Debug için console log
-            console.log('Yüklenen sinemalar:', this.cinemas.length);
-            console.log('Bulunan şehirler:', this.availableCities);
+            // Debug info
+            console.log('Loaded cinemas:', this.cinemas.length);
+            console.log('Detected cities:', this.availableCities);
             
-            // Loading'i kapat ve içeriği göster
+            // Hide loading state and show content
             if (this.cinemas.length === 0) {
                 this.showEmpty();
             } else if (effectiveCityId) {
@@ -134,23 +134,23 @@ class CinemaSelection {
                     updateDropdown: true 
                 });
             } else {
-                // Önce sinemaları render et
+                // Render cinemas first
                 this.filteredCinemas = [...this.cinemas];
                 this.renderCinemas(this.cinemas);
-                // Sonra grid'i göster (loading'i kapatır)
+                // Then reveal the grid (hides loading)
                 this.showGrid();
             }
             
         } catch (error) {
-            console.error('Sinema yükleme hatası:', error);
-            console.log('Mock data yükleniyor:', error.message);
+            console.error('Cinema loading error:', error);
+            console.log('Loading mock data:', error.message);
             this.renderMockCinemas();
             this.showGrid();
         }
     }
 
     renderCityFilter() {
-        let html = '<option value="" style="background-color: #1f2937; color: white;">Tüm Şehirler</option>';
+        let html = '<option value="" style="background-color: #1f2937; color: white;">All Cities</option>';
         
         if (this.availableCities && this.availableCities.length > 0) {
             this.availableCities.forEach(city => {
@@ -162,9 +162,9 @@ class CinemaSelection {
         
         this.cityFilterElement.innerHTML = html;
         
-        // Eğer şehir yoksa bilgi ver
+        // Warn when no city info is available
         if (this.availableCities.length === 0) {
-            console.warn('Şehir bilgisi bulunamadı. Sinemalarda city ilişkisi eksik olabilir.');
+            console.warn('No city info was returned. Cinema-city relations might be missing.');
         }
     }
 
@@ -206,7 +206,7 @@ class CinemaSelection {
 
                     setTimeout(() => {
                         if (this.gridElement && this.gridElement.classList.contains('hidden')) {
-                            console.warn('Grid hala gizli, zorla gösteriliyor...');
+                            console.warn('Grid still hidden, forcing it visible...');
                             this.showGrid();
                         }
                     }, 50);
@@ -219,7 +219,7 @@ class CinemaSelection {
                 setTimeout(renderFiltered, 50);
             }
         } catch (error) {
-            console.error('Şehir filtreleme hatası:', error);
+            console.error('City filtering error:', error);
             this.filteredCinemas = [...this.cinemas];
             this.updateCinemaCount();
             this.renderCinemas(this.filteredCinemas);
@@ -238,7 +238,7 @@ class CinemaSelection {
             this.renderCinemas(this.filteredCinemas);
             this.showGrid();
         } catch (error) {
-            console.error('Filtre temizleme hatası:', error);
+            console.error('Failed to reset filters:', error);
         }
     }
 
@@ -248,7 +248,7 @@ class CinemaSelection {
 
     renderCinemas(cinemas) {
         if (!this.gridElement) {
-            console.error('Grid element bulunamadı!');
+            console.error('Cinema grid element not found!');
             return;
         }
         
@@ -261,14 +261,14 @@ class CinemaSelection {
         
         try {
             cinemas.forEach(cinema => {
-                // Seans sayısını hesapla
+                // Calculate showtime count
                 const showtimeCount = cinema.halls ? 
                     cinema.halls.reduce((total, hall) => total + (hall.showtimes ? hall.showtimes.length : 0), 0) : 0;
                 
-                // XSS koruması için string escape
-                const cinemaName = (cinema.name || 'İsimsiz Sinema').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                const cinemaAddress = (cinema.address || 'Adres bilgisi yok').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                const cityName = cinema.city ? (cinema.city.name || 'Şehir bilgisi yok') : 'Şehir bilgisi yok';
+                // Escape strings for safety
+                const cinemaName = (cinema.name || 'Unnamed Cinema').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const cinemaAddress = (cinema.address || 'No address on file').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const cityName = cinema.city ? (cinema.city.name || 'City unavailable') : 'City unavailable';
                 
                 html += `
                     <div class="glass-effect rounded-2xl p-6 card-hover cursor-pointer" 
@@ -284,10 +284,10 @@ class CinemaSelection {
                             ${cinemaAddress}
                         </p>
                         <p class="text-emerald-400 text-sm">
-                            <i class="fas fa-door-open mr-1"></i>${cinema.halls ? cinema.halls.length : 'N/A'} Salon
+                            <i class="fas fa-door-open mr-1"></i>${cinema.halls ? cinema.halls.length : 'N/A'} Auditoriums
                         </p>
                         <p class="text-yellow-400 text-sm">
-                            <i class="fas fa-clock mr-1"></i>${showtimeCount} Seans
+                            <i class="fas fa-clock mr-1"></i>${showtimeCount} Showtimes
                         </p>
                         ${cinema.phone ? `
                             <p class="text-gray-400 text-xs mt-1">
@@ -300,14 +300,14 @@ class CinemaSelection {
             
             this.gridElement.innerHTML = html;
             
-            // Grid'in görünür olduğundan emin ol
+            // Ensure the grid becomes visible
             this.gridElement.style.display = 'grid';
             this.gridElement.style.opacity = '1';
             this.gridElement.style.visibility = 'visible';
             
         } catch (error) {
-            console.error('Sinema render hatası:', error);
-            this.gridElement.innerHTML = '<div class="text-white text-center p-4">Sinemalar yüklenirken bir hata oluştu.</div>';
+            console.error('Cinema render error:', error);
+            this.gridElement.innerHTML = '<div class="text-white text-center p-4">An error occurred while loading cinemas.</div>';
         }
     }
 
@@ -367,12 +367,12 @@ class CinemaSelection {
             <div class="flex items-center space-x-4">
                 <i class="fas fa-film text-yellow-400 text-2xl"></i>
                 <div>
-                    <h4 class="text-white font-semibold">Seçilen Film</h4>
+                    <h4 class="text-white font-semibold">Selected Movie</h4>
                     <p class="text-purple-300">${movie.title}</p>
                 </div>
                 <div class="ml-auto">
                     <span class="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full text-sm">
-                        <i class="fas fa-check mr-1"></i>Seçildi
+                        <i class="fas fa-check mr-1"></i>Chosen
                     </span>
                 </div>
             </div>
@@ -398,7 +398,7 @@ class CinemaSelection {
         }
         if (this.gridElement) {
             this.gridElement.classList.remove('hidden');
-            // Grid'in görünür olduğundan emin ol
+            // Ensure the grid is visible
             this.gridElement.style.display = 'grid';
             this.gridElement.style.opacity = '1';
             this.gridElement.style.visibility = 'visible';
@@ -458,7 +458,7 @@ async function selectMovieForTicket(movieId, movieTitle) {
     // Show selected movie info
     window.cinemaSelection.showSelectedMovie(selectedMovie);
     
-    // Load cinemas for this movie (TÜM SİNEMALAR)
+    // Load cinemas for this movie (ALL CINEMAS)
     const preferredCityId = window.movieSelection?.currentCityId || '';
     await window.cinemaSelection.loadCinemas(preferredCityId);
 }
@@ -480,14 +480,14 @@ async function selectCinemaForTicket(cinemaId, cinemaName, cinemaAddress) {
             <div class="flex items-center space-x-3">
                 <i class="fas fa-film text-yellow-400 text-lg"></i>
                 <div>
-                    <h6 class="text-white font-medium text-sm">Seçilen Film</h6>
+                    <h6 class="text-white font-medium text-sm">Selected Movie</h6>
                     <p class="text-purple-300 text-xs">${selectedMovie.title}</p>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
                 <i class="fas fa-building text-blue-400 text-lg"></i>
                 <div>
-                    <h6 class="text-white font-medium text-sm">Seçilen Sinema</h6>
+                    <h6 class="text-white font-medium text-sm">Selected Cinema</h6>
                     <p class="text-blue-300 text-xs">${cinemaName}</p>
                 </div>
             </div>

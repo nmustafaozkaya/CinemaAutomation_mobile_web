@@ -5,242 +5,18 @@
         <div class="flex items-center justify-between mb-8">
             <h2 class="text-3xl font-bold text-white flex items-center">
                 <i class="fas fa-ticket-alt mr-3 text-emerald-400"></i>
-                Bilet Al
+                Purchase Tickets
             </h2>
             <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                <i class="fas fa-arrow-left mr-2"></i>Geri
+                <i class="fas fa-arrow-left mr-2"></i>Back
             </a>
         </div>
 
-        <!-- Progress Steps - 6 Aşama -->
-        <div class="flex items-center justify-center mb-12">
-            <div class="flex items-center space-x-4">
-                <div class="step-item active flex items-center">
-                    <div
-                        class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
-                        1
-                    </div>
-                    <span class="ml-2 text-white font-medium">Film Seç</span>
-                </div>
-                <div class="w-12 h-1 bg-gray-600 rounded"></div>
-                <div class="step-item flex items-center">
-                    <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">2
-                    </div>
-                    <span class="ml-2 text-gray-400 font-medium">Sinema Seç</span>
-                </div>
-                <div class="w-12 h-1 bg-gray-600 rounded"></div>
-                <div class="step-item flex items-center">
-                    <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">3
-                    </div>
-                    <span class="ml-2 text-gray-400 font-medium">Seans Seç</span>
-                </div>
-                <div class="w-12 h-1 bg-gray-600 rounded"></div>
-                <div class="step-item flex items-center">
-                    <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">4
-                    </div>
-                    <span class="ml-2 text-gray-400 font-medium">Bilet Tipi</span>
-                </div>
-                <div class="w-12 h-1 bg-gray-600 rounded"></div>
-                <div class="step-item flex items-center">
-                    <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">5
-                    </div>
-                    <span class="ml-2 text-gray-400 font-medium">Koltuk Seç</span>
-                </div>
-                <div class="w-12 h-1 bg-gray-600 rounded"></div>
-                <div class="step-item flex items-center">
-                    <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">6
-                    </div>
-                    <span class="ml-2 text-gray-400 font-medium">Ödeme</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 1: Film Seçimi -->
-        <div id="ticketStep1" class="ticket-step">
-            <h3 class="text-2xl font-bold text-white mb-6 text-center">
-                <i class="fas fa-film mr-2 text-green-400"></i>Film Seçiniz
-            </h3>
-            <div id="ticketMovieGrid" class="space-y-12">
-                <!-- Movie selection will be loaded here -->
-            </div>
-        </div>
-
-        <!-- Step 2: Sinema Seçimi -->
-        <div id="ticketStep2" class="ticket-step hidden">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-building mr-2 text-green-400"></i>Sinema Seçiniz
-                </h3>
-                <button onclick="goBackToStep(1)"
-                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Film Değiştir
-                </button>
-            </div>
-            <div id="selectedMovieInfo" class="bg-white/10 p-4 rounded-xl mb-6"></div>
-            <div id="cinemaGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-        </div>
-
-        <!-- Step 3: Seans Seçimi -->
-        <div id="ticketStep3" class="ticket-step hidden">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-clock mr-2 text-green-400"></i>Seans Seçiniz
-                </h3>
-                <button onclick="goBackToStep(2)"
-                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Sinema Değiştir
-                </button>
-            </div>
-            <div id="selectedMovieCinemaInfo" class="bg-white/10 p-4 rounded-xl mb-6"></div>
-            <div id="showtimeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-        </div>
-
-        <!-- Step 5: Koltuk Seçimi -->
-        <div id="ticketStep5" class="ticket-step hidden">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-couch mr-2 text-green-400"></i>Koltuk Seçiniz (Maksimum 6 adet)
-                </h3>
-                <button onclick="goBackToStep(4)"
-                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Bilet Tipi Değiştir
-                </button>
-            </div>
-            <div id="selectedShowtimeInfo" class="bg-white/10 p-4 rounded-xl mb-6"></div>
-            <div class="bg-white/10 p-6 rounded-xl">
-                <div class="text-center mb-6">
-                    <div class="bg-gray-800 text-white px-8 py-2 rounded-lg inline-block">
-                        <i class="fas fa-desktop mr-2"></i>PERDE
-                    </div>
-                </div>
-                <div id="seatMap" class="max-w-4xl mx-auto"></div>
-                <div class="flex items-center justify-center space-x-8 mt-6">
-                    <div class="flex items-center">
-                        <div class="w-6 h-6 bg-emerald-500 rounded-lg mr-2"></div>
-                        <span class="text-white">Müsait</span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-6 h-6 bg-red-500 rounded-lg mr-2"></div>
-                        <span class="text-white">Dolu</span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-6 h-6 bg-green-500 rounded-lg mr-2"></div>
-                        <span class="text-white">Seçili</span>
-                    </div>
-                </div>
-                <div class="text-center mt-4">
-                    <div id="selectedSeatsInfo" class="text-white font-medium mb-2">Seçili koltuk yok</div>
-                    <div id="seatRequirementInfo" class="text-sm text-gray-300 mb-3"></div>
-                    <button id="continueToPayment" onclick="goToPayment()"
-                        class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-bold hidden">
-                        <i class="fas fa-arrow-right mr-2"></i>Ödemeye Geç
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 4: Bilet Tipi Seçimi -->
-        <div id="ticketStep4" class="ticket-step hidden">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-users mr-2 text-green-400"></i>Bilet Tiplerini Seçiniz
-                </h3>
-                <button onclick="goBackToStep(3)"
-                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Seans Değiştir
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white/10 p-6 rounded-xl">
-                    <h4 class="text-xl font-semibold text-white mb-4">
-                        <i class="fas fa-ticket-alt mr-2"></i>Bilet Tipleri
-                    </h4>
-                    <div id="ticketTypesContainer" class="space-y-4">
-                        <!-- Bilet tipleri buraya yüklenecek -->
-                    </div>
-                    <div class="mt-6 pt-4 border-t border-white/20">
-                        <div class="flex justify-between items-center text-lg font-bold text-white">
-                            <span>Seçilen Biletler:</span>
-                            <span id="selectedTicketCount" class="text-emerald-400">0</span>
-                        </div>
-                        <div id="ticketTypeSummary" class="mt-2 text-sm text-gray-300"></div>
-                    </div>
-                    <button id="continueToSeatSelection" onclick="goToSeatSelection()"
-                        class="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold disabled:bg-gray-600 disabled:cursor-not-allowed"
-                        disabled>
-                        <i class="fas fa-arrow-right mr-2"></i>Koltuk Seçimine Geç
-                    </button>
-                </div>
-
-                <div class="bg-white/10 p-6 rounded-xl">
-                    <h4 class="text-xl font-semibold text-white mb-4">
-                        <i class="fas fa-info-circle mr-2"></i>Fiyat Bilgileri
-                    </h4>
-                    <div id="priceInfo" class="space-y-3 text-white">
-                        <!-- Fiyat bilgileri buraya yüklenecek -->
-                    </div>
-                    <div class="mt-6 pt-4 border-t border-white/20">
-                        <div class="flex justify-between items-center text-xl font-bold text-white">
-                            <span>Toplam:</span>
-                            <span id="totalPricePreview" class="text-emerald-400">₺0</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 6: Müşteri Bilgileri ve Ödeme -->
-        <div id="ticketStep6" class="ticket-step hidden">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-white text-center flex-1">
-                    <i class="fas fa-credit-card mr-2 text-green-400"></i>Müşteri Bilgileri ve Ödeme
-                </h3>
-                <button onclick="goBackToStep(5)"
-                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Koltuk Değiştir
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white/10 p-6 rounded-xl">
-                    <h4 class="text-xl font-semibold text-white mb-4">
-                        <i class="fas fa-user mr-2"></i>Müşteri Bilgileri
-                    </h4>
-                    <div class="space-y-4">
-                        <input type="text" id="customerName" placeholder="Ad Soyad"
-                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300">
-                        <input type="email" id="customerEmail" placeholder="E-posta"
-                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300">
-                        <input type="tel" id="customerPhone" placeholder="Telefon"
-                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300">
-                        <select id="paymentMethod"
-                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white">
-                            <option value="cash">💰 Nakit</option>
-                            <option value="card">💳 Kredi Kartı</option>
-                            <option value="online">🌐 Online Ödeme</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="bg-white/10 p-6 rounded-xl">
-                    <h4 class="text-xl font-semibold text-white mb-4">
-                        <i class="fas fa-receipt mr-2"></i>Sipariş Özeti
-                    </h4>
-                    <div id="orderSummary" class="space-y-3 text-white mb-6"></div>
-                    <div class="border-t border-white/20 pt-4">
-                        <div class="flex justify-between items-center text-xl font-bold text-white">
-                            <span>Toplam:</span>
-                            <span id="totalPrice" class="text-emerald-400">₺0</span>
-                        </div>
-                    </div>
-                    <button onclick="completeSale()"
-                        class="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105">
-                        <i class="fas fa-check-circle mr-2"></i>Ödemeyi Tamamla
-                    </button>
-                </div>
-            </div>
-        </div>
+        @include('components.ticket-steps')
+        @include('components.movie-selection')
+        @include('components.cinema-selection')
+        @include('components.seat-map')
+        @include('components.payment-form')
     </div>
 
     <script>
@@ -396,7 +172,7 @@
             if (nowShowingMovies.length > 0) {
                 html += `
                     <div>
-                        <div class="flex items-center mb-6">
+        <div class="flex items-center mb-6">
                             <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
                                 <i class="fas fa-play text-white"></i>
                             </div>
@@ -438,7 +214,7 @@
                 `;
             }
             
-            movieGrid.innerHTML = html || '<p class="text-white text-center">Film bulunamadı.</p>';
+            movieGrid.innerHTML = html || '<p class="text-white text-center">No movies found.</p>';
         }
         
         function renderMovieCardForTicket(movie, isNowShowing) {
@@ -448,12 +224,12 @@
             const selectButton = isNowShowing ? `
                 <button onclick="selectMovieForTicket(${movie.id}, '${movie.title.replace(/'/g, "\\'")}')" 
                         class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
-                    <i class="fas fa-ticket-alt mr-1"></i>Seç
+                    <i class="fas fa-ticket-alt mr-1"></i>Select
                 </button>
             ` : `
                 <button disabled
                         class="flex-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-semibold cursor-not-allowed opacity-50">
-                    <i class="fas fa-calendar-alt mr-1"></i>Yakında
+                    <i class="fas fa-calendar-alt mr-1"></i>Coming Soon
                 </button>
             `;
             
@@ -508,8 +284,8 @@
                 // Modal oluştur
                 createMovieDetailModal(movie, isNowShowing);
             } catch (error) {
-                console.error('Film detayı yüklenemedi:', error);
-                alert('Film detayı yüklenemedi!');
+                console.error('Movie details could not be loaded:', error);
+                alert('Movie details could not be loaded!');
             }
         }
 
@@ -532,21 +308,21 @@
                 buyTicketButton = `
                     <button disabled
                             class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold cursor-not-allowed flex items-center opacity-50">
-                        <i class="fas fa-calendar-alt mr-2"></i>Yakında
+                        <i class="fas fa-calendar-alt mr-2"></i>Coming Soon
                     </button>
                 `;
             } else if (isLoggedIn) {
                 buyTicketButton = `
                     <button onclick="selectMovieForTicket(${movie.id}, '${movie.title.replace(/'/g, "\\'")}'); closeMovieDetailModal();" 
                             class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                        <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                        <i class="fas fa-ticket-alt mr-2"></i>Buy Tickets
                     </button>
                 `;
             } else {
                 buyTicketButton = `
                     <button onclick="window.location.href='/login'" 
                             class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+                        <i class="fas fa-sign-in-alt mr-2"></i>Sign In
                     </button>
                 `;
             }
@@ -557,7 +333,7 @@
                     <div class="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <!-- Header -->
                         <div class="flex justify-between items-center p-6 border-b border-gray-700">
-                            <h2 class="text-2xl font-bold text-white">🎬 Film Detayları</h2>
+                            <h2 class="text-2xl font-bold text-white">🎬 Movie Details</h2>
                             <button onclick="closeMovieDetailModal()" class="text-gray-400 hover:text-white text-2xl">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -609,15 +385,15 @@
                                         <div class="bg-gray-800/50 p-4 rounded-lg">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-clock text-blue-400 mr-2"></i>
-                                                <span class="text-gray-300">Süre</span>
+                                                <span class="text-gray-300">Runtime</span>
                                             </div>
-                                            <span class="text-white font-semibold">${movie.duration || 'N/A'} dakika</span>
+                                            <span class="text-white font-semibold">${movie.duration || 'N/A'} min</span>
                                         </div>
                                         
                                         <div class="bg-gray-800/50 p-4 rounded-lg">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-tag text-green-400 mr-2"></i>
-                                                <span class="text-gray-300">Tür</span>
+                                                <span class="text-gray-300">Genre</span>
                                             </div>
                                             <span class="text-white font-semibold">${movie.genre || 'N/A'}</span>
                                         </div>
@@ -625,7 +401,7 @@
                                         <div class="bg-gray-800/50 p-4 rounded-lg">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-calendar text-purple-400 mr-2"></i>
-                                                <span class="text-gray-300">Çıkış Tarihi</span>
+                                                <span class="text-gray-300">Release Date</span>
                                             </div>
                                             <span class="text-white font-semibold">${movie.release_date || 'N/A'}</span>
                                         </div>
@@ -633,7 +409,7 @@
                                         <div class="bg-gray-800/50 p-4 rounded-lg">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-globe text-orange-400 mr-2"></i>
-                                                <span class="text-gray-300">Dil</span>
+                                                <span class="text-gray-300">Language</span>
                                             </div>
                                             <span class="text-white font-semibold">${movie.language || 'N/A'}</span>
                                         </div>
@@ -642,18 +418,18 @@
                                     <!-- Description -->
                                     <div class="mb-6">
                                         <h3 class="text-lg font-semibold text-white mb-3">
-                                            <i class="fas fa-info-circle text-blue-400 mr-2"></i>Özet
+                                            <i class="fas fa-info-circle text-blue-400 mr-2"></i>Synopsis
                                         </h3>
-                                        <p class="text-gray-300 leading-relaxed">${movie.description || 'Açıklama mevcut değil.'}</p>
+                                        <p class="text-gray-300 leading-relaxed">${movie.description || 'Description not available.'}</p>
                                     </div>
                                     
                                     ${!isLoggedIn && isNowShowing ? `
-                                    <!-- Giriş uyarısı -->
+                                    <!-- Sign-in reminder -->
                                     <div class="mb-6 bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
                                         <div class="flex items-center">
                                             <i class="fas fa-info-circle text-blue-400 mr-3 text-xl"></i>
                                             <p class="text-blue-200">
-                                                Bilet satın almak için <strong>giriş yapmanız</strong> gerekmektedir.
+                                                You must <strong>sign in</strong> to purchase tickets.
                                             </p>
                                         </div>
                                     </div>
@@ -664,7 +440,7 @@
                                         ${buyTicketButton}
                                         <button onclick="closeMovieDetailModal()" 
                                                 class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
-                                            <i class="fas fa-times mr-2"></i>Kapat
+                                            <i class="fas fa-times mr-2"></i>Close
                                         </button>
                                     </div>
                                 </div>
@@ -701,7 +477,7 @@
             currentTicketStep = 2;
             updateTicketSteps();
             
-            // Seçilen filmi vurgula
+            // Highlight selected movie
             document.querySelectorAll('.movie-card').forEach(card => {
                 card.classList.remove('ring-2', 'ring-yellow-400', 'bg-yellow-500/10');
             });
@@ -718,7 +494,7 @@
                                                                                                     <div class="flex items-center space-x-4">
                                                                                                         <i class="fas fa-film text-yellow-400 text-2xl"></i>
                                                                                                         <div>
-                                                                                                            <h4 class="text-white font-semibold">Seçilen Film</h4>
+                                                                                                            <h4 class="text-white font-semibold">Selected Movie</h4>
                                                                                                             <p class="text-purple-300">${movieTitle}</p>
                                                                                                         </div>
                                                                                                     </div>
@@ -750,9 +526,9 @@
                                                                                                                 <i class="fas fa-building text-white text-3xl opacity-70"></i>
                                                                                                             </div>
                                                                                                             <h4 class="text-lg font-bold text-white mb-2">${cinema.name}</h4>
-                                                                                                            <p class="text-blue-300 text-sm mb-1">${cinema.address || 'Adres bilgisi yok'}</p>
+                                                                                                            <p class="text-blue-300 text-sm mb-1">${cinema.address || 'No address available'}</p>
                                                                                                             <p class="text-emerald-400 text-sm">
-                                                                                                                <i class="fas fa-door-open mr-1"></i>${cinema.hall_count || cinema.halls?.length || 'N/A'} Salon
+                                                                                                                <i class="fas fa-door-open mr-1"></i>${cinema.hall_count || cinema.halls?.length || 'N/A'} auditoriums
                                                                                                             </p>
                                                                                                         </div>
                                                                                                     `;
@@ -774,14 +550,14 @@
                                                                                                         <div class="flex items-center space-x-4">
                                                                                                             <i class="fas fa-film text-yellow-400 text-xl"></i>
                                                                                                             <div>
-                                                                                                                <h5 class="text-white font-medium">Film</h5>
+                                                                                                            <h5 class="text-white font-medium">Movie</h5>
                                                                                                                 <p class="text-purple-300 text-sm">${selectedMovie.title}</p>
                                                                                                             </div>
                                                                                                         </div>
                                                                                                         <div class="flex items-center space-x-4">
                                                                                                             <i class="fas fa-building text-blue-400 text-xl"></i>
                                                                                                             <div>
-                                                                                                                <h5 class="text-white font-medium">Sinema</h5>
+                                                                                                            <h5 class="text-white font-medium">Cinema</h5>
                                                                                                                 <p class="text-blue-300 text-sm">${cinemaName}</p>
                                                                                                             </div>
                                                                                                         </div>
@@ -811,7 +587,7 @@
             let html = '';
 
             if (!showtimes || showtimes.length === 0) {
-                html = '<p class="text-white text-center col-span-full">Bu sinemada seçili film için seans bulunamadı.</p>';
+                html = '<p class="text-white text-center col-span-full">No showtimes available for this movie at the selected cinema.</p>';
                 showtimeGrid.innerHTML = html;
                 return;
             }
@@ -838,7 +614,7 @@
                     const hours = String(startTime.getUTCHours()).padStart(2, '0');
                     const minutes = String(startTime.getUTCMinutes()).padStart(2, '0');
                     const formattedTime = `${hours}:${minutes}`;
-                    const hallName = showtime.hall?.name || 'Salon';
+                    const hallName = showtime.hall?.name || 'Auditorium';
                     const price = showtime.price || 45;
                     const displayText = `${formattedTime} - ${hallName}`;
                     
@@ -848,7 +624,7 @@
                             <h4 class="text-lg font-semibold text-white mb-2">${hallName}</h4>
                             <p class="text-emerald-400 font-bold text-lg">${formattedTime}</p>
                             <p class="text-gray-400 text-xs mb-1">${formattedDate}</p>
-                            <p class="text-purple-300 text-sm mt-1">₺${price}/kişi</p>
+                            <p class="text-purple-300 text-sm mt-1">₺${price}/person</p>
                         </div>
                     `;
                 } catch (e) {
@@ -856,7 +632,7 @@
                 }
             });
 
-            showtimeGrid.innerHTML = html || '<p class="text-white text-center col-span-full">Seans bulunamadı.</p>';
+            showtimeGrid.innerHTML = html || '<p class="text-white text-center col-span-full">No showtimes found.</p>';
         }
 
         async function selectShowtimeForTicket(showtimeId, startTime, hallName, price) {
@@ -873,21 +649,21 @@
                                                                                                         <div class="flex items-center space-x-3">
                                                                                                             <i class="fas fa-film text-yellow-400 text-lg"></i>
                                                                                                             <div>
-                                                                                                                <h6 class="text-white font-medium text-sm">Film</h6>
+                                                                                                                <h6 class="text-white font-medium text-sm">Movie</h6>
                                                                                                                 <p class="text-purple-300 text-xs">${selectedMovie.title}</p>
                                                                                                             </div>
                                                                                                         </div>
                                                                                                         <div class="flex items-center space-x-3">
                                                                                                             <i class="fas fa-building text-blue-400 text-lg"></i>
                                                                                                             <div>
-                                                                                                                <h6 class="text-white font-medium text-sm">Sinema</h6>
+                                                                                                                <h6 class="text-white font-medium text-sm">Cinema</h6>
                                                                                                                 <p class="text-blue-300 text-xs">${selectedCinema.name}</p>
                                                                                                             </div>
                                                                                                         </div>
                                                                                                         <div class="flex items-center space-x-3">
                                                                                                             <i class="fas fa-clock text-purple-400 text-lg"></i>
                                                                                                             <div>
-                                                                                                                <h6 class="text-white font-medium text-sm">Seans</h6>
+                                                                                                                <h6 class="text-white font-medium text-sm">Showtime</h6>
                                                                                                                 <p class="text-emerald-400 text-xs">${startTime} - ${hallName}</p>
                                                                                                             </div>
                                                                                                         </div>
@@ -979,7 +755,7 @@
                 const seatLimit = Math.min(getTotalTicketCount() || MAX_TICKETS_PER_ORDER, MAX_TICKETS_PER_ORDER);
 
                 if (selectedSeats.length >= seatLimit) {
-                    alert(`Maksimum ${seatLimit} koltuk seçebilirsiniz!`);
+                    alert(`You can select at most ${seatLimit} seats!`);
                     return;
                 }
 
@@ -1033,8 +809,8 @@
 
             if (info) {
                 info.textContent = selectedSeats.length === 0
-                    ? 'Seçili koltuk yok'
-                    : `${selectedSeats.length} koltuk seçili: ${selectedSeats.map(s => s.code).join(', ')}`;
+                    ? 'No seats selected'
+                    : `${selectedSeats.length} seats selected: ${selectedSeats.map(s => s.code).join(', ')}`;
             }
 
             if (!requirementInfo || !continueBtn) {
@@ -1042,7 +818,7 @@
             }
 
             if (requiredSeats === 0) {
-                requirementInfo.textContent = 'Devam etmek için önce bilet tiplerini seçin.';
+                requirementInfo.textContent = 'Select ticket types before continuing.';
                 requirementInfo.classList.remove('text-emerald-300', 'text-red-400');
                 requirementInfo.classList.add('text-gray-300');
                 continueBtn.classList.add('hidden');
@@ -1050,19 +826,19 @@
             }
 
             if (selectedSeats.length === requiredSeats) {
-                requirementInfo.textContent = 'Harika! Bilet ve koltuk sayıları eşleşti.';
+                requirementInfo.textContent = 'Great! Ticket and seat counts match.';
                 requirementInfo.classList.remove('text-gray-300', 'text-red-400');
                 requirementInfo.classList.add('text-emerald-300');
                 continueBtn.classList.remove('hidden');
             } else if (selectedSeats.length < requiredSeats) {
                 const diff = requiredSeats - selectedSeats.length;
-                requirementInfo.textContent = `Devam etmek için ${diff} koltuk daha seçin.`;
+                requirementInfo.textContent = `Select ${diff} more seats to continue.`;
                 requirementInfo.classList.remove('text-gray-300', 'text-emerald-300');
                 requirementInfo.classList.add('text-red-400');
                 continueBtn.classList.add('hidden');
             } else {
                 const diff = selectedSeats.length - requiredSeats;
-                requirementInfo.textContent = `Lütfen ${diff} koltuğu iptal edin.`;
+                requirementInfo.textContent = `Please release ${diff} seats.`;
                 requirementInfo.classList.remove('text-gray-300', 'text-emerald-300');
                 requirementInfo.classList.add('text-red-400');
                 continueBtn.classList.add('hidden');
@@ -1090,14 +866,14 @@
 
         async function goToSeatSelection() {
             if (!selectedShowtime) {
-                alert('Lütfen önce seans seçin!');
+                alert('Please select a showtime first!');
                 return;
             }
 
             const totalTickets = getTotalTicketCount();
 
             if (totalTickets === 0) {
-                alert('Devam etmek için en az bir bilet seçmelisiniz.');
+                alert('Please select at least one ticket to continue.');
                 return;
             }
 
@@ -1138,10 +914,10 @@
                 // Fallback - mock data
                 const basePrice = parseFloat(selectedShowtime.price) || 45;
                 const mockTypes = [
-                    { code: 'adult', name: 'Yetişkin', icon: 'fa-user', description: 'Tam bilet' },
-                    { code: 'student', name: 'Öğrenci', icon: 'fa-graduation-cap', description: '%20 indirim' },
-                    { code: 'senior', name: 'Emekli', icon: 'fa-user-tie', description: '%15 indirim' },
-                    { code: 'child', name: 'Çocuk', icon: 'fa-child', description: '%25 indirim' }
+                    { code: 'adult', name: 'Adult', icon: 'fa-user', description: 'Full ticket' },
+                    { code: 'student', name: 'Student', icon: 'fa-graduation-cap', description: '20% discount' },
+                    { code: 'senior', name: 'Retired', icon: 'fa-user-tie', description: '15% discount' },
+                    { code: 'child', name: 'Child', icon: 'fa-child', description: '25% discount' }
                 ];
 
                 ticketPrices = {
@@ -1191,10 +967,10 @@
         function renderPriceInfo() {
             const container = document.getElementById('priceInfo');
             const ticketTypes = [
-                { id: 'adult', name: 'Yetişkin (Tam Bilet)' },
-                { id: 'student', name: 'Öğrenci (%20 İndirim)' },
-                { id: 'senior', name: 'Emekli (%15 İndirim)' },
-                { id: 'child', name: 'Çocuk (%25 İndirim)' }
+                { id: 'adult', name: 'Adult (Full Ticket)' },
+                { id: 'student', name: 'Student (20% Off)' },
+                { id: 'senior', name: 'Retired (15% Off)' },
+                { id: 'child', name: 'Child (25% Off)' }
             ];
 
             let html = '';
@@ -1224,7 +1000,7 @@
 
             if (newCount < 0) return;
             if (proposedTotal > MAX_TICKETS_PER_ORDER) {
-                alert(`Maksimum ${MAX_TICKETS_PER_ORDER} bilet seçebilirsiniz!`);
+                alert(`You can select at most ${MAX_TICKETS_PER_ORDER} tickets!`);
                 return;
             }
 
@@ -1245,7 +1021,7 @@
             countElement.textContent = totalCount;
 
             if (totalCount === 0) {
-                summaryElement.textContent = 'Hiç bilet seçilmedi';
+                summaryElement.textContent = 'No tickets selected';
                 summaryElement.classList.remove('text-red-400');
                 continueButton.disabled = true;
             } else {
@@ -1253,10 +1029,10 @@
                     .filter(([type, count]) => count > 0)
                     .map(([type, count]) => {
                         const typeNames = {
-                            adult: 'Yetişkin',
-                            student: 'Öğrenci',
-                            senior: 'Emekli',
-                            child: 'Çocuk'
+                            adult: 'Adult',
+                            student: 'Student',
+                            senior: 'Retired',
+                            child: 'Child'
                         };
                         return `${count} ${typeNames[type]}`;
                     })
@@ -1280,7 +1056,7 @@
             const totalTickets = getTotalTicketCount();
 
             if (totalTickets === 0) {
-                alert('Ödeme adımına geçmek için önce bilet seçmelisiniz.');
+                alert('Select tickets before moving to payment.');
                 return;
             }
 
@@ -1301,28 +1077,28 @@
             }, 0);
 
             const typeNames = {
-                adult: 'Yetişkin',
-                student: 'Öğrenci',
-                senior: 'Emekli',
-                child: 'Çocuk'
+                adult: 'Adult',
+                student: 'Student',
+                senior: 'Retired',
+                child: 'Child'
             };
 
             summary.innerHTML = `
                                                                                                     <div class="space-y-3">
                                                                                                         <div class="flex justify-between">
-                                                                                                            <span>Film:</span>
+                                                                                                            <span>Movie:</span>
                                                                                                             <span class="font-medium">${selectedMovie.title}</span>
                                                                                                         </div>
                                                                                                         <div class="flex justify-between">
-                                                                                                            <span>Sinema:</span>
+                                                                                                            <span>Cinema:</span>
                                                                                                             <span class="font-medium">${selectedCinema.name}</span>
                                                                                                         </div>
                                                                                                         <div class="flex justify-between">
-                                                                                                            <span>Seans:</span>
+                                                                                                            <span>Showtime:</span>
                                                                                                             <span class="font-medium">${selectedShowtime.startTime}</span>
                                                                                                         </div>
                                                                                                         <div class="flex justify-between">
-                                                                                                            <span>Salon:</span>
+                                                                                                            <span>Auditorium:</span>
                                                                                                             <span class="font-medium">${selectedShowtime.hall}</span>
                                                                                                         </div>
                                                                                                         <div class="flex justify-between">
@@ -1379,7 +1155,7 @@
             console.log('Token exists:', !!token);
 
             if (!token) {
-                alert('Lütfen giriş yapın!');
+                alert('Please sign in first!');
                 window.location.href = '/login';
                 return;
             }
@@ -1389,28 +1165,28 @@
             const paymentMethod = document.getElementById('paymentMethod').value;
 
             if (!customerName || !customerEmail || !customerPhone) {
-                alert('Lütfen tüm müşteri bilgilerini doldurun!');
+                alert('Please complete all customer details!');
                 return;
             }
 
             if (Object.values(selectedTicketTypes).reduce((sum, count) => sum + count, 0) === 0) {
-                alert('Lütfen en az bir bilet tipi seçin!');
+                alert('Please select at least one ticket type!');
                 return;
             }
 
             const totalTickets = Object.values(selectedTicketTypes).reduce((sum, count) => sum + count, 0);
             if (totalTickets !== selectedSeats.length) {
-                alert('Seçilen koltuk sayısı ile bilet sayısı eşleşmiyor!');
+            alert('Seat and ticket counts do not match!');
                 return;
             }
 
-            const loadingMsg = 'İşleminiz gerçekleştiriliyor...';
+            const loadingMsg = 'Processing your order...';
             alert(loadingMsg);
 
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
-                    alert('Lütfen giriş yapın!');
+                    alert('Please sign in!');
                     window.location.href = '/login';
                     return;
                 }
@@ -1450,21 +1226,21 @@
                     const ticketSummary = Object.entries(selectedTicketTypes)
                         .filter(([type, count]) => count > 0)
                         .map(([type, count]) => {
-                            const typeNames = {
-                                adult: 'Yetişkin',
-                                student: 'Öğrenci',
-                                senior: 'Emekli',
-                                child: 'Çocuk'
-                            };
+            const typeNames = {
+                adult: 'Adult',
+                student: 'Student',
+                senior: 'Retired',
+                child: 'Child'
+            };
                             return `${count} ${typeNames[type]}`;
                         })
                         .join(', ');
 
-                    alert(`Bilet satışı başarılı!\nToplam: ₺${total.toFixed(2)}\nBiletler: ${ticketSummary}\nKoltuklar: ${selectedSeats.map(s => s.code).join(', ')}`);
+                    alert(`🎉 Ticket purchase successful!\nTotal: ₺${total.toFixed(2)}\nTickets: ${ticketSummary}\nSeats: ${selectedSeats.map(s => s.code).join(', ')}`);
                     setTimeout(() => location.reload(), 2000);
                 }
             } catch (error) {
-                console.error('Bilet satışı hatası:', error);
+                console.error('Ticket purchase error:', error);
 
                 // Simulate success for demo
                 setTimeout(() => {
@@ -1476,16 +1252,16 @@
                         .filter(([type, count]) => count > 0)
                         .map(([type, count]) => {
                             const typeNames = {
-                                adult: 'Yetişkin',
-                                student: 'Öğrenci',
-                                senior: 'Emekli',
-                                child: 'Çocuk'
+                                adult: 'Adult',
+                                student: 'Student',
+                                senior: 'Retired',
+                                child: 'Child'
                             };
                             return `${count} ${typeNames[type]}`;
                         })
                         .join(', ');
 
-                    alert(`Bilet satışı başarılı!\nToplam: ₺${total.toFixed(2)}\nBiletler: ${ticketSummary}\nKoltuklar: ${selectedSeats.map(s => s.code).join(', ')}`);
+                    alert(`🎉 Ticket purchase successful!\nTotal: ₺${total.toFixed(2)}\nTickets: ${ticketSummary}\nSeats: ${selectedSeats.map(s => s.code).join(', ')}`);
                     setTimeout(() => location.reload(), 2000);
                 }, 1500);
             }
@@ -1499,5 +1275,4 @@
             }
         }
     </script>
-@endsection
 @endsection

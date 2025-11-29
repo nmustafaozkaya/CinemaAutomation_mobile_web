@@ -25,8 +25,8 @@ Future<List<Promotion>> fetchPromotions() async {
   if (!hasPurchased) {
     promotions.add(
       Promotion(
-        title: 'İlk Bilete Özel %30 İndirim!',
-        description: 'İlk biletinizde anında %30 indirim kazanın.',
+        title: '30% Off Your First Ticket',
+        description: 'Get an instant 30% discount on your very first ticket.',
         imagePath: 'assets/images/promotion_firstbuy.png',
         backgroundColor: const Color(0xffd94d43),
       ),
@@ -35,8 +35,8 @@ Future<List<Promotion>> fetchPromotions() async {
 
   promotions.add(
     Promotion(
-      title: 'Mısır ve İçecek Menüsü',
-      description: 'Büyük boy mısır ve içecek sadece 200 TL.',
+      title: 'Popcorn & Drink Combo',
+      description: 'Large popcorn plus a drink for only 200 TL.',
       imagePath: 'assets/images/popcorn_coke.png',
       backgroundColor: const Color(0xff3a8c8c),
     ),
@@ -44,8 +44,8 @@ Future<List<Promotion>> fetchPromotions() async {
 
   promotions.add(
     Promotion(
-      title: 'Çarşamba Günü Halk Günü!',
-      description: 'Her Çarşamba tüm seanslar tek fiyat.',
+      title: 'Wednesday Fan Day',
+      description: 'Every Wednesday all showtimes cost the same low price.',
       imagePath: 'assets/images/cinema_woman.png',
       backgroundColor: const Color(0xffa168a3),
     ),

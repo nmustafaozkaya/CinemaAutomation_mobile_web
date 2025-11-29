@@ -28,9 +28,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     if (!hasPurchased) {
       loadedPromotions.add(
         Promotion(
-          title: 'İlk Bilete Özel %30 İndirim!',
+          title: '30% Off Your First Ticket',
           description:
-              'Uygulamamızdan alacağınız ilk sinema biletinde anında %30 indirim kazanın. Bu fırsatı kaçırmayın!',
+              'Enjoy an instant 30% discount on the very first movie ticket you purchase in the app. Don’t miss out!',
           imagePath: 'assets/images/promotion_firstbuy.png',
           backgroundColor: const Color(0xffd94d43),
         ),
@@ -39,9 +39,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
     loadedPromotions.add(
       Promotion(
-        title: 'Mısır ve İçecek Menüsü 200 TL',
+        title: 'Popcorn & Drink Combo 200 TL',
         description:
-            'Büyük boy patlamış mısır ve orta boy içecek sadece 200 TL. Biletinize eklemeyi unutmayın.',
+            'Large popcorn plus a medium drink for only 200 TL. Add it to your order for the full cinema experience.',
         imagePath: 'assets/images/popcorn_coke.png',
         backgroundColor: const Color(0xff3a8c8c),
       ),
@@ -49,15 +49,15 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
     loadedPromotions.add(
       Promotion(
-        title: 'Çarşamba Günü Halk Günü!',
+        title: 'Wednesday Fan Day',
         description:
-            'Her Çarşamba tüm seanslar tek fiyat. İndirimli biletlerle sinema keyfini yaşayın.',
+            'Every Wednesday all showtimes are a single discounted price. Grab a budget-friendly midweek movie!',
         imagePath: 'assets/images/cinema_woman.png',
         backgroundColor: const Color(0xffa168a3),
       ),
     );
 
-    // State'i güncelle ve arayüzü yeniden çiz
+    // Update local state once promotions are ready
     setState(() {
       _promotions.addAll(loadedPromotions);
       _isLoading = false;
@@ -70,7 +70,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text(
-          'Promosyonlar',
+          'Promotions',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.black,
@@ -84,7 +84,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Colors.white),
-            ) // Yükleniyorsa bekleme animasyonu göster
+            ) // Show loading indicator while fetching promotions
           : ListView.builder(
               padding: const EdgeInsets.all(16.0),
               itemCount: _promotions.length,
@@ -92,14 +92,14 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 final promotion = _promotions[index];
                 return PromotionCard(
                   promotion: promotion,
-                ); // Her promosyon için bir kart oluştur
+                ); // Render a card for each promotion
               },
             ),
     );
   }
 }
 
-// Promosyonları daha şık göstermek için ayrı bir Widget
+// Dedicated widget to display each promotion nicely
 class PromotionCard extends StatelessWidget {
   final Promotion promotion;
 
@@ -122,7 +122,7 @@ class PromotionCard extends StatelessWidget {
               width: double.infinity,
               height: 180,
               fit: BoxFit.cover,
-              // Resim bulunamazsa hata vermemesi için
+              // Provide a graceful fallback if the image cannot be loaded
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   height: 180,
@@ -164,7 +164,7 @@ class PromotionCard extends StatelessWidget {
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
                     ),
-                    child: const Text('Kullan'),
+                    child: const Text('Use Offer'),
                   ),
                 ),
               ],

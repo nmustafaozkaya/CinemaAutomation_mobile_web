@@ -23,19 +23,12 @@ class UserSeeder extends Seeder
 
         $users = [
             [
-                'name' => 'Super Admin User',
-                'email' => 'superadmin@cinema.com',
-                'password' => bcrypt('password'),
-                'cinema_id' => null, // Super Admin tüm sinemalara erişebilir
-                'role_id' => $roles['super_admin']->id,
-                'is_active' => true
-            ],
-            [
                 'name' => 'Admin User',
                 'email' => 'admin@cinema.com',
                 'password' => bcrypt('password'),
                 'cinema_id' => $firstCinema?->id,
                 'role_id' => $roles['admin']->id,
+                'phone' => '05001234567',
                 'is_active' => true
             ],
             [
@@ -44,20 +37,20 @@ class UserSeeder extends Seeder
                 'password' => bcrypt('password'),
                 'cinema_id' => null,
                 'role_id' => $roles['customer']->id,
+                'phone' => '05009876543',
                 'is_active' => true
             ]
         ];
 
         foreach ($users as $user) {
-            User::firstOrCreate(
-                ['email' => $user['email']], 
+            User::updateOrCreate(
+                ['email' => $user['email']],
                 $user
             );
         }
 
         $this->command->info('✅ ' . count($users) . ' kullanıcı oluşturuldu.');
         $this->command->info('🔑 Test hesapları:');
-        $this->command->info('   Super Admin: superadmin@cinema.com / password');
         $this->command->info('   Admin: admin@cinema.com / password');
         $this->command->info('   Customer: customer@cinema.com / password');
     }

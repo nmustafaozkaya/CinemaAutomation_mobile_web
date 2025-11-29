@@ -51,15 +51,12 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: AppColorStyle.textPrimary,
         backgroundColor: AppColorStyle.appBarColor,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Ana Sayfa'),
-          BottomNavigationBarItem(icon: Icon(Icons.movie), label: 'Filmler'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.theaters),
-            label: 'Sinemalar',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.movie), label: 'Movies'),
+          BottomNavigationBarItem(icon: Icon(Icons.theaters), label: 'Halls'),
           BottomNavigationBarItem(
             icon: Icon(FontAwesomeIcons.solidUser),
-            label: 'Profil',
+            label: 'Profile',
           ),
         ],
         onTap: (int index) {

@@ -4,6 +4,7 @@ import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'dart:convert';
 import "package:sinema_uygulamasi/components/mytickets.dart";
 import 'package:sinema_uygulamasi/components/user_preferences.dart';
+import 'package:sinema_uygulamasi/screens/login_screen.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 
 class MyTicketsPage extends StatefulWidget {
@@ -61,7 +62,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
         setState(() {
           hasError = true;
           errorMessage =
-              'Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.';
+              'No active user session found. Please sign in again.';
           isLoading = false;
         });
         return;
@@ -71,7 +72,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
         Uri.parse(ApiConnection.myTickets),
         headers: {
           'Authorization': 'Bearer $_userToken',
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       );
 
@@ -89,36 +90,56 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
           } catch (jsonError) {
             setState(() {
               hasError = true;
-              errorMessage = 'JSON parse hatası: $jsonError';
+              errorMessage = 'JSON parse error: $jsonError';
               isLoading = false;
             });
           }
         } else {
+          // Sunucudan gelen cevabı debug için kısaltarak göster
+          final bodyPreview =
+              response.body.length > 300 ? '${response.body.substring(0, 300)}...' : response.body;
+
           setState(() {
             hasError = true;
             errorMessage =
-                'Sunucu beklenmedik bir yanıt döndürdü (HTML formatında)';
+                'The server returned an unexpected (non-JSON) response.\n'
+                'Status: ${response.statusCode}\n'
+                'Body: $bodyPreview';
             isLoading = false;
           });
         }
       } else if (response.statusCode == 401) {
+        // Token geçersiz / süresi dolmuş olabilir: veriyi temizle ve login'e yönlendir
+        await UserPreferences.removeData();
+
+        if (!mounted) return;
+
         setState(() {
           hasError = true;
-          errorMessage = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+          errorMessage = 'Your session has expired. Please sign in again.';
           isLoading = false;
+        });
+
+        // Kısa bir gecikmeden sonra login ekranına yönlendir
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
         });
       } else {
         setState(() {
           hasError = true;
           errorMessage =
-              'Biletler yüklenemedi. Kod: ${response.statusCode}\nMesaj: ${response.body}';
+              'Unable to load tickets. Code: ${response.statusCode}\nMessage: ${response.body}';
           isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
         hasError = true;
-        errorMessage = 'Bağlantı hatası: $e';
+        errorMessage = 'Connection error: $e';
         isLoading = false;
       });
     }
@@ -176,7 +197,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
                 backgroundColor: AppColorStyle.primaryAccent,
                 foregroundColor: AppColorStyle.textPrimary,
               ),
-              child: const Text('Tekrar Dene'),
+              child: const Text('Try Again'),
             ),
           ],
         ),
@@ -195,7 +216,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
             ),
             SizedBox(height: 16),
             Text(
-              'Henüz biletiniz yok',
+              'You have no tickets yet',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
@@ -204,7 +225,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
             ),
             SizedBox(height: 8),
             Text(
-              'Otomatik film biletleriniz burada görünecek',
+              'Your cinema tickets will appear here automatically',
               style: TextStyle(color: AppColorStyle.textSecondary),
             ),
           ],

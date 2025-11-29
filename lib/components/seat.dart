@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class CinemaSeatResponse {
   final bool success;
   final CinemaSeatData data;
@@ -29,9 +31,9 @@ class CinemaSeatData {
 
   factory CinemaSeatData.fromJson(Map<String, dynamic> json) {
     return CinemaSeatData(
-      showtime: ShowtimeInfo.fromJson(json['showtime']),
-      seats: SeatInfo.fromJson(json['seats']),
-      counts: SeatCounts.fromJson(json['counts']),
+      showtime: ShowtimeInfo.fromJson(json['showtime'] as Map<String, dynamic>? ?? {}),
+      seats: SeatInfo.fromJson(json['seats'] as Map<String, dynamic>? ?? {}),
+      counts: SeatCounts.fromJson(json['counts'] as Map<String, dynamic>? ?? {}),
     );
   }
 
@@ -63,12 +65,12 @@ class ShowtimeInfo {
 
   factory ShowtimeInfo.fromJson(Map<String, dynamic> json) {
     return ShowtimeInfo(
-      id: json['id'],
-      movie: json['movie'],
-      hall: json['hall'],
-      cinema: json['cinema'],
-      startTime: DateTime.parse(json['start_time']),
-      price: json['price'],
+      id: json['id'] as int? ?? 0,
+      movie: json['movie']?.toString() ?? '',
+      hall: json['hall']?.toString() ?? '',
+      cinema: json['cinema']?.toString() ?? '',
+      startTime: json['start_time'] != null ? DateTime.parse(json['start_time'].toString()) : DateTime.now(),
+      price: json['price']?.toString() ?? '0',
     );
   }
 
@@ -97,14 +99,14 @@ class SeatInfo {
 
   factory SeatInfo.fromJson(Map<String, dynamic> json) {
     return SeatInfo(
-      available: (json['available'] as List)
-          .map((seat) => Seat.fromJson(seat))
+      available: (json['available'] as List? ?? [])
+          .map((seat) => Seat.fromJson(seat as Map<String, dynamic>))
           .toList(),
-      occupied: (json['occupied'] as List)
-          .map((seat) => Seat.fromJson(seat))
+      occupied: (json['occupied'] as List? ?? [])
+          .map((seat) => Seat.fromJson(seat as Map<String, dynamic>))
           .toList(),
-      pending: (json['pending'] as List)
-          .map((seat) => Seat.fromJson(seat))
+      pending: (json['pending'] as List? ?? [])
+          .map((seat) => Seat.fromJson(seat as Map<String, dynamic>))
           .toList(),
     );
   }
@@ -135,7 +137,7 @@ class SeatInfo {
     }
 
     groupedSeats.forEach((key, value) {
-      value.sort((a, b) => a.number.compareTo(b.number));
+      value.sort((a, b) => a.number.compareTo(b.number)); // Küçükten büyüğe sırala (A1, A2, A3...)
     });
 
     return groupedSeats;
@@ -162,14 +164,28 @@ class Seat {
   });
 
   factory Seat.fromJson(Map<String, dynamic> json) {
+    // Debug: Gelen JSON'u yazdır
+    debugPrint('🔍 Seat JSON: $json');
+    
+    // Status değerini güvenli bir şekilde parse et
+    final statusValue = json['status']?.toString() ?? 'Blank';
+    
+    // Null kontrolleri
+    final rowValue = json['row'];
+    final numberValue = json['number'];
+    final createdAtValue = json['created_at'];
+    final updatedAtValue = json['updated_at'];
+    
+    debugPrint('🔍 Seat values: row=$rowValue (${rowValue.runtimeType}), number=$numberValue (${numberValue.runtimeType}), status=$statusValue');
+    
     return Seat(
-      id: json['id'],
-      hallId: json['hall_id'],
-      row: json['row'],
-      number: json['number'],
-      status: SeatStatus.fromString(json['status']),
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      id: json['id'] as int? ?? 0,
+      hallId: json['hall_id'] as int? ?? 0,
+      row: rowValue?.toString() ?? 'A',
+      number: (numberValue is int) ? numberValue : (numberValue is String) ? int.tryParse(numberValue) ?? 0 : 0,
+      status: SeatStatus.fromString(statusValue),
+      createdAt: createdAtValue != null ? DateTime.parse(createdAtValue.toString()) : DateTime.now(),
+      updatedAt: updatedAtValue != null ? DateTime.parse(updatedAtValue.toString()) : DateTime.now(),
     );
   }
 
@@ -196,7 +212,17 @@ enum SeatStatus {
   pending;
 
   static SeatStatus fromString(String status) {
-    switch (status.toLowerCase()) {
+    // Trim ve lowercase yap
+    final normalizedStatus = status.trim().toLowerCase();
+    
+    switch (normalizedStatus) {
+      case 'blank':
+        return SeatStatus.available;
+      case 'filled':
+        return SeatStatus.occupied;
+      case 'in another basket':
+        return SeatStatus.pending;
+      // Backward compatibility
       case 'available':
         return SeatStatus.available;
       case 'occupied':
@@ -204,18 +230,19 @@ enum SeatStatus {
       case 'pending':
         return SeatStatus.pending;
       default:
-        throw ArgumentError('Unknown seat status: $status');
+        // Debug için orijinal değeri de göster
+        throw ArgumentError('Unknown seat status: "$status" (normalized: "$normalizedStatus")');
     }
   }
 
   String get displayName {
     switch (this) {
       case SeatStatus.available:
-        return 'Müsait';
+        return 'Blank';
       case SeatStatus.occupied:
-        return 'Dolu';
+        return 'Filled';
       case SeatStatus.pending:
-        return 'Bekliyor';
+        return 'In Another Basket';
     }
   }
 }
@@ -235,10 +262,10 @@ class SeatCounts {
 
   factory SeatCounts.fromJson(Map<String, dynamic> json) {
     return SeatCounts(
-      total: json['total'],
-      available: json['available'],
-      occupied: json['occupied'],
-      pending: json['pending'],
+      total: json['total'] as int? ?? 0,
+      available: json['available'] as int? ?? 0,
+      occupied: json['occupied'] as int? ?? 0,
+      pending: json['pending'] as int? ?? 0,
     );
   }
 

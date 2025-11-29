@@ -34,7 +34,7 @@ class _BuyScreenState extends State<BuyScreen> {
 
   final Color buttonColor = Colors.amber;
   final Color buttonTextColor = AppColorStyle.textPrimary;
-  final String buttonText = "Continue to Seat Selection";
+  final String buttonText = "Continue to Ticket Type Selection";
 
   @override
   void initState() {
@@ -355,11 +355,7 @@ class _BuyScreenState extends State<BuyScreen> {
                   onPressed: onPressed,
                 ),
               if (isReadOnly)
-                const Icon(
-                  Icons.check_circle,
-                  color: Colors.green,
-                  size: 20,
-                ),
+                const Icon(Icons.check_circle, color: Colors.green, size: 20),
             ],
           ),
           const SizedBox(height: 10),

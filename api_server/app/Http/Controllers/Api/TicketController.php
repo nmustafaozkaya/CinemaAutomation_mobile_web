@@ -40,7 +40,7 @@ class TicketController extends Controller
 
                 foreach ($seats as $seat) {
                     // Koltuk ne müsait ne de pending ise hata ver
-                    if (!in_array($seat->status, ['available', 'pending'])) {
+                    if (!in_array($seat->status, [Seat::STATUS_AVAILABLE, Seat::STATUS_PENDING])) {
                         return response()->json([
                             'success' => false,
                             'message' => "Koltuk {$seat->row}{$seat->number} müsait değil (Durum: {$seat->status})"
@@ -96,7 +96,7 @@ class TicketController extends Controller
 
                     // Koltuk durumunu occupied yap
                     $seat->update([
-                        'status' => 'occupied',
+                        'status' => Seat::STATUS_OCCUPIED,
                         'reserved_at' => null,
                         'reserved_until' => null
                     ]);

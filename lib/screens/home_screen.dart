@@ -34,7 +34,7 @@ Widget buildMoviePoster(String posterUrl) {
       resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://');
 
   if (!isValidUrl) {
-    debugPrint('Geçersiz poster URL: $resolvedUrl');
+    debugPrint('Invalid poster URL: $resolvedUrl');
     return Container(
       color: Colors.grey.shade300,
       child: const Center(
@@ -63,7 +63,7 @@ Widget buildMoviePoster(String posterUrl) {
       );
     },
     errorBuilder: (context, error, stackTrace) {
-      debugPrint('Poster yükleme hatası: $error - URL: $resolvedUrl');
+      debugPrint('Poster load error: $error - URL: $resolvedUrl');
       return Container(
         color: Colors.grey.shade300,
         child: const Center(
@@ -85,6 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Movie>> _nowShowingMoviesFuture;
   late Future<List<Movie>> _comingSoonMoviesFuture;
   static const int _maxRetries = 3;
+  int _loadCounter = 0; // Her yüklemede artırılacak counter
 
   @override
   void initState() {
@@ -94,13 +95,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _loadDistributedMovies() {
     // Distributed API'yi kullan - toplam 100 filmi tarihe göre dağıtır
-    // Cache-busting için timestamp ekle
+    // Cache-busting için timestamp ekle - her çağrıda yeni timestamp
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     String url = '${ApiConnection.distributedMovies}?_t=$timestamp';
 
-    // Distributed API'den hem Now Showing hem Coming Soon filmlerini al
-    _nowShowingMoviesFuture = _fetchDistributedMovies(url, true);
-    _comingSoonMoviesFuture = _fetchDistributedMovies(url, false);
+    // Counter'ı artır - FutureBuilder key'lerini güncellemek için
+    _loadCounter++;
+
+    // Future'ları her seferinde yeniden oluştur - cache'i bypass et
+    if (mounted) {
+      setState(() {
+        _nowShowingMoviesFuture = _fetchDistributedMovies(url, true);
+        _comingSoonMoviesFuture = _fetchDistributedMovies(url, false);
+      });
+    } else {
+      // initState içindeyse setState olmadan direkt atama yap
+      _nowShowingMoviesFuture = _fetchDistributedMovies(url, true);
+      _comingSoonMoviesFuture = _fetchDistributedMovies(url, false);
+    }
   }
 
   Future<List<Movie>> _fetchDistributedMovies(
@@ -121,13 +133,46 @@ class _HomeScreenState extends State<HomeScreen> {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              throw TimeoutException('İstek zaman aşımına uğradı');
+              throw TimeoutException('Request timed out');
             },
           );
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         try {
-          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          // JSON string'i temizle - Unicode ve escape karakterlerini düzelt
+          String cleanedJson = sanitizeJsonString(response.body);
+          
+          // "Unexpected end of input" hatasını kontrol et - JSON eksik/kesik olabilir
+          if (cleanedJson.trim().isEmpty || 
+              (!cleanedJson.trim().endsWith('}') && !cleanedJson.trim().endsWith(']'))) {
+            debugPrint('⚠️ JSON eksik görünüyor, retrying...');
+            if (retryAttempt < _maxRetries) {
+              await Future.delayed(
+                Duration(milliseconds: 500 * (retryAttempt + 1)),
+              );
+              return _fetchDistributedMovies(
+                url,
+                isNowShowing,
+                retryAttempt: retryAttempt + 1,
+              );
+            }
+            return [];
+          }
+          
+          // JSON parse - temizlenmiş JSON'u kullan
+          Map<String, dynamic> data;
+          try {
+            data = jsonDecode(cleanedJson) as Map<String, dynamic>;
+          } catch (e) {
+            debugPrint('⚠️ JSON parse hatası (sanitize sonrası): $e');
+            // Eğer sanitize sonrası da parse edilemezse, orijinal JSON'u dene
+            try {
+              data = jsonDecode(response.body) as Map<String, dynamic>;
+            } catch (e2) {
+              debugPrint('⚠️ Orijinal JSON da parse edilemedi: $e2');
+              rethrow;
+            }
+          }
 
           if (data['success'] == true && data['data'] != null) {
             final responseData = data['data'] as Map<String, dynamic>;
@@ -142,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     try {
                       return Movie.fromJson(json as Map<String, dynamic>);
                     } catch (e) {
-                      debugPrint('⚠️ Film parse hatası: $e');
+                      debugPrint('⚠️ Movie parse error: $e');
                       return null;
                     }
                   })
@@ -159,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     try {
                       return Movie.fromJson(json as Map<String, dynamic>);
                     } catch (e) {
-                      debugPrint('⚠️ Film parse hatası: $e');
+                      debugPrint('⚠️ Movie parse error: $e');
                       return null;
                     }
                   })
@@ -169,11 +214,11 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           }
         } catch (e) {
-          debugPrint('⚠️ JSON parse hatası: $e');
+          debugPrint('⚠️ JSON parse error: $e');
           // JSON parse hatası - retry yap
           if (retryAttempt < _maxRetries) {
             debugPrint(
-              '⚠️ Retry yapılıyor... (${retryAttempt + 1}/$_maxRetries)',
+              '⚠️ Retrying... (${retryAttempt + 1}/$_maxRetries)',
             );
             await Future.delayed(
               Duration(milliseconds: 500 * (retryAttempt + 1)),
@@ -186,11 +231,11 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       } else if (response.statusCode != 200) {
-        debugPrint('⚠️ HTTP hatası: ${response.statusCode}');
+        debugPrint('⚠️ HTTP error: ${response.statusCode}');
         // HTTP hatası - retry yap
         if (retryAttempt < _maxRetries) {
           debugPrint(
-            '⚠️ Retry yapılıyor... (${retryAttempt + 1}/$_maxRetries)',
+            '⚠️ Retrying... (${retryAttempt + 1}/$_maxRetries)',
           );
           await Future.delayed(
             Duration(milliseconds: 500 * (retryAttempt + 1)),
@@ -204,10 +249,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       return [];
     } on TimeoutException catch (e) {
-      debugPrint('⚠️ Timeout hatası: $e');
+      debugPrint('⚠️ Timeout error: $e');
       // Timeout - retry yap
       if (retryAttempt < _maxRetries) {
-        debugPrint('⚠️ Retry yapılıyor... (${retryAttempt + 1}/$_maxRetries)');
+        debugPrint('⚠️ Retrying... (${retryAttempt + 1}/$_maxRetries)');
         await Future.delayed(Duration(milliseconds: 500 * (retryAttempt + 1)));
         return _fetchDistributedMovies(
           url,
@@ -217,10 +262,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       return [];
     } catch (e) {
-      debugPrint('⚠️ _fetchDistributedMovies hatası: $e');
+      debugPrint('⚠️ _fetchDistributedMovies error: $e');
       // Diğer hatalar - retry yap
       if (retryAttempt < _maxRetries) {
-        debugPrint('⚠️ Retry yapılıyor... (${retryAttempt + 1}/$_maxRetries)');
+        debugPrint('⚠️ Retrying... (${retryAttempt + 1}/$_maxRetries)');
         await Future.delayed(Duration(milliseconds: 500 * (retryAttempt + 1)));
         return _fetchDistributedMovies(
           url,
@@ -276,9 +321,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+            const SizedBox(height: 10),
         FutureBuilder<List<Movie>>(
-          key: ValueKey('now_showing_${_nowShowingMoviesFuture.hashCode}'),
+          key: ValueKey('now_showing_$_loadCounter'),
           future: _nowShowingMoviesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -293,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Hata: ${snapshot.error}",
+                      "Error: ${snapshot.error}",
                       style: const TextStyle(
                         color: AppColorStyle.textSecondary,
                       ),
@@ -306,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
+                      label: const Text('Try Again'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
@@ -321,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Film bulunamadı.",
+                      "No movies found.",
                       style: TextStyle(color: AppColorStyle.textSecondary),
                     ),
                     const SizedBox(height: 10),
@@ -332,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
+                      label: const Text('Try Again'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
@@ -427,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 10),
         FutureBuilder<List<Movie>>(
-          key: ValueKey('coming_soon_${_comingSoonMoviesFuture.hashCode}'),
+          key: ValueKey('coming_soon_$_loadCounter'),
           future: _comingSoonMoviesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -442,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Hata: ${snapshot.error}",
+                      "Error: ${snapshot.error}",
                       style: const TextStyle(
                         color: AppColorStyle.textSecondary,
                       ),
@@ -455,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
+                      label: const Text('Try Again'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
@@ -470,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Film bulunamadı.",
+                      "No movies found.",
                       style: TextStyle(color: AppColorStyle.textSecondary),
                     ),
                     const SizedBox(height: 10),
@@ -481,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
+                      label: const Text('Try Again'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
@@ -708,19 +753,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   ExpansionTile(
                     leading: const Icon(Icons.adjust),
-                    title: const Text('Hakkımızda'),
+                    title: const Text('About Us'),
                     trailing: const Icon(Icons.arrow_drop_down),
                     children: [
                       ListTile(
-                        title: const Text('Biz Kimiz?'),
+                        title: const Text('Who Are We?'),
                         onTap: () => Navigator.pop(context),
                       ),
                       ListTile(
-                        title: const Text('Sertifikalarımız'),
+                        title: const Text('Our Certificates'),
                         onTap: () => Navigator.pop(context),
                       ),
                       ListTile(
-                        title: const Text('Misyonumuz'),
+                        title: const Text('Our Mission'),
                         onTap: () => Navigator.pop(context),
                       ),
                     ],

@@ -13,16 +13,12 @@ class RoleSeeder extends Seeder
 
         $roles = [
             [
-                'name' => 'super_admin',
-                'description' => 'Sistem yöneticisi - Tüm yetkiler'
-            ],
-            [
                 'name' => 'admin',
-                'description' => 'Sinema müdürü - Yönetim yetkileri'
+                'description' => 'Cinema manager - full management permissions'
             ],
             [
                 'name' => 'customer',
-                'description' => 'Müşteri - Temel görüntüleme yetkileri'
+                'description' => 'Customer - basic viewing permissions'
             ]
         ];
 

@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('hall_id')->constrained();
             $table->string('row');
             $table->integer('number');
-            $table->enum('status', ['available', 'occupied', 'pending'])
-          ->default('available');
+            $table->enum('status', ['Blank', 'Filled', 'In Another Basket'])
+          ->default('Blank');
             $table->timestamps();
 });
     }

@@ -7,7 +7,7 @@ import 'package:sinema_uygulamasi/screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('tr_TR', null);
+  await initializeDateFormatting('en_US', null);
 
   final rememberMe = await UserPreferences.getRememberMe();
   final currentUser = rememberMe ? await UserPreferences.readData() : null;
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Sinema Uygulaması',
+      title: 'Cinema App',
       theme: ThemeData(primarySwatch: Colors.teal),
       home: currentUser != null
           ? HomePage(currentUser: currentUser!)

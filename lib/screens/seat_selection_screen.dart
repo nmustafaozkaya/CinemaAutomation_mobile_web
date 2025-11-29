@@ -145,10 +145,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       try {
         final response = await http.get(
           uri,
-          headers: const {
-            'Accept': 'application/json',
-            'Connection': 'close',
-          },
+          headers: const {'Accept': 'application/json', 'Connection': 'close'},
         );
 
         if (response.statusCode == 200) {
@@ -156,8 +153,22 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
             throw Exception('Empty response received from server.');
           }
 
-          final Map<String, dynamic> jsonResponse =
-              _decodeSeatJson(response.bodyBytes);
+          final Map<String, dynamic> jsonResponse = _decodeSeatJson(
+            response.bodyBytes,
+          );
+
+          // Debug: API'den gelen veriyi yazdır
+          debugPrint('🔍 API Response: ${jsonResponse.toString()}');
+          if (jsonResponse['data'] != null &&
+              jsonResponse['data']['seats'] != null) {
+            final seats = jsonResponse['data']['seats'];
+            debugPrint(
+              '🔍 Seats structure: available=${seats['available']?.length ?? 0}, occupied=${seats['occupied']?.length ?? 0}, pending=${seats['pending']?.length ?? 0}',
+            );
+            if (seats['available'] != null && seats['available'].isNotEmpty) {
+              debugPrint('🔍 First available seat: ${seats['available'][0]}');
+            }
+          }
 
           return CinemaSeatResponse.fromJson(jsonResponse);
         } else {
@@ -171,9 +182,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           await Future.delayed(const Duration(milliseconds: 250));
           continue;
         }
-        throw Exception(
-          'Seat data parse error: ${e.message}',
-        );
+        throw Exception('Seat data parse error: ${e.message}');
       } catch (e) {
         throw Exception('Error while fetching seat data: $e');
       }
@@ -435,16 +444,16 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   Color getSeatColor(Seat seat) {
     final isSelected = selectedSeats.any((s) => s.id == seat.id);
     if (isSelected) {
-      return AppColorStyle.primaryAccent;
+      return const Color(0xFFf8e71c); // Your Selection
     }
 
     switch (seat.status) {
       case SeatStatus.available:
-        return Colors.green;
+        return const Color(0xFF10b981); // Blank
       case SeatStatus.occupied:
-        return Colors.red;
+        return const Color(0xFFcbcbcb); // Filled
       case SeatStatus.pending:
-        return Colors.orange;
+        return const Color(0xFFff4061); // In Another Basket
     }
   }
 
@@ -452,9 +461,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     return GestureDetector(
       onTap: () => toggleSeatSelection(seat),
       child: Container(
-        width: 35,
-        height: 35,
-        margin: const EdgeInsets.all(2),
+        width: 32,
+        height: 32,
+        margin: const EdgeInsets.all(1.5),
         decoration: BoxDecoration(
           color: getSeatColor(seat),
           borderRadius: BorderRadius.circular(6),
@@ -466,12 +475,20 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           ),
         ),
         child: Center(
-          child: Text(
-            seat.displayName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Text(
+                seat.displayName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 9,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ),
@@ -496,32 +513,16 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
     return Column(
       children: [
-        Container(
-          width: double.infinity,
-          height: 30,
-          margin: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColorStyle.appBarColor,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Center(
-            child: Text(
-              'Screen This Way ↑',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColorStyle.textPrimary,
-              ),
-            ),
-          ),
-        ),
+        // Seat Map
         Expanded(
           child: SingleChildScrollView(
             child: Column(
               children: [
                 ...sortedRows.map((row) {
                   final seats = groupedSeats[row]!;
-                  final seatButtons =
-                      seats.map((seat) => buildSeatButton(seat)).toList();
+                  final seatButtons = seats
+                      .map((seat) => buildSeatButton(seat))
+                      .toList();
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -556,6 +557,25 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
             ),
           ),
         ),
+        // Screen (en altta)
+        Container(
+          width: double.infinity,
+          height: 30,
+          margin: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColorStyle.appBarColor,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Center(
+            child: Text(
+              'SCREEN',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColorStyle.textPrimary,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -567,13 +587,15 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 8,
           children: [
-            _buildLegendItem(Colors.green, 'Available'),
-            _buildLegendItem(AppColorStyle.primaryAccent, 'Selected'),
-            _buildLegendItem(Colors.orange, 'Pending'),
-            _buildLegendItem(Colors.red, 'Occupied'),
+            _buildLegendItem(const Color(0xFFf8e71c), 'Your Selection'),
+            _buildLegendItem(const Color(0xFFff4061), 'In Another Basket'),
+            _buildLegendItem(const Color(0xFFcbcbcb), 'Filled'),
+            _buildLegendItem(const Color(0xFF10b981), 'Blank'),
           ],
         ),
       ),
@@ -592,10 +614,14 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
             borderRadius: BorderRadius.circular(4),
           ),
         ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: AppColorStyle.textSecondary),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 11, color: AppColorStyle.textSecondary),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
         ),
       ],
     );
@@ -733,23 +759,6 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
         backgroundColor: AppColorStyle.appBarColor,
         foregroundColor: AppColorStyle.textPrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColorStyle.textPrimary),
-            onPressed: () async {
-              for (var seat in List<Seat>.from(selectedSeats)) {
-                final success = await unreserveSeat(seat);
-                if (success) {
-                  setState(() {
-                    selectedSeats.removeWhere((s) => s.id == seat.id);
-                  });
-                }
-              }
-
-              await loadSeats(isManualRefresh: true);
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
