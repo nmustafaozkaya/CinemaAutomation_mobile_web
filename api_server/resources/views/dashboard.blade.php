@@ -18,23 +18,23 @@
                 </div>
                 <h1
                     class="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                    Hoş Geldiniz, {{ auth()->user()->name }}!
+                    Welcome, {{ auth()->user()->name }}!
                 </h1>
                 <p class="text-xl text-gray-300 max-w-2xl mx-auto">
-                    Vizyondaki filmleri keşfedin ve biletinizi hemen alın
+                    Discover movies now showing and buy your ticket instantly.
                 </p>
             </div>
 
-            <!-- Film Kategorileri -->
+            <!-- Movie Categories -->
             <div class="mb-12">
                 <h2 class="text-3xl font-bold text-white mb-8 text-center">
-                    <i class="fas fa-th-large mr-3 text-blue-400"></i>Film Kategorileri
+                    <i class="fas fa-th-large mr-3 text-blue-400"></i>Movie Categories
                 </h2>
                 
                 <!-- Loading State - Hidden by default -->
                 <div id="movieLoadingState" style="display: none !important; visibility: hidden !important;">
                     <div class="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto mb-4 animate-spin"></div>
-                    <p class="text-white">Filmler yükleniyor...</p>
+                    <p class="text-white">Loading movies...</p>
                 </div>
                 
                 <!-- Categories Container -->
@@ -47,8 +47,8 @@
                     <div class="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-film text-gray-400 text-3xl"></i>
                     </div>
-                    <h4 class="text-xl font-bold text-white mb-2">Film Bulunamadı</h4>
-                    <p class="text-gray-400 mb-4">Şu anda vizyonda film bulunmuyor.</p>
+                    <h4 class="text-xl font-bold text-white mb-2">No Movies Found</h4>
+                    <p class="text-gray-400 mb-4">There are currently no movies in theaters.</p>
                 </div>
             </div>
 
@@ -68,10 +68,10 @@
                 </div>
                 <h1
                     class="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                    Yönetim Paneli
+                    Management Dashboard
                 </h1>
                 <p class="text-xl text-gray-300 max-w-2xl mx-auto">
-                    Sinema operasyonlarınızı yönetin ve raporlarınızı görüntüleyin
+                    Manage your cinema operations and view reports.
                 </p>
             </div>
 
@@ -83,7 +83,7 @@
                         <i class="fas fa-film text-white text-xl"></i>
                     </div>
                     <div class="text-3xl font-bold text-gray-800 mb-2">50</div>
-                    <div class="text-gray-600 font-medium">Aktif Filmler</div>
+                    <div class="text-gray-600 font-medium">Active Movies</div>
                 </div>
 
                 <div class="stat-card p-6 rounded-2xl text-center card-hover">
@@ -92,7 +92,7 @@
                         <i class="fas fa-building text-white text-xl"></i>
                     </div>
                     <div class="text-3xl font-bold text-gray-800 mb-2">10</div>
-                    <div class="text-gray-600 font-medium">Sinema Salonları</div>
+                    <div class="text-gray-600 font-medium">Cinemas</div>
                 </div>
 
                 <div class="stat-card p-6 rounded-2xl text-center card-hover">
@@ -101,7 +101,7 @@
                         <i class="fas fa-clock text-white text-xl"></i>
                     </div>
                     <div class="text-3xl font-bold text-gray-800 mb-2">150</div>
-                    <div class="text-gray-600 font-medium">Günlük Seanslar</div>
+                    <div class="text-gray-600 font-medium">Daily Showtimes</div>
                 </div>
 
                 <div class="stat-card p-6 rounded-2xl text-center card-hover">
@@ -110,7 +110,7 @@
                         <i class="fas fa-ticket-alt text-white text-xl"></i>
                     </div>
                     <div class="text-3xl font-bold text-gray-800 mb-2">247</div>
-                    <div class="text-gray-600 font-medium">Satılan Biletler</div>
+                    <div class="text-gray-600 font-medium">Tickets Sold</div>
                 </div>
             </div>
 
@@ -121,11 +121,11 @@
                         class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <i class="fas fa-play text-white text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-4">Film Listesi</h3>
-                    <p class="text-gray-300 mb-6">Vizyondaki tüm filmleri keşfedin</p>
+                    <h3 class="text-xl font-bold text-white mb-4">Movie List</h3>
+                    <p class="text-gray-300 mb-6">Browse all movies currently showing.</p>
                     <a href="/movies"
                         class="w-full inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
-                        Filmleri Görüntüle
+                        View Movies
                     </a>
                 </div>
 
@@ -134,11 +134,11 @@
                         class="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <i class="fas fa-ticket-alt text-white text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-4">Bilet Satış</h3>
-                    <p class="text-gray-300 mb-6">Hızlı ve kolay bilet satışı yapın</p>
+                    <h3 class="text-xl font-bold text-white mb-4">Ticket Sales</h3>
+                    <p class="text-gray-300 mb-6">Make fast and easy ticket sales.</p>
                     <a href="/tickets"
                         class="w-full inline-block bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300">
-                        Bilet Sat
+                        Sell Ticket
                     </a>
                 </div>
 
@@ -147,17 +147,17 @@
                         class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <i class="fas fa-cog text-white text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-4">Yönetim Paneli</h3>
-                    <p class="text-gray-300 mb-6">Sistem yönetimi ve raporlar</p>
+                    <h3 class="text-xl font-bold text-white mb-4">Admin Panel</h3>
+                    <p class="text-gray-300 mb-6">System management and reports.</p>
                     <a href="/admin"
                         class="w-full inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
-                        Yönetim Paneli
+                        Admin Panel
                     </a>
                 </div>
             </div>
         @endif
     @else
-            <!-- MISAFIR DASHBOARD -->
+            <!-- GUEST DASHBOARD -->
             <div class="text-center mb-12">
                 <div class="floating-animation inline-block mb-6">
                     <div
@@ -172,10 +172,10 @@
                 </div>
                 <h1
                     class="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                    Cinema Automation'a Hoş Geldiniz
+                    Welcome to Cinema Automation
                 </h1>
                 <p class="text-xl text-gray-300 max-w-2xl mx-auto">
-                    En yeni filmler, konforlu koltuklar ve dijital ses sistemi ile unutulmaz bir sinema deneyimi yaşayın
+                    Experience unforgettable cinema with the latest movies, comfortable seats and digital sound.
                 </p>
             </div>
 
@@ -186,11 +186,11 @@
                         class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <i class="fas fa-play text-white text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-4">Vizyondaki Filmler</h3>
-                    <p class="text-gray-300 mb-6">Vizyondaki tüm filmleri keşfedin</p>
+                    <h3 class="text-xl font-bold text-white mb-4">Now Showing</h3>
+                    <p class="text-gray-300 mb-6">Discover all movies currently in theaters.</p>
                     <a href="/movies"
                         class="w-full inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
-                        Filmleri Görüntüle
+                        View Movies
                     </a>
                 </div>
 
@@ -199,11 +199,11 @@
                         class="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <i class="fas fa-sign-in-alt text-white text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-4">Giriş Yap</h3>
-                    <p class="text-gray-300 mb-6">Bilet almak için giriş yapın</p>
+                    <h3 class="text-xl font-bold text-white mb-4">Login</h3>
+                    <p class="text-gray-300 mb-6">Login to buy tickets.</p>
                     <a href="/login"
                         class="w-full inline-block bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300">
-                        Giriş Yap
+                        Login
                     </a>
                 </div>
             </div>
@@ -218,7 +218,7 @@
 
         async function loadMovies() {
             try {
-                console.log('Dashboard - Filmler yükleniyor...');
+                console.log('Dashboard - Loading movies...');
                 
                 let url = '/api/movies?per_page=100';
                 
@@ -227,19 +227,19 @@
                 console.log('Dashboard - API Response:', response.data);
                 
                 const movies = response.data.data.data || response.data.data;
-                console.log('Dashboard - Film sayısı:', movies.length);
+                console.log('Dashboard - Movie count:', movies.length);
                 
                 if (movies.length === 0) {
-                    console.log('Dashboard - Film bulunamadı, empty state gösteriliyor');
+                    console.log('Dashboard - No movies found, showing empty state');
                     showEmpty();
                 } else {
-                    console.log('Dashboard - Filmler türlerine göre kategorilere ayrılıyor');
+                    console.log('Dashboard - Grouping movies by genre');
                     renderMoviesByGenre(movies);
                     console.log('Dashboard - Kategoriler render edildi');
                 }
                 
             } catch (error) {
-                console.error('Dashboard - Filmler yüklenemedi:', error);
+                console.error('Dashboard - Failed to load movies:', error);
                 console.error('Dashboard - Error details:', error.response?.data);
                 showEmpty();
             }
@@ -252,12 +252,12 @@
         }
 
         function showGrid() {
-            console.log('Dashboard - showGrid çağrıldı');
+            console.log('Dashboard - showGrid called');
             const loadingState = document.getElementById('movieLoadingState');
             const movieGrid = document.getElementById('movieGrid');
             const emptyState = document.getElementById('movieEmptyState');
             
-            // Loading state'i tamamen gizle
+            // Completely hide loading state
             if (loadingState) {
                 loadingState.style.display = 'none';
                 loadingState.style.visibility = 'hidden';
@@ -265,7 +265,7 @@
                 loadingState.classList.add('hidden');
             }
             
-            // Movie grid'i göster
+            // Show movie grid
             if (movieGrid) {
                 movieGrid.style.display = 'grid';
                 movieGrid.style.visibility = 'visible';
@@ -273,7 +273,7 @@
                 movieGrid.classList.remove('hidden');
             }
             
-            // Empty state'i gizle
+            // Hide empty state
             if (emptyState) {
                 emptyState.style.display = 'none';
                 emptyState.style.visibility = 'hidden';
@@ -292,18 +292,18 @@
         }
 
         function renderMoviesByGenre(movies) {
-            console.log('Dashboard - renderMoviesByGenre çağrıldı, film sayısı:', movies.length);
+            console.log('Dashboard - renderMoviesByGenre called, movie count:', movies.length);
             
-            // Filmleri türlerine göre grupla - Korku ve Gerilim'i ayır
+            // Group movies by genre - separate Horror and Thriller
             const categories = {};
             movies.forEach(movie => {
-                const genreStr = movie.genre || 'Diğer';
+                const genreStr = movie.genre || 'Other';
                 
-                // Virgülle ayrılmış türleri parçala ve ayır
+                // Split comma separated genres
                 const genres = genreStr.split(',').map(g => g.trim()).filter(g => g);
                 
                 genres.forEach(genre => {
-                    // Korku ve Gerilim'i ayrı kategorilere ayır
+                    // Separate Horror and Thriller categories
                     if (genre.includes('Korku') && !genre.includes('Gerilim')) {
                         if (!categories['Korku']) {
                             categories['Korku'] = [];
@@ -315,14 +315,14 @@
                         }
                         categories['Gerilim'].push(movie);
                     } else if (genre.includes('Korku') && genre.includes('Gerilim')) {
-                        // Hem Korku hem Gerilim içeriyorsa her ikisine de ekle
+                        // If contains both Horror and Thriller, add to both
                         if (!categories['Korku']) {
                             categories['Korku'] = [];
                         }
                         if (!categories['Gerilim']) {
                             categories['Gerilim'] = [];
                         }
-                        // Sadece bir kez ekle (duplicate kontrolü)
+                        // Ensure unique add (duplicate check)
                         if (!categories['Korku'].some(m => m.id === movie.id)) {
                             categories['Korku'].push(movie);
                         }
@@ -330,11 +330,11 @@
                             categories['Gerilim'].push(movie);
                         }
                     } else {
-                        // Diğer türler
+                        // Other genres
                         if (!categories[genre]) {
                             categories[genre] = [];
                         }
-                        // Duplicate kontrolü
+                        // Duplicate check
                         if (!categories[genre].some(m => m.id === movie.id)) {
                             categories[genre].push(movie);
                         }
@@ -342,11 +342,11 @@
                 });
             });
             
-            // En popüler türleri seç (en az 2 film olan)
+            // Pick most popular genres (at least 2 movies)
             const popularCategories = Object.entries(categories)
                 .filter(([genre, films]) => films.length >= 2)
                 .sort((a, b) => b[1].length - a[1].length)
-                .slice(0, 8); // En fazla 8 kategori göster
+                .slice(0, 8); // Show at most 8 categories
             
             console.log('Dashboard - Kategoriler:', popularCategories.map(([genre, films]) => `${genre}: ${films.length} film`));
             
@@ -372,14 +372,14 @@
                             ${films.length > 10 ? `
                                 <a href="/movies?genre=${encodeURIComponent(genre)}" 
                                    class="text-blue-400 hover:text-blue-300 font-semibold flex items-center">
-                                    Tümünü Gör <i class="fas fa-arrow-right ml-2"></i>
+                                    View All <i class="fas fa-arrow-right ml-2"></i>
                                 </a>
                             ` : ''}
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
                 `;
                 
-                // Her kategoriden en fazla 10 film göster
+                // Show at most 10 movies per category
                 films.slice(0, 10).forEach(movie => {
                     const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
                     
@@ -418,7 +418,7 @@
                     `;
                 });
                 
-                // Daha Fazla butonu ekle (eğer 10'dan fazla film varsa)
+                // Add "More" button if there are more than 10 movies
                 if (films.length > 10) {
                     html += `
                         <div class="glass-effect rounded-xl overflow-hidden card-hover flex items-center justify-center min-h-[300px] border-2 border-dashed border-gray-600 hover:border-blue-500 transition-all">
@@ -426,11 +426,11 @@
                                 <div class="w-16 h-16 ${genreColor} rounded-full flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-plus text-white text-2xl"></i>
                                 </div>
-                                <h4 class="text-lg font-bold text-white mb-2">Daha Fazla</h4>
-                                <p class="text-gray-400 text-sm mb-4">${films.length - 10} film daha</p>
+                                <h4 class="text-lg font-bold text-white mb-2">More</h4>
+                                <p class="text-gray-400 text-sm mb-4">${films.length - 10} more movies</p>
                                 <button onclick="window.location.href='/movies?genre=${encodeURIComponent(genre)}'" 
                                         class="bg-gradient-to-r ${getGenreGradient(genre)} hover:opacity-80 text-white px-6 py-3 rounded-lg font-semibold transition-all">
-                                    <i class="fas fa-arrow-right mr-2"></i>Tümünü Gör
+                                    <i class="fas fa-arrow-right mr-2"></i>View All
                                 </button>
                             </div>
                         </div>
@@ -444,7 +444,7 @@
             });
             
             categoriesContainer.innerHTML = html;
-            console.log('Dashboard - Kategoriler render edildi');
+            console.log('Dashboard - Categories rendered');
         }
         
         function getGenreIcon(genre) {
@@ -528,52 +528,52 @@
                 const response = await axios.get(`/api/movies/${movieId}`);
                 const movie = response.data.data;
                 
-                // Modal oluştur
+                // Create modal
                 createMovieDetailModal(movie);
             } catch (error) {
-                console.error('Film detayı yüklenemedi:', error);
-                alert('Film detayı yüklenemedi!');
+                console.error('Failed to load movie details:', error);
+                alert('Failed to load movie details!');
             }
         }
         
         function createMovieDetailModal(movie) {
-            // Mevcut modal varsa kaldır
+            // Remove existing modal if any
             const existingModal = document.getElementById('movieDetailModal');
             if (existingModal) {
                 existingModal.remove();
             }
             
-            // Poster URL kontrolü
+            // Poster URL check
             const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
             
-            // Kullanıcı giriş durumunu kontrol et
+            // Check user login state
             const isLoggedIn = window.userPermissions && window.userPermissions.isLoggedIn;
             
-            // Bilet Al butonu - sadece giriş yapmış kullanıcılar için
+            // "Buy Ticket" button - only for logged-in users
             let buyTicketButton = '';
             if (isLoggedIn) {
                 buyTicketButton = `
                     <button onclick="window.location.href='/buy-tickets?movie=${movie.id}'" 
                             class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                        <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                        <i class="fas fa-ticket-alt mr-2"></i>Buy Ticket
                     </button>
                 `;
             } else {
                 buyTicketButton = `
                     <button onclick="window.location.href='/login'" 
                             class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+                        <i class="fas fa-sign-in-alt mr-2"></i>Login
                     </button>
                 `;
             }
             
-            // Modal HTML oluştur
+            // Build modal HTML
             const modalHTML = `
                 <div id="movieDetailModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
                     <div class="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <!-- Header -->
                         <div class="flex justify-between items-center p-6 border-b border-gray-700">
-                            <h2 class="text-2xl font-bold text-white">🎬 Film Detayları</h2>
+                            <h2 class="text-2xl font-bold text-white">🎬 Movie Details</h2>
                             <button onclick="closeMovieDetailModal()" class="text-gray-400 hover:text-white text-2xl">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -618,7 +618,7 @@
                                         <div class="bg-gray-800/50 p-4 rounded-lg">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-clock text-blue-400 mr-2"></i>
-                                                <span class="text-gray-300">Süre</span>
+                                                <span class="text-gray-300">Duration</span>
                                             </div>
                                             <span class="text-white font-semibold">${movie.duration || 'N/A'} dakika</span>
                                         </div>
@@ -626,7 +626,7 @@
                                         <div class="bg-gray-800/50 p-4 rounded-lg">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-tag text-green-400 mr-2"></i>
-                                                <span class="text-gray-300">Tür</span>
+                                                <span class="text-gray-300">Genre</span>
                                             </div>
                                             <span class="text-white font-semibold">${movie.genre || 'N/A'}</span>
                                         </div>
@@ -634,7 +634,7 @@
                                         <div class="bg-gray-800/50 p-4 rounded-lg">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-calendar text-purple-400 mr-2"></i>
-                                                <span class="text-gray-300">Çıkış Tarihi</span>
+                                                <span class="text-gray-300">Release Date</span>
                                             </div>
                                             <span class="text-white font-semibold">${movie.release_date || 'N/A'}</span>
                                         </div>
@@ -642,7 +642,7 @@
                                         <div class="bg-gray-800/50 p-4 rounded-lg">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-globe text-orange-400 mr-2"></i>
-                                                <span class="text-gray-300">Dil</span>
+                                                <span class="text-gray-300">Language</span>
                                             </div>
                                             <span class="text-white font-semibold">${movie.language || 'N/A'}</span>
                                         </div>
@@ -651,29 +651,29 @@
                                     <!-- Description -->
                                     <div class="mb-6">
                                         <h3 class="text-lg font-semibold text-white mb-3">
-                                            <i class="fas fa-info-circle text-blue-400 mr-2"></i>Özet
+                                            <i class="fas fa-info-circle text-blue-400 mr-2"></i>Overview
                                         </h3>
-                                        <p class="text-gray-300 leading-relaxed">${movie.description || 'Açıklama mevcut değil.'}</p>
+                                        <p class="text-gray-300 leading-relaxed">${movie.description || 'No description available.'}</p>
                                     </div>
                                     
                                     ${!isLoggedIn ? `
-                                    <!-- Giriş uyarısı -->
+                                    <!-- Login warning -->
                                     <div class="mb-6 bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
                                         <div class="flex items-center">
                                             <i class="fas fa-info-circle text-blue-400 mr-3 text-xl"></i>
                                             <p class="text-blue-200">
-                                                Bilet satın almak için <strong>giriş yapmanız</strong> gerekmektedir.
+                                                You must <strong>log in</strong> to purchase tickets.
                                             </p>
                                         </div>
                                     </div>
                                     ` : ''}
                                     
-                                    <!-- Actions -->
+                            <!-- Actions -->
                                     <div class="flex gap-4">
                                         ${buyTicketButton}
                                         <button onclick="closeMovieDetailModal()" 
-                                                class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
-                                            <i class="fas fa-times mr-2"></i>Kapat
+                                            class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                                            <i class="fas fa-times mr-2"></i>Close
                                         </button>
                                     </div>
                                 </div>
@@ -683,14 +683,14 @@
                 </div>
             `;
             
-            // Modal'ı body'ye ekle
+            // Append modal to body
             document.body.insertAdjacentHTML('beforeend', modalHTML);
             
-            // Modal'ı göster
+            // Show modal
             const modal = document.getElementById('movieDetailModal');
             modal.style.display = 'flex';
             
-            // ESC tuşu ile kapatma
+            // Close on ESC key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     closeMovieDetailModal();

@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class FetchCurrentMovies extends Command
 {
     protected $signature = 'movies:fetch-current {--year=2024 : Year to fetch movies from} {--pages=10 : Number of pages to fetch}';
-    protected $description = 'Fetch current movies from TMDB API and save to CSV';
+    protected $description = 'Fetch current movies from TMDB API (English) and save to CSV';
 
     private $tmdbApiKey = 'fd906554dbafae73a755cb63e9a595df';
     private $tmdbBaseUrl = 'https://api.themoviedb.org/3';
@@ -21,9 +21,9 @@ class FetchCurrentMovies extends Command
         $year = $this->option('year');
         $pages = $this->option('pages');
 
-        $this->info("🎬 Güncel filmler TMDB'den çekiliyor...");
-        $this->info("📅 Yıl: {$year}");
-        $this->info("📄 Sayfa sayısı: {$pages}");
+        $this->info("🎬 Fetching current movies from TMDB...");
+        $this->info("📅 Year: {$year}");
+        $this->info("📄 Number of pages: {$pages}");
 
         $allMovies = [];
         $totalFetched = 0;
@@ -35,35 +35,35 @@ class FetchCurrentMovies extends Command
                 $movies = $this->fetchMoviesFromTMDB($year, $page);
                 
                 if (empty($movies)) {
-                    $this->warn("⚠️ Sayfa {$page} boş, durduruluyor.");
+                    $this->warn("⚠️ Page {$page} is empty, stopping.");
                     break;
                 }
 
                 $allMovies = array_merge($allMovies, $movies);
                 $totalFetched += count($movies);
                 
-                $this->info("✅ Sayfa {$page}: " . count($movies) . " film eklendi");
+                $this->info("✅ Page {$page}: " . count($movies) . " movies added");
                 
                 // Rate limiting - TMDB allows 40 requests per 10 seconds
                 sleep(1);
                 
             } catch (\Exception $e) {
-                $this->error("❌ Sayfa {$page} hatası: " . $e->getMessage());
+                $this->error("❌ Error on page {$page}: " . $e->getMessage());
                 continue;
             }
         }
 
         if (empty($allMovies)) {
-            $this->error("❌ Hiç film çekilemedi!");
+            $this->error("❌ No movies were fetched!");
             return;
         }
 
-        $this->info("📊 Toplam çekilen film: {$totalFetched}");
+        $this->info("📊 Total movies fetched: {$totalFetched}");
         
         // CSV'ye kaydet
         $this->saveToCSV($allMovies, $year);
         
-        $this->info("✅ Güncel filmler başarıyla kaydedildi!");
+        $this->info("✅ Current movies saved successfully!");
     }
 
     private function fetchMoviesFromTMDB($year, $page)
@@ -73,7 +73,8 @@ class FetchCurrentMovies extends Command
             'primary_release_year' => $year,
             'sort_by' => 'popularity.desc',
             'page' => $page,
-            'language' => 'tr-TR',
+            // Fetch movies in English
+            'language' => 'en-US',
             'include_adult' => false,
             'vote_count.gte' => 10, // En az 10 oy almış filmler
         ]);
@@ -109,7 +110,7 @@ class FetchCurrentMovies extends Command
 
         fclose($handle);
         
-        $this->info("💾 CSV dosyası kaydedildi: {$csvFile}");
+        $this->info("💾 CSV file saved: {$csvFile}");
     }
 
     private function formatMovieForCSV($movie)

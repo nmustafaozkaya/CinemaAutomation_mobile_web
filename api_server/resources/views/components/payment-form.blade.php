@@ -150,6 +150,76 @@
                     </select>
                 </div>
 
+                <!-- Cash Info -->
+                <div id="cashInfo" class="mt-4 bg-yellow-500/10 border border-yellow-500/40 text-yellow-100 text-sm p-4 rounded-lg hidden">
+                    <p>
+                        Please pay for your tickets at the cinema box office, concession stand, or ticket counter before the showtime.
+                    </p>
+                </div>
+
+                <!-- Card Details -->
+                <div id="cardDetails" class="mt-4 space-y-3 hidden">
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-1">
+                            <i class="fas fa-id-card mr-1"></i>Name on Card
+                        </label>
+                        <input type="text" id="cardName" placeholder="Name on card"
+                            class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-1">
+                            <i class="fas fa-credit-card mr-1"></i>Card Number
+                        </label>
+                        <input type="text" id="cardNumber" placeholder="XXXX XXXX XXXX XXXX" maxlength="19"
+                            class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-white text-sm font-medium mb-1">
+                                <i class="fas fa-calendar-alt mr-1"></i>Expiry (MM/YY)
+                            </label>
+                            <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5"
+                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-white text-sm font-medium mb-1">
+                                <i class="fas fa-lock mr-1"></i>CVV
+                            </label>
+                            <input type="password" id="cardCvv" placeholder="CVV" maxlength="4"
+                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Online Payment Providers -->
+                <div id="onlineProviders" class="mt-4 space-y-2 hidden">
+                    <p class="text-sm text-gray-200 mb-2">Choose an online payment provider:</p>
+                    <button type="button"
+                        class="w-full flex items-center justify-between px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm"
+                        data-provider="paypal">
+                        <span><i class="fab fa-paypal mr-2 text-blue-400"></i>PayPal</span>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </button>
+                    <button type="button"
+                        class="w-full flex items-center justify-between px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm"
+                        data-provider="stripe">
+                        <span><i class="fas fa-credit-card mr-2 text-purple-400"></i>Stripe</span>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </button>
+                    <button type="button"
+                        class="w-full flex items-center justify-between px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm"
+                        data-provider="apple_pay">
+                        <span><i class="fab fa-apple mr-2 text-gray-200"></i>Apple Pay</span>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </button>
+                    <button type="button"
+                        class="w-full flex items-center justify-between px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm"
+                        data-provider="google_pay">
+                        <span><i class="fab fa-google-pay mr-2 text-green-400"></i>Google Pay</span>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </button>
+                </div>
+
                 <div class="flex items-center mt-4">
                     <input type="checkbox" id="termsAccepted" required
                         class="w-4 h-4 text-emerald-600 bg-transparent border-white/20 rounded focus:ring-emerald-500">
@@ -679,6 +749,31 @@
                 console.log('- Tickets:', ticketTypesArray);
                 console.log('- Tax calculation:', this.taxCalculation);
 
+                // Determine selected payment method details
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                let paymentDetails = {};
+
+                if (paymentMethod === 'cash') {
+                    paymentDetails = {
+                        type: 'cash',
+                        note: 'Customer will pay at cinema box office / ticket counter.'
+                    };
+                } else if (paymentMethod === 'card') {
+                    paymentDetails = {
+                        type: 'card',
+                        card_name: document.getElementById('cardName').value || null,
+                        last4: (document.getElementById('cardNumber').value || '').slice(-4),
+                        expiry: document.getElementById('cardExpiry').value || null,
+                    };
+                } else if (paymentMethod === 'online') {
+                    const providerButton = document.querySelector('#onlineProviders button.selected');
+                    const provider = providerButton ? providerButton.getAttribute('data-provider') : null;
+                    paymentDetails = {
+                        type: 'online',
+                        provider: provider
+                    };
+                }
+
                 // API request
                 const response = await axios.post('/api/tickets', {
                     showtime_id: selectedShowtime.id,
@@ -686,7 +781,8 @@
                     customer_name: document.getElementById('customerName').value,
                     customer_email: document.getElementById('customerEmail').value,
                     customer_phone: document.getElementById('customerPhone').value,
-                    payment_method: document.getElementById('paymentMethod').value,
+                    payment_method: paymentMethod,
+                    payment_details: paymentDetails,
                     tax_calculation: this.taxCalculation
                 });
 
@@ -806,6 +902,40 @@
     document.addEventListener('DOMContentLoaded', function () {
         window.paymentForm = new PaymentForm();
         prefillCustomerInfo();
+
+        // Payment method UI behavior
+        const paymentSelect = document.getElementById('paymentMethod');
+        const cashInfo = document.getElementById('cashInfo');
+        const cardDetails = document.getElementById('cardDetails');
+        const onlineProviders = document.getElementById('onlineProviders');
+
+        function updatePaymentMethodUI() {
+            const value = paymentSelect.value;
+            cashInfo.classList.add('hidden');
+            cardDetails.classList.add('hidden');
+            onlineProviders.classList.add('hidden');
+
+            if (value === 'cash') {
+                cashInfo.classList.remove('hidden');
+            } else if (value === 'card') {
+                cardDetails.classList.remove('hidden');
+            } else if (value === 'online') {
+                onlineProviders.classList.remove('hidden');
+            }
+        }
+
+        if (paymentSelect) {
+            paymentSelect.addEventListener('change', updatePaymentMethodUI);
+            updatePaymentMethodUI();
+        }
+
+        // Mark selected online provider
+        document.querySelectorAll('#onlineProviders button').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('#onlineProviders button').forEach(b => b.classList.remove('ring-2', 'ring-emerald-400'));
+                this.classList.add('ring-2', 'ring-emerald-400');
+            });
+        });
     });
 
     // Global functions

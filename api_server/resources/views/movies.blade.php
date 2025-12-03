@@ -5,18 +5,18 @@
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-3xl font-bold text-white flex items-center">
             <i class="fas fa-play mr-3 text-green-400"></i>
-            Film Listesi
+            Movie List
         </h2>
         <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i>Geri
+            <i class="fas fa-arrow-left mr-2"></i>Back
         </a>
     </div>
     
     <div class="mb-8">
-        <!-- Arama -->
+        <!-- Search -->
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-                <input type="text" id="movieSearch" placeholder="Film adı ile ara..." 
+                <input type="text" id="movieSearch" placeholder="Search by movie name..." 
                        onkeypress="if(event.key === 'Enter') searchMovies()"
                        class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all">
             </div>
@@ -61,7 +61,7 @@ async function loadMovies(search = '') {
             return;
         }
         
-        // Arama yoksa distributed endpoint'ini kullan - toplam 100 filmi tarihe göre dağıtır
+        // If there is no search, use the distributed endpoint - distributes 100 movies by date
         const url = '/api/movies/distributed';
         
         console.log('Movies - Distributed API çağrısı:', url);
@@ -82,7 +82,7 @@ async function loadMovies(search = '') {
         
         renderMoviesByCategory(nowShowingMovies, comingSoonMovies);
     } catch (error) {
-        console.error('Filmler yüklenemedi:', error);
+        console.error('Movies could not be loaded:', error);
         console.error('Error details:', error.response?.data);
         renderMoviesByCategory([], []);
     }
@@ -114,7 +114,7 @@ function isNowShowingDate(releaseDate) {
             return movieDate <= today;
         }
     } catch (e) {
-        console.error('Tarih parse hatası:', e, releaseDate);
+        console.error('Date parse error:', e, releaseDate);
     }
     
     return true;
@@ -124,7 +124,7 @@ function renderMoviesByCategory(nowShowingMovies, comingSoonMovies) {
     const movieGrid = document.getElementById('movieGrid');
     let html = '';
     
-    // Now Showing bölümü
+    // Now Showing section
     if (nowShowingMovies.length > 0) {
         html += `
             <div class="col-span-full mb-8">
@@ -142,7 +142,7 @@ function renderMoviesByCategory(nowShowingMovies, comingSoonMovies) {
         });
     }
     
-    // Coming Soon bölümü
+    // Coming Soon section
     if (comingSoonMovies.length > 0) {
         html += `
             <div class="col-span-full mb-8 mt-8">
@@ -160,7 +160,7 @@ function renderMoviesByCategory(nowShowingMovies, comingSoonMovies) {
         });
     }
     
-    movieGrid.innerHTML = html || '<p class="text-white text-center col-span-full">Film bulunamadı.</p>';
+    movieGrid.innerHTML = html || '<p class="text-white text-center col-span-full">No movies found.</p>';
 }
 
 function renderMovieCard(movie, isNowShowing) {
@@ -202,7 +202,7 @@ function searchMovies() {
 
 async function showMovieDetails(movieId, isNowShowing = true) {
     try {
-        // Önce /api/movies'ten dene, bulunamazsa /api/future-movies'ten dene
+        // Try /api/movies first, then /api/future-movies if not found
         let response;
         try {
             response = await axios.get(`/api/movies/${movieId}`);
@@ -217,64 +217,64 @@ async function showMovieDetails(movieId, isNowShowing = true) {
         
         const movie = response.data.data;
         
-        // Film tarihine göre isNowShowing'i belirle
+        // Determine isNowShowing by movie release date
         if (isNowShowing === undefined || isNowShowing === null) {
             isNowShowing = isNowShowingDate(movie.release_date);
         }
         
-        // Modal oluştur
+        // Create modal
         createMovieDetailModal(movie, isNowShowing);
     } catch (error) {
-        console.error('Film detayı yüklenemedi:', error);
-        alert('Film detayı yüklenemedi!');
+        console.error('Failed to load movie details:', error);
+        alert('Failed to load movie details!');
     }
 }
 
 function createMovieDetailModal(movie, isNowShowing = true) {
-    // Mevcut modal varsa kaldır
+    // Remove existing modal if any
     const existingModal = document.getElementById('movieDetailModal');
     if (existingModal) {
         existingModal.remove();
     }
     
-    // Poster URL kontrolü
+    // Poster URL check
     const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
     
-    // Kullanıcı giriş durumunu kontrol et
+    // Check user login state
     const isLoggedIn = window.userPermissions && window.userPermissions.isLoggedIn;
     
-    // Bilet Al butonu - sadece giriş yapmış kullanıcılar ve Now Showing için
+    // "Buy Ticket" button - only for logged-in users and Now Showing
     let buyTicketButton = '';
     if (!isNowShowing) {
         buyTicketButton = `
             <button disabled
                     class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold cursor-not-allowed flex items-center opacity-50">
-                <i class="fas fa-calendar-alt mr-2"></i>Yakında
+                <i class="fas fa-calendar-alt mr-2"></i>Coming Soon
             </button>
         `;
     } else if (isLoggedIn) {
         buyTicketButton = `
             <button onclick="window.location.href='/buy-tickets?movie=${movie.id}'" 
                     class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                <i class="fas fa-ticket-alt mr-2"></i>Buy Ticket
             </button>
         `;
     } else {
         buyTicketButton = `
             <button onclick="window.location.href='/login'" 
                     class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
-                <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+                <i class="fas fa-sign-in-alt mr-2"></i>Login
             </button>
         `;
     }
     
-    // Modal HTML oluştur
+    // Build modal HTML
     const modalHTML = `
         <div id="movieDetailModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div class="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <!-- Header -->
                 <div class="flex justify-between items-center p-6 border-b border-gray-700">
-                    <h2 class="text-2xl font-bold text-white">🎬 Film Detayları</h2>
+                    <h2 class="text-2xl font-bold text-white">🎬 Movie Details</h2>
                     <button onclick="closeMovieDetailModal()" class="text-gray-400 hover:text-white text-2xl">
                         <i class="fas fa-times"></i>
                     </button>
@@ -326,7 +326,7 @@ function createMovieDetailModal(movie, isNowShowing = true) {
                                 <div class="bg-gray-800/50 p-4 rounded-lg">
                                     <div class="flex items-center mb-2">
                                         <i class="fas fa-clock text-blue-400 mr-2"></i>
-                                        <span class="text-gray-300">Süre</span>
+                                        <span class="text-gray-300">Duration</span>
                                     </div>
                                     <span class="text-white font-semibold">${movie.duration || 'N/A'} dakika</span>
                                 </div>
@@ -334,7 +334,7 @@ function createMovieDetailModal(movie, isNowShowing = true) {
                                 <div class="bg-gray-800/50 p-4 rounded-lg">
                                     <div class="flex items-center mb-2">
                                         <i class="fas fa-tag text-green-400 mr-2"></i>
-                                        <span class="text-gray-300">Tür</span>
+                                        <span class="text-gray-300">Genre</span>
                                     </div>
                                     <span class="text-white font-semibold">${movie.genre || 'N/A'}</span>
                                 </div>
@@ -342,7 +342,7 @@ function createMovieDetailModal(movie, isNowShowing = true) {
                                 <div class="bg-gray-800/50 p-4 rounded-lg">
                                     <div class="flex items-center mb-2">
                                         <i class="fas fa-calendar text-purple-400 mr-2"></i>
-                                        <span class="text-gray-300">Çıkış Tarihi</span>
+                                        <span class="text-gray-300">Release Date</span>
                                     </div>
                                     <span class="text-white font-semibold">${movie.release_date || 'N/A'}</span>
                                 </div>
@@ -350,7 +350,7 @@ function createMovieDetailModal(movie, isNowShowing = true) {
                                 <div class="bg-gray-800/50 p-4 rounded-lg">
                                     <div class="flex items-center mb-2">
                                         <i class="fas fa-globe text-orange-400 mr-2"></i>
-                                        <span class="text-gray-300">Dil</span>
+                                        <span class="text-gray-300">Language</span>
                                     </div>
                                     <span class="text-white font-semibold">${movie.language || 'N/A'}</span>
                                 </div>
@@ -359,18 +359,18 @@ function createMovieDetailModal(movie, isNowShowing = true) {
                             <!-- Description -->
                             <div class="mb-6">
                                 <h3 class="text-lg font-semibold text-white mb-3">
-                                    <i class="fas fa-info-circle text-blue-400 mr-2"></i>Özet
+                                    <i class="fas fa-info-circle text-blue-400 mr-2"></i>Overview
                                 </h3>
-                                <p class="text-gray-300 leading-relaxed">${movie.description || 'Açıklama mevcut değil.'}</p>
+                                <p class="text-gray-300 leading-relaxed">${movie.description || 'No description available.'}</p>
                             </div>
                             
                             ${!isLoggedIn && isNowShowing ? `
-                            <!-- Giriş uyarısı -->
+                            <!-- Login warning -->
                             <div class="mb-6 bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
                                 <div class="flex items-center">
                                     <i class="fas fa-info-circle text-blue-400 mr-3 text-xl"></i>
                                     <p class="text-blue-200">
-                                        Bilet satın almak için <strong>giriş yapmanız</strong> gerekmektedir.
+                                        You must <strong>log in</strong> to purchase tickets.
                                     </p>
                                 </div>
                             </div>
@@ -381,7 +381,7 @@ function createMovieDetailModal(movie, isNowShowing = true) {
                                 ${buyTicketButton}
                                 <button onclick="closeMovieDetailModal()" 
                                         class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
-                                    <i class="fas fa-times mr-2"></i>Kapat
+                                    <i class="fas fa-times mr-2"></i>Close
                                 </button>
                             </div>
                         </div>
@@ -391,14 +391,14 @@ function createMovieDetailModal(movie, isNowShowing = true) {
         </div>
     `;
     
-    // Modal'ı body'ye ekle
+    // Append modal to body
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     
-    // Modal'ı göster
+    // Show modal
     const modal = document.getElementById('movieDetailModal');
     modal.style.display = 'flex';
     
-    // ESC tuşu ile kapatma
+    // Close on ESC key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeMovieDetailModal();
@@ -413,14 +413,14 @@ function closeMovieDetailModal() {
     }
 }
 
-// Enter tuşu ile arama
+// Search on Enter key
 document.getElementById('movieSearch')?.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         searchMovies();
     }
 });
 
-// Sayfa yüklendiğinde filmleri yükle
+// Load movies on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadMovies();
 });

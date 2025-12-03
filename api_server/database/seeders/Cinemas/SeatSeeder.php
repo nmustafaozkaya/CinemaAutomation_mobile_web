@@ -42,7 +42,8 @@ class SeatSeeder extends Seeder
                         'hall_id' => $hall->id,
                         'row' => $row,
                         'number' => $number,
-                        'status' => 'available',
+                        // Use enum values defined on seats.status ('Blank', 'Filled', 'In Another Basket')
+                        'status' => 'Blank',
                         'created_at' => now(),
                         'updated_at' => now()
                     ];

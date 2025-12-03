@@ -11,7 +11,7 @@ import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:intl/intl.dart';
 import 'package:sinema_uygulamasi/components/showtimes.dart';
 import 'package:sinema_uygulamasi/components/seat_reservation_response.dart';
-import 'package:sinema_uygulamasi/screens/reservation_screen.dart';
+import 'package:sinema_uygulamasi/screens/payment_screen.dart';
 
 class SeatSelectionScreen extends StatefulWidget {
   final Cinema currentCinema;
@@ -708,10 +708,11 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                 ElevatedButton(
                   onPressed: isSelectionComplete
                       ? () {
+                          // After seat selection, go directly to payment screen (skip reservation step)
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ReservationScreen(
+                              builder: (context) => PaymentScreen(
                                 cinema: widget.currentCinema,
                                 movie: widget.currentMovie,
                                 showtime: widget.selectedShowtime,
@@ -719,6 +720,10 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                                 selectedTicketDetails:
                                     widget.selectedTicketDetails,
                                 totalPrice: totalPrice,
+                                // For direct navigation, initialize taxes as empty; PaymentScreen recalculates service fee.
+                                taxes: const [],
+                                taxAmount: 0.0,
+                                finalTotal: totalPrice,
                               ),
                             ),
                           );
@@ -737,7 +742,8 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Proceed', style: TextStyle(fontSize: 16)),
+                  child:
+                      const Text('Proceed to Payment', style: TextStyle(fontSize: 16)),
                 ),
               ],
             ),

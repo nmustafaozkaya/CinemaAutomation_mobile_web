@@ -6,10 +6,10 @@
         <div class="flex items-center justify-between mb-8">
             <h2 class="text-3xl font-bold text-white flex items-center">
                 <i class="fas fa-history mr-3 text-emerald-400"></i>
-                Biletlerim
+                My Tickets
             </h2>
             <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                <i class="fas fa-arrow-left mr-2"></i>Ana Sayfa
+                <i class="fas fa-arrow-left mr-2"></i>Home
             </a>
         </div>
 
@@ -17,26 +17,26 @@
         <div class="bg-white/10 p-4 rounded-xl mb-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-white text-sm font-medium mb-2">Tarih Filtresi</label>
+                    <label class="block text-white text-sm font-medium mb-2">Date Filter</label>
                     <select id="dateFilter" class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white">
-                        <option value="">Tüm Tarihler</option>
-                        <option value="today">Bugün</option>
-                        <option value="week">Bu Hafta</option>
-                        <option value="month">Bu Ay</option>
+                        <option value="">All Dates</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-white text-sm font-medium mb-2">Durum Filtresi</label>
+                    <label class="block text-white text-sm font-medium mb-2">Status Filter</label>
                     <select id="statusFilter" class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white">
-                        <option value="">Tüm Durumlar</option>
-                        <option value="sold">Aktif</option>
-                        <option value="cancelled">İptal Edildi</option>
-                        <option value="refunded">İade Edildi</option>
+                        <option value="">All Statuses</option>
+                        <option value="sold">Active</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="refunded">Refunded</option>
                     </select>
                 </div>
                 <div class="flex items-end">
                     <button onclick="applyFilters()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-lg font-medium">
-                        <i class="fas fa-filter mr-2"></i>Filtrele
+                        <i class="fas fa-filter mr-2"></i>Filter
                     </button>
                 </div>
             </div>
@@ -45,7 +45,7 @@
         <!-- Loading -->
         <div id="loadingState" class="text-center py-12">
             <div class="loading w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p class="text-white">Biletleriniz yükleniyor...</p>
+            <p class="text-white">Your tickets are loading...</p>
         </div>
 
         <!-- Empty State -->
@@ -53,10 +53,10 @@
             <div class="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-ticket-alt text-gray-400 text-3xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-white mb-2">Henüz Biletiniz Bulunmuyor</h3>
-            <p class="text-gray-400 mb-6">Hemen bir bilet satın alarak sinemaya gitmeye başlayın!</p>
+            <h3 class="text-xl font-bold text-white mb-2">You don’t have any tickets yet</h3>
+            <p class="text-gray-400 mb-6">Buy a ticket now and start your cinema experience!</p>
             <a href="/tickets" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center">
-                <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                <i class="fas fa-ticket-alt mr-2"></i>Buy Ticket
             </a>
         </div>
 
@@ -71,11 +71,11 @@
         </div>
     </div>
 
-    <!-- Ticket Detail Modal -->
+        <!-- Ticket Detail Modal -->
     <div id="ticketModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-bold text-white">Bilet Detayı</h3>
+                <h3 class="text-xl font-bold text-white">Ticket Details</h3>
                 <button onclick="closeTicketModal()" class="text-gray-400 hover:text-white">
                     <i class="fas fa-times text-xl"></i>
                 </button>
@@ -148,6 +148,7 @@
                 const hall = showtime.hall;
                 const cinema = hall.cinema;
                 const seat = ticket.seat;
+                const paymentMethod = ticket.sale?.payment_method || null;
 
                 const showtimeDate = new Date(showtime.start_time);
                 const purchaseDate = new Date(ticket.created_at);
@@ -169,6 +170,12 @@
                     'student': 'Student',
                     'senior': 'Retired',
                     'child': 'Child'
+                };
+
+                const paymentMethodLabels = {
+                    'cash': 'Cash (Pay at cinema)',
+                    'card': 'Credit Card',
+                    'online': 'Online Payment'
                 };
 
                 html += `
@@ -207,6 +214,10 @@
                             <div>
                                 <p class="text-gray-400 text-sm">Satın Alma Tarihi</p>
                                 <p class="text-white text-sm">${purchaseDate.toLocaleDateString('tr-TR')} ${purchaseDate.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}</p>
+                                ${paymentMethod ? `
+                                <p class="text-gray-400 text-sm mt-1">Ödeme Yöntemi</p>
+                                <p class="text-emerald-300 text-sm">${paymentMethodLabels[paymentMethod] || paymentMethod}</p>
+                                ` : ''}
                             </div>
                             <div class="text-right">
                                 <p class="text-gray-400 text-sm">Fiyat</p>
@@ -257,7 +268,7 @@
 
         function showTicketDetail(ticketId) {
             // Simple detail modal - could be expanded
-            alert(`Bilet ID: ${ticketId}\n\nDetaylı bilet bilgileri burada gösterilebilir.`);
+                    alert(`Ticket ID: ${ticketId}\n\nDetailed ticket information can be shown here.`);
         }
 
         function closeTicketModal() {

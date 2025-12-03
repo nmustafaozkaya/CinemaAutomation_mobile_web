@@ -405,21 +405,36 @@ class TicketCard extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Durum
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _getStatusColor(ticket.status),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                _getStatusText(ticket.status),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColorStyle.textPrimary,
+            // Status + Payment Method
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(ticket.status),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    _getStatusText(ticket.status),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColorStyle.textPrimary,
+                    ),
+                  ),
                 ),
-              ),
+                if (ticket.paymentMethod != null)
+                  Text(
+                    'Payment: ${_getPaymentMethodText(ticket.paymentMethod!)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColorStyle.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
@@ -497,6 +512,19 @@ class TicketCard extends StatelessWidget {
         return 'Pending';
       default:
         return status;
+    }
+  }
+
+  String _getPaymentMethodText(String method) {
+    switch (method.toLowerCase()) {
+      case 'cash':
+        return 'Cash (pay at cinema)';
+      case 'card':
+        return 'Credit Card';
+      case 'online':
+        return 'Online Payment';
+      default:
+        return method;
     }
   }
 }

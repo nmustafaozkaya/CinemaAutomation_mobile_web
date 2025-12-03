@@ -46,10 +46,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _cardNameController = TextEditingController();
+  final _cardNumberController = TextEditingController();
+  final _cardExpiryController = TextEditingController();
+  final _cardCvvController = TextEditingController();
 
   User? currentUser;
   String? _userToken;
   String _paymentMethod = 'card';
+  String _onlineProvider = 'paypal';
   bool _isLoading = false;
   bool _isFirstPurchase = false;
 
@@ -64,16 +69,43 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   double get _firstPurchaseDiscountRate => 0.30; // %30
 
-  double get _firstPurchaseDiscountAmount =>
-      _isEligibleForFirstPurchaseDiscount ? widget.finalTotal * _firstPurchaseDiscountRate : 0.0;
+  double get _firstPurchaseDiscountAmount => _isEligibleForFirstPurchaseDiscount
+      ? widget.finalTotal * _firstPurchaseDiscountRate
+      : 0.0;
 
   double get _effectiveFinalTotal =>
-      (widget.finalTotal - _firstPurchaseDiscountAmount).clamp(0, double.infinity);
+      (widget.finalTotal - _firstPurchaseDiscountAmount).clamp(
+        0,
+        double.infinity,
+      );
 
   @override
   void initState() {
     super.initState();
     _loadUserDataAndToken();
+
+    // Auto-format expiry field as MM/YY while typing
+    _cardExpiryController.addListener(() {
+      final text = _cardExpiryController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      if (text.isEmpty) return;
+
+      String formatted;
+      if (text.length <= 2) {
+        formatted = text;
+      } else {
+        final mm = text.substring(0, 2);
+        final yy = text.substring(2, text.length.clamp(2, 4));
+        formatted = '$mm/$yy';
+      }
+
+      if (_cardExpiryController.text != formatted) {
+        final selectionIndex = formatted.length;
+        _cardExpiryController.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: selectionIndex),
+        );
+      }
+    });
   }
 
   Future<void> _loadUserDataAndToken() async {
@@ -157,6 +189,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _cardNameController.dispose();
+    _cardNumberController.dispose();
+    _cardExpiryController.dispose();
+    _cardCvvController.dispose();
     super.dispose();
   }
 
@@ -185,35 +221,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Map<String, dynamic> _buildTaxCalculationPayload() {
-    List<Map<String, dynamic>> taxList = widget.taxes
-        .where((t) => t.status == 'active')
-        .map((tax) {
-          double rate = double.tryParse(tax.rate) ?? 0.0;
-          double amount = TaxService.calculateTaxAmount(
-            tax,
-            widget.totalPrice,
-            ticketCount: widget.selectedSeats.length,
-          );
-          final isPerTicket = tax.type == 'fixed';
-          return {
-            "name": tax.name,
-            "type": tax.type,
-            "rate": rate,
-            "amount": double.parse(amount.toStringAsFixed(2)),
-            "formatted_name": isPerTicket
-                ? "${tax.name} (${tax.rate} ₺ x ${widget.selectedSeats.length} tickets)"
-                : "${tax.name} (${tax.rate})",
-          };
-        })
-        .toList();
+    List<Map<String, dynamic>>
+    taxList = widget.taxes.where((t) => t.status == 'active').map((tax) {
+      double rate = double.tryParse(tax.rate) ?? 0.0;
+      double amount = TaxService.calculateTaxAmount(
+        tax,
+        widget.totalPrice,
+        ticketCount: widget.selectedSeats.length,
+      );
+      final isPerTicket = tax.type == 'fixed';
+      return {
+        "name": tax.name,
+        "type": tax.type,
+        "rate": rate,
+        "amount": double.parse(amount.toStringAsFixed(2)),
+        "formatted_name": isPerTicket
+            ? "${tax.name} (${tax.rate} ₺ x ${widget.selectedSeats.length} tickets)"
+            : "${tax.name} (${tax.rate})",
+      };
+    }).toList();
 
-    final originalTotal =
-        double.parse(widget.finalTotal.toStringAsFixed(2));
+    final originalTotal = double.parse(widget.finalTotal.toStringAsFixed(2));
 
-    final discountAmount =
-        double.parse(_firstPurchaseDiscountAmount.toStringAsFixed(2));
-    final totalAfterDiscount =
-        double.parse(_effectiveFinalTotal.toStringAsFixed(2));
+    final discountAmount = double.parse(
+      _firstPurchaseDiscountAmount.toStringAsFixed(2),
+    );
+    final totalAfterDiscount = double.parse(
+      _effectiveFinalTotal.toStringAsFixed(2),
+    );
 
     final payload = {
       "subtotal": double.parse(widget.totalPrice.toStringAsFixed(2)),
@@ -239,6 +274,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _submitPayment() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Extra validation based on payment method
+    if (_paymentMethod == 'card') {
+      if (_cardNameController.text.trim().isEmpty ||
+          _cardNumberController.text.trim().isEmpty ||
+          _cardExpiryController.text.trim().isEmpty ||
+          _cardCvvController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please complete all card details.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    } else if (_paymentMethod == 'online') {
+      if (_onlineProvider.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please choose an online payment provider.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     if (_userToken == null || _userToken!.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -260,6 +321,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
       "customer_email": _emailController.text,
       "customer_phone": _phoneController.text,
       "payment_method": _paymentMethod,
+      "payment_details": {
+        "type": _paymentMethod,
+        if (_paymentMethod == 'cash') ...{
+          "note":
+              "Customer will pay at cinema box office / concession / ticket counter.",
+        },
+        if (_paymentMethod == 'card') ...{
+          "card_name": _cardNameController.text.trim(),
+          "last4": _cardNumberController.text.trim().isNotEmpty
+              ? _cardNumberController.text.trim().substring(
+                  _cardNumberController.text.trim().length - 4,
+                )
+              : null,
+          "expiry": _cardExpiryController.text.trim(),
+        },
+        if (_paymentMethod == 'online') ...{"provider": _onlineProvider},
+      },
       "tax_calculation": _buildTaxCalculationPayload(),
       "user_id": currentUser?.id,
     };
@@ -557,15 +635,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ? Column(
                         children: [
                           _buildPaymentMethodTile(
-                            value: 'card',
-                            icon: Icons.credit_card,
-                            label: 'Credit Card',
-                          ),
-                          const SizedBox(height: 12),
-                          _buildPaymentMethodTile(
                             value: 'cash',
                             icon: Icons.payments_outlined,
                             label: 'Cash',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildPaymentMethodTile(
+                            value: 'card',
+                            icon: Icons.credit_card,
+                            label: 'Credit Card',
                           ),
                           const SizedBox(height: 12),
                           _buildPaymentMethodTile(
@@ -603,10 +681,187 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ],
                       ),
               ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_paymentMethod == 'cash') ...[
+                      Text(
+                        'Cash Payment',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColorStyle.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Please pay for your tickets at the cinema box office, concession stand, or ticket counter before the showtime.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColorStyle.textSecondary,
+                        ),
+                      ),
+                    ] else if (_paymentMethod == 'card') ...[
+                      Text(
+                        'Card Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColorStyle.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildCardFields(),
+                    ] else if (_paymentMethod == 'online') ...[
+                      Text(
+                        'Online Payment Providers',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColorStyle.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildOnlineProviders(),
+                    ],
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCardFields() {
+    return Column(
+      children: [
+        _buildTextField(
+          _cardNameController,
+          'Name on Card',
+          Icons.person_outline,
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) {
+              return 'Enter the name on the card';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          _cardNumberController,
+          'Card Number',
+          Icons.credit_card,
+          hintText: 'XXXX XXXX XXXX XXXX',
+          keyboardType: TextInputType.number,
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) {
+              return 'Enter your card number';
+            }
+            if (val.replaceAll(' ', '').length < 12) {
+              return 'Enter a valid card number';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                _cardExpiryController,
+                'Expiry (MM/YY)',
+                Icons.calendar_today,
+                hintText: 'MM/YY',
+                keyboardType: TextInputType.number,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Enter expiry date';
+                  }
+                  if (!RegExp(r'^\d{2}/\d{2}$').hasMatch(val.trim())) {
+                    return 'Use MM/YY format';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                _cardCvvController,
+                'CVV',
+                Icons.lock_outline,
+                keyboardType: TextInputType.number,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Enter CVV';
+                  }
+                  if (val.trim().length < 3) {
+                    return 'Enter valid CVV';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOnlineProviders() {
+    final providers = [
+      {'id': 'paypal', 'label': 'PayPal', 'icon': Icons.account_balance_wallet},
+      {'id': 'stripe', 'label': 'Stripe', 'icon': Icons.credit_score},
+      {'id': 'apple_pay', 'label': 'Apple Pay', 'icon': Icons.phone_iphone},
+      {'id': 'google_pay', 'label': 'Google Pay', 'icon': Icons.android},
+    ];
+
+    return Column(
+      children: providers.map((p) {
+        final isSelected = _onlineProvider == p['id'];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            tileColor: isSelected
+                ? AppColorStyle.secondaryAccent.withValues(alpha: 0.15)
+                : AppColorStyle.appBarColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: isSelected
+                    ? AppColorStyle.secondaryAccent
+                    : AppColorStyle.primaryAccent.withValues(alpha: 0.4),
+              ),
+            ),
+            leading: Icon(
+              p['icon'] as IconData,
+              color: isSelected
+                  ? AppColorStyle.secondaryAccent
+                  : AppColorStyle.textSecondary,
+            ),
+            title: Text(
+              p['label'] as String,
+              style: TextStyle(
+                color: AppColorStyle.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            trailing: isSelected
+                ? Icon(Icons.check_circle, color: AppColorStyle.secondaryAccent)
+                : null,
+            onTap: () {
+              setState(() {
+                _onlineProvider = p['id'] as String;
+              });
+            },
+          ),
+        );
+      }).toList(),
     );
   }
 

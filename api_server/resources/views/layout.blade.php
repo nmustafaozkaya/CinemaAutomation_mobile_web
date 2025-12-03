@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>🎬 Modern Sinema Otomasyonu</title>
+    <title>🎬 Modern Cinema Automation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -115,7 +115,7 @@
             color: white !important;
         }
 
-        /* Select dropdown açıldığında */
+        /* Select dropdown when opened */
         select:focus option {
             background-color: #1f2937 !important;
             color: white !important;
@@ -142,7 +142,7 @@
                 <div class="flex items-center">
                     <a href="/" class="flex items-center space-x-3 hover:opacity-90 transition-opacity">
                         <div class="w-12 h-12 rounded-full bg-white/10 border-2 border-emerald-400/60 shadow-md flex items-center justify-center p-1.5">
-                            <img src="{{ asset('images/logo.png') }}" alt="Cinema Automation" class="w-full h-full object-contain rounded-full" style="display: block !important;" onerror="console.error('Logo yüklenemedi:', this.src); this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <img src="{{ asset('images/logo.png') }}" alt="Cinema Automation" class="w-full h-full object-contain rounded-full" style="display: block !important;" onerror="console.error('Logo could not be loaded:', this.src); this.style.display='none'; this.nextElementSibling.style.display='flex';">
                             <div style="display: none;" class="w-full h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
                                 <i class="fas fa-film text-white text-lg"></i>
                             </div>
@@ -153,41 +153,41 @@
                 <!-- ✅ Role-based navigation -->
                 <div class="hidden md:flex space-x-8">
                     <a href="/" class="nav-link text-white hover:text-green-300 transition-colors">
-                        <i class="fas fa-home mr-2"></i>Ana Sayfa
+                        <i class="fas fa-home mr-2"></i>Home
                     </a>
                     <a href="/movies" class="nav-link text-white hover:text-green-300 transition-colors">
-                        <i class="fas fa-play mr-2"></i>Filmler
+                        <i class="fas fa-play mr-2"></i>Movies
                     </a>
                     @auth
                         @if(auth()->user()->isCustomer())
-                            <!-- Customer sadece bilet alabilir -->
+                            <!-- Customer can only buy tickets -->
                             <a href="/buy-tickets" class="nav-link text-white hover:text-green-300 transition-colors">
-                                <i class="fas fa-ticket-alt mr-2"></i>Bilet Al
+                                <i class="fas fa-ticket-alt mr-2"></i>Buy Ticket
                             </a>
                             <a href="/my-tickets" class="nav-link text-white hover:text-green-300 transition-colors">
-                                <i class="fas fa-history mr-2"></i>Biletlerim
+                                <i class="fas fa-history mr-2"></i>My Tickets
                             </a>
                         @else
-                            <!-- Admin'ler bilet satışı ve yönetim görebilir -->
+                            <!-- Admins can sell tickets and see management -->
                             <a href="/tickets" class="nav-link text-white hover:text-green-300 transition-colors">
-                                <i class="fas fa-ticket-alt mr-2"></i>Bilet Satış
+                                <i class="fas fa-ticket-alt mr-2"></i>Ticket Sales
                             </a>
                             <a href="/admin" class="nav-link text-white hover:text-green-300 transition-colors">
-                                <i class="fas fa-cog mr-2"></i>Yönetim
+                                <i class="fas fa-cog mr-2"></i>Management
                             </a>
                         @endif
 
-                        <!-- Çıkış -->
+                        <!-- Logout -->
                         <a href="/logout" class="nav-link text-white hover:text-green-300 transition-colors">
-                            <i class="fas fa-sign-out-alt mr-2"></i>Çıkış
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
                         </a>
                     @else
-                        <!-- Giriş yapmamış kullanıcılar -->
+                        <!-- Guest (not authenticated) users -->
                         <a href="/login" class="nav-link text-white hover:text-green-300 transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Giriş
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
                         </a>
                         <a href="/register" class="nav-link text-white hover:text-green-300 transition-colors">
-                            <i class="fas fa-user-plus mr-2"></i>Kayıt Ol
+                            <i class="fas fa-user-plus mr-2"></i>Register
                         </a>
                     @endauth
                 </div>
@@ -210,8 +210,8 @@
             <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-check text-white text-2xl"></i>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">İşlem Başarılı!</h3>
-            <p id="successMessage" class="text-gray-600 mb-6">İşleminiz başarıyla tamamlandı.</p>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Operation Successful!</h3>
+            <p id="successMessage" class="text-gray-600 mb-6">Your action has been completed successfully.</p>
             <button onclick="closeSuccessModal()"
                 class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold transition-all">
                 Tamam
@@ -224,7 +224,7 @@
         <div class="bg-white rounded-2xl p-8 text-center">
             <div class="loading w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-4">
             </div>
-            <p class="text-gray-600 font-medium">Yükleniyor...</p>
+            <p class="text-gray-600 font-medium">Loading...</p>
         </div>
     </div>
 
@@ -251,21 +251,25 @@
         window.userPermissions = {
             @auth
                 isLoggedIn: true,
-                    role: '{{ auth()->user()->role->name }}',
-                        roleId: {{ auth()->user()->role_id }},
+                role: '{{ auth()->user()->role->name }}',
+                roleId: {{ auth()->user()->role_id }},
                 isAdmin: {{ auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() ? 'true' : 'false' }},
-                    isSuperAdmin: {{ auth()->user()->isSuperAdmin() ? 'true' : 'false' }},
+                isSuperAdmin: {{ auth()->user()->isSuperAdmin() ? 'true' : 'false' }},
                 isCustomer: {{ auth()->user()->isCustomer() ? 'true' : 'false' }},
-                    userName: '{{ auth()->user()->name }}'
+                userName: '{{ auth()->user()->name }}',
+                email: '{{ auth()->user()->email }}',
+                phone: '{{ auth()->user()->phone ?? '' }}'
             @else
-            isLoggedIn: false,
+                isLoggedIn: false,
                 role: null,
-                    roleId: null,
-                        isAdmin: false,
-                            isSuperAdmin: false,
-                                isCustomer: false,
-                                    userName: null
-        @endauth
+                roleId: null,
+                isAdmin: false,
+                isSuperAdmin: false,
+                isCustomer: false,
+                userName: null,
+                email: null,
+                phone: null
+            @endauth
         };
 
     </script>

@@ -15,15 +15,15 @@ class Movies2025Seeder extends Seeder
 
     public function run(): void
     {
-        $this->command->info('🎬 2025 Filmleri TMDB\'den yükleniyor...');
+        $this->command->info('🎬 Loading 2025 movies from TMDB (English)...');
 
         $movies = [];
         $page = 1;
-        $maxPages = 10; // 10 sayfa = ~200 film
+        $maxPages = 10; // 10 pages ≈ 200 movies
         $totalAdded = 0;
 
         while ($page <= $maxPages) {
-            $this->command->info("📄 Sayfa {$page} yükleniyor...");
+            $this->command->info("📄 Loading page {$page}...");
 
             try {
                 $response = Http::timeout(15)->get("{$this->tmdbBaseUrl}/discover/movie", [
@@ -31,41 +31,42 @@ class Movies2025Seeder extends Seeder
                     'primary_release_year' => 2025,
                     'sort_by' => 'popularity.desc',
                     'page' => $page,
-                    'language' => 'tr-TR',
-                    'region' => 'TR'
+                    // Fetch movies in English worldwide
+                    'language' => 'en-US',
+                    'region' => 'US'
                 ]);
 
                 if (!$response->successful()) {
-                    $this->command->error("❌ TMDB API hatası: " . $response->status());
+                    $this->command->error("❌ TMDB API error: " . $response->status());
                     break;
                 }
 
                 $data = $response->json();
                 
                 if (empty($data['results'])) {
-                    $this->command->info("⚠️ Sayfa {$page}'de film bulunamadı.");
+                    $this->command->info("⚠️ No movies found on page {$page}.");
                     break;
                 }
 
                 foreach ($data['results'] as $movieData) {
-                    // Sadece poster'ı olan filmleri ekle
+                    // Only add movies that have a poster
                     if (empty($movieData['poster_path'])) {
                         continue;
                     }
 
-                    // Film zaten var mı kontrol et
+                    // Skip if movie with the same title already exists
                     $existingMovie = Movie::where('title', $movieData['title'])->first();
                     if ($existingMovie) {
                         continue;
                     }
 
-                    // Genre'ları al
+                    // Get genre names
                     $genres = [];
                     if (isset($movieData['genre_ids']) && is_array($movieData['genre_ids'])) {
                         $genres = $this->getGenreNames($movieData['genre_ids']);
                     }
 
-                    // Release date'i parse et
+                    // Parse release date
                     $releaseDate = null;
                     if (!empty($movieData['release_date'])) {
                         try {
@@ -77,10 +78,10 @@ class Movies2025Seeder extends Seeder
                         $releaseDate = '2025-01-01';
                     }
 
-                    // Film verisini hazırla
+                    // Prepare movie payload
                     $movie = [
-                        'title' => substr($movieData['title'] ?? 'İsimsiz Film', 0, 255),
-                        'description' => substr($movieData['overview'] ?? 'Açıklama mevcut değil.', 0, 1000),
+                        'title' => substr($movieData['title'] ?? 'Untitled Movie', 0, 255),
+                        'description' => substr($movieData['overview'] ?? 'No description available.', 0, 1000),
                         'duration' => $movieData['runtime'] ?? 120,
                         'language' => substr($movieData['original_language'] ?? 'en', 0, 5),
                         'release_date' => $releaseDate,
@@ -95,24 +96,24 @@ class Movies2025Seeder extends Seeder
                     try {
                         Movie::create($movie);
                         $totalAdded++;
-                        $this->command->info("✅ {$movie['title']} eklendi");
+                        $this->command->info("✅ {$movie['title']} added");
                     } catch (\Exception $e) {
-                        $this->command->warn("⚠️ {$movie['title']} eklenemedi: " . $e->getMessage());
+                        $this->command->warn("⚠️ {$movie['title']} could not be added: " . $e->getMessage());
                     }
                 }
 
                 // Rate limiting
-                usleep(500000); // 0.5 saniye bekle
+                usleep(500000); // wait 0.5 seconds
                 $page++;
 
             } catch (\Exception $e) {
-                $this->command->error("❌ Sayfa {$page} yüklenirken hata: " . $e->getMessage());
+                $this->command->error("❌ Error while loading page {$page}: " . $e->getMessage());
                 break;
             }
         }
 
-        $this->command->info("\n🎉 2025 Filmleri yükleme tamamlandı!");
-        $this->command->info("📊 Toplam eklenen: {$totalAdded} film");
+        $this->command->info("\n🎉 2025 movie loading completed!");
+        $this->command->info("📊 Total added: {$totalAdded} movies");
     }
 
     private function getGenreNames($genreIds): array
@@ -123,7 +124,8 @@ class Movies2025Seeder extends Seeder
             try {
                 $response = Http::timeout(10)->get("{$this->tmdbBaseUrl}/genre/movie/list", [
                     'api_key' => $this->tmdbApiKey,
-                    'language' => 'tr-TR'
+                    // Get genre names in English
+                    'language' => 'en-US'
                 ]);
 
                 if ($response->successful()) {
@@ -134,31 +136,31 @@ class Movies2025Seeder extends Seeder
                     }
                 }
             } catch (\Exception $e) {
-                $this->command->warn("⚠️ Genre listesi alınamadı, varsayılan kullanılıyor.");
+                $this->command->warn("⚠️ Could not fetch genre list, using default map.");
             }
 
-            // Varsayılan genre map
+            // Default genre map (English)
             if ($genreMap === null) {
                 $genreMap = [
-                    28 => 'Aksiyon',
-                    12 => 'Macera',
-                    16 => 'Animasyon',
-                    35 => 'Komedi',
-                    80 => 'Suç',
-                    99 => 'Belgesel',
+                    28 => 'Action',
+                    12 => 'Adventure',
+                    16 => 'Animation',
+                    35 => 'Comedy',
+                    80 => 'Crime',
+                    99 => 'Documentary',
                     18 => 'Drama',
-                    10751 => 'Aile',
-                    14 => 'Fantastik',
-                    36 => 'Tarih',
-                    27 => 'Korku',
-                    10402 => 'Müzik',
-                    9648 => 'Gizem',
-                    10749 => 'Romantik',
-                    878 => 'Bilim Kurgu',
-                    10770 => 'TV Filmi',
-                    53 => 'Gerilim',
-                    10752 => 'Savaş',
-                    37 => 'Batı'
+                    10751 => 'Family',
+                    14 => 'Fantasy',
+                    36 => 'History',
+                    27 => 'Horror',
+                    10402 => 'Music',
+                    9648 => 'Mystery',
+                    10749 => 'Romance',
+                    878 => 'Science Fiction',
+                    10770 => 'TV Movie',
+                    53 => 'Thriller',
+                    10752 => 'War',
+                    37 => 'Western'
                 ];
             }
         }

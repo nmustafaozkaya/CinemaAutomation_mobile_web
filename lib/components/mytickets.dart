@@ -57,6 +57,7 @@ class Ticket {
   final DateTime updatedAt;
   final Showtime showtime;
   final Seat seat;
+  final String? paymentMethod;
 
   Ticket({
     required this.id,
@@ -72,6 +73,7 @@ class Ticket {
     required this.updatedAt,
     required this.showtime,
     required this.seat,
+    this.paymentMethod,
   });
 
   factory Ticket.fromJson(Map<String, dynamic> json) {
@@ -89,6 +91,7 @@ class Ticket {
       updatedAt: DateTime.parse(json['updated_at']),
       showtime: Showtime.fromJson(json['showtime']),
       seat: Seat.fromJson(json['seat']),
+      paymentMethod: json['sale'] != null ? json['sale']['payment_method'] as String? : null,
     );
   }
 }

@@ -244,7 +244,8 @@ class TicketController extends Controller
             $tickets = Ticket::with([
                 'showtime.movie',
                 'showtime.hall.cinema',
-                'seat'
+                'seat',
+                'sale',
             ])
                 ->where('user_id', Auth::id())
                 ->orderBy('created_at', 'desc')
