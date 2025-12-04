@@ -242,7 +242,7 @@ class _MovieDetailsState extends State<MovieDetails> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  "Release Date: ${DateFormat('MMMM d, yyyy').format(movie.releaseDate)}",
+                  "Release Date: ${DateFormat('d MMMM yyyy', 'tr_TR').format(movie.releaseDate)}",
                   style: const TextStyle(color: AppColorStyle.textPrimary),
                 ),
               ],
@@ -274,7 +274,7 @@ class _MovieDetailsState extends State<MovieDetails> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  "Run Time: ${movie.runtime}",
+                  "Duration: ${movie.runtime}",
                   style: const TextStyle(color: AppColorStyle.textPrimary),
                 ),
               ],
@@ -311,7 +311,7 @@ class _MovieDetailsState extends State<MovieDetails> {
                       ),
                     if (selectedShowtime != null)
                       Text(
-                        'Showtime: ${selectedShowtime!.hallname} - ${DateFormat('dd MMM yyyy - HH:mm').format(selectedShowtime!.startTime)}',
+                        'Showtime: ${selectedShowtime!.hallname} - ${DateFormat('dd MMM yyyy - HH:mm', 'tr_TR').format(selectedShowtime!.startTime)}',
                         style: const TextStyle(
                           color: AppColorStyle.textSecondary,
                         ),

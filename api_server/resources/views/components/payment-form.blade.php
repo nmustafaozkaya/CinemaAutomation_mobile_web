@@ -170,23 +170,29 @@
                         <label class="block text-white text-sm font-medium mb-1">
                             <i class="fas fa-credit-card mr-1"></i>Card Number
                         </label>
-                        <input type="text" id="cardNumber" placeholder="XXXX XXXX XXXX XXXX" maxlength="19"
-                            class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                        <input type="tel" id="cardNumber" placeholder="XXXX XXXX XXXX XXXX" maxlength="19"
+                               inputmode="numeric" pattern="[0-9 ]*"
+                               oninput="formatCardNumber(this)"
+                               class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-white text-sm font-medium mb-1">
                                 <i class="fas fa-calendar-alt mr-1"></i>Expiry (MM/YY)
                             </label>
-                            <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5"
-                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                            <input type="tel" id="cardExpiry" placeholder="MM/YY" maxlength="5"
+                                   inputmode="numeric" pattern="[0-9/]*"
+                                   oninput="formatCardExpiry(this)"
+                                   class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
                         </div>
                         <div>
                             <label class="block text-white text-sm font-medium mb-1">
                                 <i class="fas fa-lock mr-1"></i>CVV
                             </label>
                             <input type="password" id="cardCvv" placeholder="CVV" maxlength="4"
-                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                                   inputmode="numeric" pattern="[0-9]*"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4);"
+                                   class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
                         </div>
                     </div>
                 </div>
@@ -280,7 +286,20 @@
 </div>
 
 <script>
-    const MAX_TICKETS_PER_ORDER = 6;
+    function formatCardNumber(input) {
+        let digits = input.value.replace(/[^0-9]/g, '').slice(0, 16);
+        const groups = digits.match(/.{1,4}/g) || [];
+        input.value = groups.join(' ');
+    }
+
+    function formatCardExpiry(input) {
+        let digits = input.value.replace(/[^0-9]/g, '').slice(0, 4);
+        if (digits.length >= 3) {
+            input.value = digits.slice(0, 2) + '/' + digits.slice(2);
+        } else {
+            input.value = digits;
+        }
+    }
     // Payment Form JavaScript (refresh of the previous implementation)
     class PaymentForm {
         constructor() {
@@ -549,25 +568,104 @@
         async loadTicketTypes(showtimeId) {
             try {
                 this.showLoading();
+                
+                console.log(`[PaymentForm] Loading ticket types for showtime: ${showtimeId}`);
+                console.log(`[PaymentForm] selectedShowtime object:`, selectedShowtime);
 
-                const response = await axios.get(`/api/tickets/prices/${showtimeId}`);
-                console.log('API Response:', response.data);
+                if (!showtimeId) {
+                    console.error('[PaymentForm] ERROR: showtimeId is empty or undefined!');
+                    throw new Error('Showtime ID is required');
+                }
 
-                this.customerTypes = response.data.data.types || [];
-                const apiPrices = response.data.data.prices;
+                const url = `/api/tickets/prices/${showtimeId}`;
+                console.log(`[PaymentForm] Fetching: ${url}`);
+                
+                const startTime = Date.now();
+                const response = await axios.get(url);
+                const elapsed = Date.now() - startTime;
+                
+                console.log(`[PaymentForm] API call took ${elapsed}ms`);
+                console.log(`[PaymentForm] Status: ${response.status}`);
+                console.log(`[PaymentForm] Full API Response:`, response.data);
 
-                // Process prices
+                const payload = response.data?.data || {};
+                console.log(`[PaymentForm] Extracted payload:`, payload);
+                
+                let types = payload.types || [];
+                const apiPrices = payload.prices || null;
+
+                console.log(`[PaymentForm] Types from API:`, types);
+                console.log(`[PaymentForm] Prices from API:`, apiPrices);
+
+                // If server didn't supply types but provided prices, derive types from price keys
+                if ((Array.isArray(types) && types.length === 0) && apiPrices) {
+                    console.warn('[PaymentForm] Ticket types missing from API, deriving from prices keys');
+                    types = Object.keys(apiPrices).map(code => ({
+                        code: code,
+                        name: code.charAt(0).toUpperCase() + code.slice(1),
+                        icon: 'fa-ticket-alt',
+                        description: ''
+                    }));
+                    console.log('[PaymentForm] Derived types:', types);
+                }
+
+                // If still no types and no prices, fallback to mock data
+                if (!Array.isArray(types) || types.length === 0) {
+                    console.error('[PaymentForm] No ticket types available from API. Falling back to defaults.');
+                    // Show a visible message in the loading area so users know what's happening
+                    try {
+                        const loadingText = this.loadingElement.querySelector('p');
+                        if (loadingText) loadingText.textContent = 'No ticket types received — using default prices.';
+                    } catch (e) { /* ignore DOM errors */ }
+
+                    this.loadMockData();
+                    console.log('[PaymentForm] Mock data loaded. Types:', this.customerTypes);
+                    // Ensure totals are recalculated if necessary
+                    await this.updateTotalPrice();
+                    return;
+                }
+
+                // Assign derived or provided types
+                this.customerTypes = types;
+                console.log('[PaymentForm] Customer types assigned:', this.customerTypes);
+
+                // Process prices; if prices missing, attempt to use selectedShowtime price or fallback value
                 this.ticketPrices = {};
-                this.customerTypes.forEach(type => {
-                    this.ticketPrices[type.code] = Number(apiPrices[type.code]);
-                });
+                if (apiPrices) {
+                    this.customerTypes.forEach(type => {
+                        const raw = apiPrices[type.code];
+                        this.ticketPrices[type.code] = Number(raw) || Number(selectedShowtime?.price) || 0;
+                    });
+                } else {
+                    // No prices provided by API — use selectedShowtime.price as base
+                    const base = Number(selectedShowtime?.price) || 45;
+                    this.customerTypes.forEach(type => {
+                        this.ticketPrices[type.code] = base;
+                    });
+                }
+
+                console.log('[PaymentForm] Final ticket prices:', this.ticketPrices);
 
                 this.renderTicketTypes();
+                console.log('[PaymentForm] Ticket types rendered');
+                
                 this.renderPriceInfo();
+                console.log('[PaymentForm] Price info rendered');
+                
                 this.showTicketTypes();
+                console.log('[PaymentForm] Ticket types shown');
+
+                // Ensure totals/taxes are recalculated in case there are preselected counts
+                await this.updateTotalPrice();
+                console.log('[PaymentForm] Total price updated');
 
             } catch (error) {
-                console.error('Unable to fetch pricing data:', error);
+                console.error('[PaymentForm] ERROR in loadTicketTypes:', error);
+                console.error('[PaymentForm] Error status:', error.response?.status);
+                console.error('[PaymentForm] Error data:', error.response?.data);
+                console.error('[PaymentForm] Error message:', error.message);
+                
+                console.log('[PaymentForm] Falling back to mock data due to error');
                 this.loadMockData();
             }
         }
@@ -838,11 +936,77 @@
 
             const selectedSeats = window.seatMap?.getSelectedSeats() || [];
 
-            alert(`🎉 Ticket purchase successful!\n\nTotal: ₺${this.taxCalculation.total.toFixed(2)}\nTickets: ${ticketSummary}\nSeats: ${selectedSeats.map(s => s.code).join(', ')}`);
+            // Eski alert yerine modern, ortalanmış bir başarı modali göster
+            const existingModal = document.getElementById('purchaseSuccessModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
 
-            setTimeout(() => {
-                window.location.href = '/my-tickets';
-            }, 2000);
+            const totalText = `₺${this.taxCalculation.total.toFixed(2)}`;
+            const seatsText = selectedSeats.map(s => s.code).join(', ');
+
+            const modalHtml = `
+                <div id="purchaseSuccessModal"
+                     class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+                    <div class="bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 border border-emerald-500/40">
+                        <div class="flex flex-col items-center text-center space-y-4">
+                            <div
+                                class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-400 flex items-center justify-center mb-2">
+                                <i class="fas fa-check text-3xl text-emerald-400"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white">Ticket purchase successful!</h3>
+                            <p class="text-gray-300 text-sm max-w-xs">
+                                Your tickets have been created successfully. You can view all details on the
+                                <span class="font-semibold text-emerald-300">My Tickets</span> page.
+                            </p>
+
+                            <div class="w-full bg-gray-800/80 rounded-xl p-4 space-y-2 text-sm">
+                                <div class="flex justify-between text-gray-300">
+                                    <span>Total</span>
+                                    <span class="font-semibold text-emerald-400">${totalText}</span>
+                                </div>
+                                <div class="flex justify-between text-gray-300">
+                                    <span>Tickets</span>
+                                    <span class="font-semibold">${ticketSummary}</span>
+                                </div>
+                                <div class="flex justify-between text-gray-300">
+                                    <span>Seats</span>
+                                    <span class="font-semibold">${seatsText}</span>
+                                </div>
+                            </div>
+
+                            <button id="viewMyTicketsBtn"
+                                    class="mt-2 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span>Go to My Tickets</span>
+                            </button>
+
+                            <button id="closeSuccessModalBtn"
+                                    class="text-xs text-gray-400 hover:text-gray-200 mt-1">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            const modal = document.getElementById('purchaseSuccessModal');
+            const viewBtn = document.getElementById('viewMyTicketsBtn');
+            const closeBtn = document.getElementById('closeSuccessModalBtn');
+
+            // Sadece butona tıklarsa My Tickets sayfasına gitsin, otomatik redirect yok
+            if (viewBtn) {
+                viewBtn.addEventListener('click', () => {
+                    window.location.href = '/my-tickets';
+                });
+            }
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    if (modal) modal.remove();
+                });
+            }
         }
 
         showLoading() {
@@ -881,15 +1045,10 @@
             }
 
             const newCount = this.selectedTicketTypes[ticketType] + change;
-            const proposedTotal = this.getTotalTicketCount() + change;
 
             if (newCount < 0) return;
 
-            if (proposedTotal > MAX_TICKETS_PER_ORDER) {
-                alert(`You can select at most ${MAX_TICKETS_PER_ORDER} tickets!`);
-                return;
-            }
-
+            // Artık MAX_TICKETS_PER_ORDER sınırı yok, sadece negatif olmayan sayıları kabul et
             this.selectedTicketTypes[ticketType] = newCount;
             document.getElementById(`count_${ticketType}`).textContent = newCount;
 

@@ -27,7 +27,7 @@
 
     <!-- Showtime Count Info -->
     <div id="showtimeCountInfo" class="text-center mb-4">
-            <span class="text-purple-300 text-sm">
+        <span class="text-purple-300 text-sm">
             <i class="fas fa-info-circle mr-1"></i>
             <span id="filteredShowtimeCount">0</span> showtimes found
         </span>
@@ -61,7 +61,7 @@
 <div id="ticketStep5" class="ticket-step hidden">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-2xl font-bold text-white text-center flex-1">
-            <i class="fas fa-couch mr-2 text-green-400"></i>Pick Seats (Maximum 6)
+            <i class="fas fa-couch mr-2 text-green-400"></i>Pick Seats
         </h3>
         <button onclick="goBackToStep(4)"
             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -547,7 +547,6 @@
                 // Show estimated price
                 if (this.selectedShowtime && this.selectedShowtime.price) {
                     const estimatedTotal = this.selectedSeats.length * this.selectedShowtime.price;
-                    this.priceElement.textContent = `Estimated Total: ₺${estimatedTotal.toFixed(2)}`;
                     this.priceElement.classList.remove('hidden');
                 }
 
@@ -739,7 +738,20 @@
     function updateShowtimeCount() {
         const countElement = document.getElementById('filteredShowtimeCount');
         if (countElement) {
-            countElement.textContent = filteredShowtimes.length;
+            // Önce DOM'daki gerçek showtime kartlarını say (kullanıcı ne görüyorsa onu göster)
+            let count = 0;
+            try {
+                count = document.querySelectorAll('#showtimeGrid .glass-effect').length;
+            } catch (e) {
+                // ignore DOM errors
+            }
+
+            // Eğer DOM'da hiç kart yoksa, yedek olarak filteredShowtimes uzunluğunu kullan
+            if (count === 0 && Array.isArray(filteredShowtimes)) {
+                count = filteredShowtimes.length;
+            }
+
+            countElement.textContent = count;
         }
     }
 
@@ -847,6 +859,9 @@
         }
 
         showtimeGrid.innerHTML = html;
+
+        // Ensure count is updated after rendering (avoids brief mismatch showing 0)
+        try { updateShowtimeCount(); } catch (e) { console.error('updateShowtimeCount failed:', e); }
     }
 
     function getAvailableSeatsText(showtime) {
@@ -936,9 +951,27 @@
     }
 
     async function selectShowtimeForTicket(showtimeId, startTime, hallName, price) {
+        // Normalize and format startTime for display. Accepts ISO or already-formatted strings.
+        let displayStartTime = startTime;
+        let isoStart = startTime;
+        try {
+            const parsed = new Date(startTime);
+            if (!isNaN(parsed.getTime())) {
+                const dateStr = parsed.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const hours = String(parsed.getUTCHours()).padStart(2, '0');
+                const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
+                displayStartTime = `${dateStr} ${hours}:${minutes}`;
+                isoStart = parsed.toISOString();
+            }
+        } catch (e) {
+            // fallback: use raw string
+            console.error('Failed to parse showtime startTime:', e);
+        }
+
         selectedShowtime = {
             id: showtimeId,
-            startTime: startTime,
+            startTimeISO: isoStart,
+            startTime: displayStartTime,
             hall: hallName,
             price: price
         };
@@ -946,7 +979,7 @@
         currentTicketStep = 4;
         updateTicketSteps();
 
-        // Show selected showtime info
+        // Show selected showtime info (use formatted startTime)
         document.getElementById('selectedShowtimeInfo').innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="flex items-center space-x-3">
@@ -959,15 +992,15 @@
                 <div class="flex items-center space-x-3">
                     <i class="fas fa-building text-blue-400 text-lg"></i>
                     <div>
-                        <h6 class="text-white font-medium text-sm">Sinema</h6>
+                        <h6 class="text-white font-medium text-sm">Cinema</h6>
                         <p class="text-blue-300 text-xs">${selectedCinema.name}</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
                     <i class="fas fa-clock text-purple-400 text-lg"></i>
                     <div>
-                        <h6 class="text-white font-medium text-sm">Seans</h6>
-                        <p class="text-emerald-400 text-xs">${startTime} - ${hallName}</p>
+                        <h6 class="text-white font-medium text-sm">Showtime</h6>
+                        <p class="text-emerald-400 text-xs">${displayStartTime} - ${hallName}</p>
                     </div>
                 </div>
             </div>
@@ -976,6 +1009,17 @@
         // Set showtime in seat map and load seats
         window.seatMap.setShowtime(selectedShowtime);
         await window.seatMap.loadSeats(showtimeId);
+
+        // Ensure ticket types/prices are loaded for this showtime so service fees can be calculated
+        try {
+            if (window.paymentForm && typeof window.paymentForm.loadTicketTypes === 'function') {
+                await window.paymentForm.loadTicketTypes(showtimeId);
+                // Recalculate totals after loading ticket types
+                await window.paymentForm.updateTotalPrice();
+            }
+        } catch (e) {
+            console.error('Failed to load ticket types after selecting showtime:', e);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {

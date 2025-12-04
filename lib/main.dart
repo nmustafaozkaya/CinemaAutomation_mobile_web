@@ -7,7 +7,7 @@ import 'package:sinema_uygulamasi/screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('en_US', null);
+  await initializeDateFormatting('tr_TR', null);
 
   final rememberMe = await UserPreferences.getRememberMe();
   final currentUser = rememberMe ? await UserPreferences.readData() : null;

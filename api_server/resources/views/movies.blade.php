@@ -188,7 +188,7 @@ function renderMovieCard(movie, isNowShowing) {
                     <i class="fas fa-star mr-1"></i>${movie.imdb_raiting || movie.imdb_rating || 'N/A'}
                 </p>
                 <button onclick="showMovieDetails(${movie.id}, ${isNowShowing})" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-2 rounded-xl font-semibold transition-all">
-                    <i class="fas fa-info-circle mr-2"></i>Detaylar
+                    <i class="fas fa-info-circle mr-2"></i>Details
                 </button>
             </div>
         </div>

@@ -34,7 +34,7 @@ class _BuyScreenState extends State<BuyScreen> {
 
   final Color buttonColor = Colors.amber;
   final Color buttonTextColor = AppColorStyle.textPrimary;
-  final String buttonText = "Continue to Ticket Type Selection";
+  final String buttonText = "Continue to Ticket Selection";
 
   @override
   void initState() {
@@ -222,7 +222,7 @@ class _BuyScreenState extends State<BuyScreen> {
                             ),
                           ),
                           Text(
-                            'Release Date: ${movie != null ? DateFormat.yMMMMd('en').format(movie.releaseDate) : '...'}',
+                            'Release Date: ${movie != null ? DateFormat.yMMMMd('tr_TR').format(movie.releaseDate) : '...'}',
                             style: const TextStyle(
                               color: AppColorStyle.textSecondary,
                             ),
@@ -230,7 +230,7 @@ class _BuyScreenState extends State<BuyScreen> {
                           if (selectedShowtime != null) ...[
                             const SizedBox(height: 8),
                             Text(
-                              'Showtime: ${DateFormat('dd MMM - HH:mm').format(selectedShowtime!.startTime)}',
+                              'Showtime: ${DateFormat('dd MMM - HH:mm', 'tr_TR').format(selectedShowtime!.startTime)}',
                               style: const TextStyle(
                                 fontSize: 16,
                                 color: AppColorStyle.textPrimary,
@@ -260,7 +260,7 @@ class _BuyScreenState extends State<BuyScreen> {
                 ),
 
                 _buildSelectionContainer(
-                  title: 'Hall and Showtime',
+                  title: 'Showtime Selection',
                   icon: FontAwesomeIcons.repeat,
                   onPressed: _selectShowtime,
                   child: selectedShowtime != null
@@ -268,7 +268,7 @@ class _BuyScreenState extends State<BuyScreen> {
                           icon: Icons.event_seat_outlined,
                           title: 'Hall: ${selectedShowtime!.hallname}',
                           subtitle:
-                              'Date: ${DateFormat('dd MMM yyyy - HH:mm').format(selectedShowtime!.startTime)}',
+                              'Showtime: ${DateFormat('dd MMM yyyy - HH:mm', 'tr_TR').format(selectedShowtime!.startTime)}',
                         )
                       : _buildPlaceholderText('Please select a showtime.'),
                 ),

@@ -48,7 +48,7 @@
             <i class="fas fa-film text-gray-400 text-3xl"></i>
         </div>
         <h4 class="text-xl font-bold text-white mb-2">No Movies Found</h4>
-        <p class="text-gray-400 mb-4">We couldn’t find any movies that match your filters.</p>
+        <p class="text-gray-400 mb-4">We couldn't find any movies that match your filters.</p>
         <button onclick="window.movieSelection.clearFilters()" 
                 class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium">
             <i class="fas fa-refresh mr-2"></i>Clear Filters
@@ -116,10 +116,24 @@ class MovieSelection {
                 this.showGrid();
             }
             
+            // Filmler yüklendikten sonra callback çağır
+            if (this.onMoviesLoaded) {
+                this.onMoviesLoaded();
+            }
+            
+            // Global event dispatch
+            window.dispatchEvent(new CustomEvent('moviesLoaded'));
+            
         } catch (error) {
             console.error('Movies could not be loaded:', error);
             this.renderMockMovies();
             this.showGrid();
+            
+            // Hata durumunda da callback çağır
+            if (this.onMoviesLoaded) {
+                this.onMoviesLoaded();
+            }
+            window.dispatchEvent(new CustomEvent('moviesLoaded'));
         }
     }
 
@@ -293,9 +307,21 @@ class MovieSelection {
 
 // Initialize movie selection when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    // URL'den film ID'sini kontrol et
+    const urlParams = new URLSearchParams(window.location.search);
+    const movieId = urlParams.get('movie');
+    
     window.movieSelection = new MovieSelection();
     window.movieSelection.loadCities();
+    
+    // Eğer URL'de film ID yoksa filmleri yükle (normal akış)
+    // Eğer URL'de film ID varsa filmleri yükleme (otomatik seçim yapılacak)
+    if (!movieId) {
+        window.movieSelection.loadMovies();
+    } else {
+        // Film ID varsa filmleri yükle ama step 1'i gösterme
     window.movieSelection.loadMovies();
+    }
     
     // Setup keyboard shortcuts
     window.movieSelection.setupKeyboardShortcuts();

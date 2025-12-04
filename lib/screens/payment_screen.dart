@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'package:sinema_uygulamasi/components/cinemas.dart';
@@ -53,7 +54,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   User? currentUser;
   String? _userToken;
-  String _paymentMethod = 'card';
+  String _paymentMethod = 'cash';
   String _onlineProvider = 'paypal';
   bool _isLoading = false;
   bool _isFirstPurchase = false;
@@ -103,6 +104,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _cardExpiryController.value = TextEditingValue(
           text: formatted,
           selection: TextSelection.collapsed(offset: selectionIndex),
+        );
+      }
+    });
+
+    // Auto-format card number as 4-4-4-4 while typing
+    _cardNumberController.addListener(() {
+      final digits = _cardNumberController.text.replaceAll(RegExp(r'\\s+'), '');
+      if (digits.isEmpty) return;
+
+      final buffer = StringBuffer();
+      for (var i = 0; i < digits.length && i < 16; i++) {
+        if (i > 0 && i % 4 == 0) {
+          buffer.write(' ');
+        }
+        buffer.write(digits[i]);
+      }
+      final formatted = buffer.toString();
+
+      if (_cardNumberController.text != formatted) {
+        _cardNumberController.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: formatted.length),
         );
       }
     });
@@ -591,6 +614,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     String? hintText,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controller,
@@ -607,6 +631,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       style: TextStyle(color: AppColorStyle.textPrimary),
       keyboardType: keyboardType,
       validator: validator,
+      inputFormatters: inputFormatters,
     );
   }
 
@@ -655,13 +680,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       )
                     : Row(
                         children: [
-                          Expanded(
-                            child: _buildPaymentMethodTile(
-                              value: 'card',
-                              icon: Icons.credit_card,
-                              label: 'Credit Card',
-                            ),
-                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildPaymentMethodTile(
@@ -670,6 +688,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               label: 'Cash',
                             ),
                           ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildPaymentMethodTile(
+                              value: 'card',
+                              icon: Icons.credit_card,
+                              label: 'Credit Card',
+                            ),
+                          ),
+
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildPaymentMethodTile(
@@ -758,6 +785,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
           Icons.credit_card,
           hintText: 'XXXX XXXX XXXX XXXX',
           keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(16),
+          ],
           validator: (val) {
             if (val == null || val.trim().isEmpty) {
               return 'Enter your card number';
@@ -778,6 +809,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 Icons.calendar_today,
                 hintText: 'MM/YY',
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
                     return 'Enter expiry date';
@@ -796,6 +831,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 'CVV',
                 Icons.lock_outline,
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
                     return 'Enter CVV';

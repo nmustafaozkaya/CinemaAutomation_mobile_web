@@ -25,7 +25,8 @@ class _CinemaSelectState extends State<CinemaSelect> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   String? _error;
-  Map<int, String> _cityIdToNameMap = {}; // Şehir ID'den isme mapping
+  Map<int, String> _cityIdToNameMap = {}; // City ID to name mapping
+  int _totalShowtimes = 0;
 
   @override
   void initState() {
@@ -69,7 +70,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
         }
       }
     } catch (e) {
-      debugPrint('Şehirler yüklenirken hata: $e');
+      debugPrint('Error loading cities: $e');
       // Hata durumunda varsayılan şehirleri kullan
       _cityIdToNameMap = {
         1: 'Istanbul',
@@ -115,18 +116,18 @@ class _CinemaSelectState extends State<CinemaSelect> {
       if (jsonResponse['success'] != true || jsonResponse['data'] == null) {
         setState(() {
           _error = jsonResponse['message'] ??
-              'No cinemas are currently showing this movie.';
+              'No cinemas showing this movie.';
           _isLoading = false;
         });
         return;
       }
 
-      // Data artık direkt olarak cinema listesi
+      // Data is now directly cinema list
       final List<dynamic> cinemasData = jsonResponse['data'] as List<dynamic>;
       
       if (cinemasData.isEmpty) {
         setState(() {
-          _error = "No cinemas are currently showing this movie.";
+          _error = "No cinemas showing this movie.";
           _isLoading = false;
         });
         return;
@@ -155,7 +156,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
 
       if (cinemas.isEmpty) {
         setState(() {
-          _error = "No cinemas are currently showing this movie.";
+          _error = "Bu filmi gösteren sinema bulunmuyor.";
           _isLoading = false;
         });
         return;
@@ -172,9 +173,9 @@ class _CinemaSelectState extends State<CinemaSelect> {
       });
       
     } catch (e) {
-      debugPrint('fetchCinemasForMovie hatası: $e');
+      debugPrint('fetchCinemasForMovie error: $e');
       setState(() {
-        _error = 'Cinema information could not be loaded: ${e.toString()}';
+        _error = 'Failed to load cinema information: ${e.toString()}';
         _isLoading = false;
       });
     }
@@ -231,7 +232,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
           try {
             decodedBody = response.body;
           } catch (e2) {
-            throw Exception('Response decode edilemedi: ${e.toString()}');
+            throw Exception('Response could not be decoded: ${e.toString()}');
           }
         }
 
@@ -267,14 +268,14 @@ class _CinemaSelectState extends State<CinemaSelect> {
           
           jsonResponse = json.decode(cleanedBody) as Map<String, dynamic>;
         } on FormatException catch (e) {
-          debugPrint('❌ JSON parse hatası: ${e.message}');
-          debugPrint('Response uzunluğu: ${decodedBody.length} karakter');
+          debugPrint('❌ JSON parse error: ${e.message}');
+          debugPrint('Response length: ${decodedBody.length} characters');
           if (e.offset != null && e.offset! < decodedBody.length) {
             final start = (e.offset! - 100).clamp(0, decodedBody.length);
             final end = (e.offset! + 100).clamp(0, decodedBody.length);
-            debugPrint('Hata pozisyonu: ${e.offset}, çevresi: ${decodedBody.substring(start, end)}');
+            debugPrint('Error position: ${e.offset}, context: ${decodedBody.substring(start, end)}');
           }
-          throw Exception('JSON parse hatası: ${e.message}');
+          throw Exception('JSON parse error: ${e.message}');
         }
 
         if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
@@ -298,9 +299,9 @@ class _CinemaSelectState extends State<CinemaSelect> {
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('fetchAllCinemas hatası: $e');
+      debugPrint('fetchAllCinemas error: $e');
       setState(() {
-        _error = 'Cinema information could not be loaded: ${e.toString()}';
+        _error = 'Failed to load cinema information: ${e.toString()}';
         _isLoading = false;
       });
     }
@@ -400,6 +401,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
       _allCinemas = cinemas;
       _filteredCinemas = cinemas;
       _cities = ['All', ...sortedCities];
+      _totalShowtimes = showtimesList.length;
       _isLoading = false;
     });
   }
@@ -488,8 +490,20 @@ class _CinemaSelectState extends State<CinemaSelect> {
             )
           : Column(
               children: [
+                // Header showing cinema count
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+                  padding: const EdgeInsets.all(12.0),
+                  child: Text(
+                    'Found ${_filteredCinemas.length} cinemas ($_totalShowtimes showtimes)',
+                    style: const TextStyle(
+                      color: AppColorStyle.textSecondary,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedCity,
                     dropdownColor: AppColorStyle.appBarColor,
@@ -531,7 +545,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
                     controller: _searchController,
                     style: const TextStyle(color: AppColorStyle.textPrimary),
                     decoration: const InputDecoration(
-                      hintText: 'Search cinemas...',
+                      hintText: 'Search cinema...',
                       hintStyle: TextStyle(color: AppColorStyle.textSecondary),
                       prefixIcon: Icon(
                         Icons.search,
@@ -564,7 +578,7 @@ class _CinemaSelectState extends State<CinemaSelect> {
                               ),
                               SizedBox(height: 16),
                               Text(
-                                'No cinemas match your search.',
+                                'No cinema matches your search.',
                                 style: TextStyle(
                                   color: AppColorStyle.textPrimary,
                                   fontSize: 16,

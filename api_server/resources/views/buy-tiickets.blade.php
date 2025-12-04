@@ -5,7 +5,7 @@
         <div class="flex items-center justify-between mb-8">
             <h2 class="text-3xl font-bold text-white flex items-center">
                 <i class="fas fa-ticket-alt mr-3 text-emerald-400"></i>
-                Purchase Tickets
+                Buy Tickets
             </h2>
             <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>Back
@@ -27,20 +27,39 @@
         let selectedTicketTypes = {};
         let ticketPrices = {};
         let currentTicketStep = 1;
-        const MAX_TICKETS_PER_ORDER = 6;
 
-        document.addEventListener('DOMContentLoaded', function () {
-            loadMoviesForTicket();
-            
+        document.addEventListener('DOMContentLoaded', async function () {
             // URL'den film ID'sini al
             const urlParams = new URLSearchParams(window.location.search);
             const movieId = urlParams.get('movie');
             
             if (movieId) {
-                // Film seçili olarak gelirse, otomatik olarak seç
-                setTimeout(() => {
-                    selectMovieFromUrl(movieId);
-                }, 1000); // Filmler yüklendikten sonra seç
+                console.log('URL\'de film ID bulundu:', movieId);
+                
+                // Eğer URL'de film ID varsa, step 1'i direkt gizle
+                const step1Element = document.getElementById('ticketStep1');
+                if (step1Element) {
+                    step1Element.classList.add('hidden');
+                    console.log('Step 1 gizlendi');
+                }
+                
+                // currentTicketStep'i 2 yap (step 1'i atla)
+                currentTicketStep = 2;
+                
+                // Step 1'i gizledikten sonra film seçimini yap
+                // Biraz daha uzun gecikme ile çağır (sayfa ve component'ler tamamen yüklensin)
+                setTimeout(async () => {
+                    console.log('URL\'den film ID alındı, otomatik seçim yapılıyor:', movieId);
+                    try {
+                        await selectMovieFromUrl(movieId);
+                    } catch (error) {
+                        console.error('Film seçimi hatası:', error);
+                    }
+                }, 800);
+            } else {
+                // Eğer URL'de film ID yoksa, step 1'i göster
+                currentTicketStep = 1;
+                updateTicketSteps();
             }
         });
         
@@ -48,11 +67,13 @@
             try {
                 // Önce /api/movies'ten dene, bulunamazsa /api/future-movies'ten dene
                 let response;
+                let isNowShowing = true;
                 try {
                     response = await axios.get(`/api/movies/${movieId}`);
                 } catch (e) {
                     if (e.response?.status === 404) {
                         response = await axios.get(`/api/future-movies/${movieId}`);
+                        isNowShowing = false;
                     } else {
                         throw e;
                     }
@@ -61,8 +82,9 @@
                 const movie = response.data.data;
                 
                 if (movie) {
-                    selectMovieForTicket(movieId, movie.title);
-                    console.log('Film otomatik seçildi:', movie.title);
+                    // Film seçili olarak gelirse, direkt step 2'ye geç (Select Cinema)
+                    await selectMovieForTicket(movieId, movie.title, isNowShowing);
+                    console.log('Film otomatik seçildi ve step 2\'ye geçildi:', movie.title);
                 }
             } catch (error) {
                 console.error('Film seçilemedi:', error);
@@ -222,7 +244,7 @@
             
             // Coming Soon için "Seç" butonunu gösterme
             const selectButton = isNowShowing ? `
-                <button onclick="selectMovieForTicket(${movie.id}, '${movie.title.replace(/'/g, "\\'")}')" 
+                <button onclick="selectMovieForTicket(${movie.id}, '${movie.title.replace(/'/g, "\\'")}', ${isNowShowing})" 
                         class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
                     <i class="fas fa-ticket-alt mr-1"></i>Select
                 </button>
@@ -313,7 +335,7 @@
                 `;
             } else if (isLoggedIn) {
                 buyTicketButton = `
-                    <button onclick="selectMovieForTicket(${movie.id}, '${movie.title.replace(/'/g, "\\'")}'); closeMovieDetailModal();" 
+                    <button onclick="selectMovieForTicket(${movie.id}, '${movie.title.replace(/'/g, "\\'")}', ${isNowShowing}); closeMovieDetailModal();" 
                             class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center">
                         <i class="fas fa-ticket-alt mr-2"></i>Buy Tickets
                     </button>
@@ -472,12 +494,18 @@
             }
         }
 
-        async function selectMovieForTicket(movieId, movieTitle) {
-            selectedMovie = { id: movieId, title: movieTitle };
-            currentTicketStep = 2;
-            updateTicketSteps();
+        async function selectMovieForTicket(movieId, movieTitle, isNowShowing = true) {
+            // Eğer film "Coming Soon" ise, seçilemez
+            if (!isNowShowing) {
+                alert('This movie is coming soon. Please select a movie that is currently showing.');
+                return;
+            }
             
-            // Highlight selected movie
+            selectedMovie = { id: movieId, title: movieTitle };
+            
+            console.log('Film seçildi:', movieTitle, 'Step 2\'ye geçiliyor...');
+            
+            // Highlight selected movie (eğer step 1'deyse)
             document.querySelectorAll('.movie-card').forEach(card => {
                 card.classList.remove('ring-2', 'ring-yellow-400', 'bg-yellow-500/10');
             });
@@ -487,31 +515,53 @@
                 selectedCard.classList.add('ring-2', 'ring-yellow-400', 'bg-yellow-500/10');
             }
 
-            // Sinemaları yükle
+            // Step 2'ye geç (Select Cinema)
+            currentTicketStep = 2;
+            
+            // Önce tüm step'leri gizle
+            for (let i = 1; i <= 6; i++) {
+                const stepElement = document.getElementById(`ticketStep${i}`);
+                if (stepElement) {
+                    stepElement.classList.add('hidden');
+                }
+            }
+            
+            // Step 2'yi göster
+            const step2Element = document.getElementById('ticketStep2');
+            if (step2Element) {
+                step2Element.classList.remove('hidden');
+                console.log('Step 2 gösterildi');
+            } else {
+                console.error('Step 2 elementi bulunamadı!');
+            }
+            
+            // Step göstergelerini güncelle (bu step 1'i tekrar göstermemeli çünkü currentTicketStep = 2)
+            updateTicketSteps();
+
+            // Seçilen film bilgisini göster
+            const selectedMovieInfo = document.getElementById('selectedMovieInfo');
+            if (selectedMovieInfo) {
+                selectedMovieInfo.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <i class="fas fa-film text-yellow-400 text-2xl"></i>
+                        <div>
+                            <h4 class="text-white font-semibold">Selected Movie</h4>
+                            <p class="text-purple-300">${movieTitle}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Sinemaları yükle (bu filmi gösteren sinemalar)
             await loadCinemas();
-
-            document.getElementById('selectedMovieInfo').innerHTML = `
-                                                                                                    <div class="flex items-center space-x-4">
-                                                                                                        <i class="fas fa-film text-yellow-400 text-2xl"></i>
-                                                                                                        <div>
-                                                                                                            <h4 class="text-white font-semibold">Selected Movie</h4>
-                                                                                                            <p class="text-purple-300">${movieTitle}</p>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                `;
-
-            try {
-                const response = await axios.get('/api/cinemas');
-                const cinemas = response.data.data || [];
-                renderCinemas(cinemas);
-            } catch (error) {
-                console.error('Sinemalar yüklenemedi:', error);
-                const mockCinemas = [
-                    { id: 1, name: "Cinema Automation Gaziantep", address: "Forum AVM", hall_count: 8 },
-                    { id: 2, name: "Cinema Automation Forum", address: "Sanko Park", hall_count: 6 },
-                    { id: 3, name: "CineBonus Anteplioğlu", address: "Anteplioğlu AVM", hall_count: 4 }
-                ];
-                renderCinemas(mockCinemas);
+            
+            console.log('Film seçimi tamamlandı, step 2 aktif, currentTicketStep:', currentTicketStep);
+            
+            // Son kontrol: Step 1 hala görünürse gizle
+            const step1Check = document.getElementById('ticketStep1');
+            if (step1Check && !step1Check.classList.contains('hidden')) {
+                console.warn('Step 1 hala görünür, gizleniyor...');
+                step1Check.classList.add('hidden');
             }
         }
 
@@ -550,14 +600,14 @@
                                                                                                         <div class="flex items-center space-x-4">
                                                                                                             <i class="fas fa-film text-yellow-400 text-xl"></i>
                                                                                                             <div>
-                                                                                                            <h5 class="text-white font-medium">Movie</h5>
+                                                                                                                <h5 class="text-white font-medium">Movie</h5>
                                                                                                                 <p class="text-purple-300 text-sm">${selectedMovie.title}</p>
                                                                                                             </div>
                                                                                                         </div>
                                                                                                         <div class="flex items-center space-x-4">
                                                                                                             <i class="fas fa-building text-blue-400 text-xl"></i>
                                                                                                             <div>
-                                                                                                            <h5 class="text-white font-medium">Cinema</h5>
+                                                                                                                <h5 class="text-white font-medium">Cinema</h5>
                                                                                                                 <p class="text-blue-300 text-sm">${cinemaName}</p>
                                                                                                             </div>
                                                                                                         </div>
@@ -636,13 +686,31 @@
         }
 
         async function selectShowtimeForTicket(showtimeId, startTime, hallName, price) {
-            selectedShowtime = { id: showtimeId, startTime: startTime, hall: hallName, price: price };
+            // Normalize and format startTime for display
+            let displayStartTime = startTime;
+            let isoStart = startTime;
+            try {
+                const parsed = new Date(startTime);
+                if (!isNaN(parsed.getTime())) {
+                    const dateStr = parsed.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const hours = String(parsed.getUTCHours()).padStart(2, '0');
+                    const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
+                    displayStartTime = `${dateStr} ${hours}:${minutes}`;
+                    isoStart = parsed.toISOString();
+                }
+            } catch (e) {
+                console.error('Failed to parse showtime startTime:', e);
+            }
+
+            selectedShowtime = { id: showtimeId, startTimeISO: isoStart, startTime: displayStartTime, hall: hallName, price: price };
             currentTicketStep = 4;
             updateTicketSteps();
 
-            // Koltuk seçimlerini sıfırla
+            // Reset selected seats
             selectedSeats = [];
-            updateSelectedSeatsInfo();
+            if (typeof updateSelectedSeatsInfo === 'function') {
+                updateSelectedSeatsInfo();
+            }
 
             document.getElementById('selectedShowtimeInfo').innerHTML = `
                                                                                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -664,13 +732,22 @@
                                                                                                             <i class="fas fa-clock text-purple-400 text-lg"></i>
                                                                                                             <div>
                                                                                                                 <h6 class="text-white font-medium text-sm">Showtime</h6>
-                                                                                                                <p class="text-emerald-400 text-xs">${startTime} - ${hallName}</p>
+                                                                                                                <p class="text-emerald-400 text-xs">${displayStartTime} - ${hallName}</p>
                                                                                                             </div>
                                                                                                         </div>
                                                                                                     </div>
                                                                                                 `;
 
-            await loadTicketTypes();
+            // Load ticket types using PaymentForm instance if available
+            if (window.paymentForm && typeof window.paymentForm.loadTicketTypes === 'function') {
+                try {
+                    await window.paymentForm.loadTicketTypes(showtimeId);
+                } catch (e) {
+                    console.error('[buy-tickets] Failed to load ticket types via PaymentForm:', e);
+                }
+            } else {
+                console.warn('[buy-tickets] PaymentForm instance not available for loading ticket types');
+            }
         }
 
         function renderSeatMap(seatData) {
@@ -752,7 +829,8 @@
             if (existingIndex !== -1) {
                 selectedSeats.splice(existingIndex, 1);
             } else {
-                const seatLimit = Math.min(getTotalTicketCount() || MAX_TICKETS_PER_ORDER, MAX_TICKETS_PER_ORDER);
+                // Koltuk limiti: seçilen toplam bilet sayısı kadar, ek üst sınır yok
+                const seatLimit = getTotalTicketCount() || Number.MAX_SAFE_INTEGER;
 
                 if (selectedSeats.length >= seatLimit) {
                     alert(`You can select at most ${seatLimit} seats!`);
@@ -849,7 +927,8 @@
             const requiredSeats = getTotalTicketCount();
             if (requiredSeats === 0) return;
 
-            const maxAllowed = Math.min(requiredSeats, MAX_TICKETS_PER_ORDER);
+            // Artık ek bir MAX_TICKETS_PER_ORDER sınırı yok, sadece gereken koltuk kadar sınırla
+            const maxAllowed = requiredSeats;
             let trimmed = false;
 
             while (selectedSeats.length > maxAllowed) {
@@ -996,13 +1075,8 @@
             }
 
             const newCount = selectedTicketTypes[ticketType] + change;
-            const proposedTotal = getTotalTicketCount() + change;
 
             if (newCount < 0) return;
-            if (proposedTotal > MAX_TICKETS_PER_ORDER) {
-                alert(`You can select at most ${MAX_TICKETS_PER_ORDER} tickets!`);
-                return;
-            }
 
             selectedTicketTypes[ticketType] = newCount;
             document.getElementById(`count_${ticketType}`).textContent = newCount;

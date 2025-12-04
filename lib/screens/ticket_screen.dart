@@ -374,20 +374,29 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                         ),
                       ),
                       onPressed: anySelected
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SeatSelectionScreen(
-                                    currentCinema: widget.currentCinema,
-                                    selectedShowtime: widget.selectedShowtime,
-                                    currentMovie: widget.currentMovie,
-                                    totalTicketsToSelect: totalSelectedTickets,
-                                    selectedTicketDetails:
-                                        selectedTicketDetails,
+                          ? () async {
+                              try {
+                                if (!mounted) return;
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SeatSelectionScreen(
+                                      currentCinema: widget.currentCinema,
+                                      selectedShowtime: widget.selectedShowtime,
+                                      currentMovie: widget.currentMovie,
+                                      totalTicketsToSelect: totalSelectedTickets,
+                                      selectedTicketDetails:
+                                          selectedTicketDetails,
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e')),
+                                  );
+                                }
+                              }
                             }
                           : null,
                       child: Text(

@@ -21,7 +21,8 @@ class TicketController extends Controller
         try {
             $validated = $request->validate([
                 'showtime_id' => 'required|exists:showtimes,id',
-                'tickets' => 'required|array|min:1|max:6',
+                // Maksimum 6 bilet sınırı kaldırıldı; sadece en az 1 bilet şartı kaldı
+                'tickets' => 'required|array|min:1',
                 'tickets.*.seat_id' => 'required|exists:seats,id',
                 'tickets.*.customer_type' => 'required|in:adult,student,senior,child',
                 'customer_name' => 'required|string|max:255',

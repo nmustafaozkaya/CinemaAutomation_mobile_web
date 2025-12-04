@@ -146,6 +146,11 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
         final response = await http.get(
           uri,
           headers: const {'Accept': 'application/json', 'Connection': 'close'},
+        ).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            throw Exception('Request timed out while loading seats');
+          },
         );
 
         if (response.statusCode == 200) {
@@ -275,11 +280,11 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           );
           return true;
         } else {
-          String message = reservationResponse.message;
+          // Backend mesajı hangi dilde olursa olsun, mobilde sabit İngilizce göster
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '${seat.displayName} could not be reserved: $message',
+                'Seat ${seat.displayName} could not be reserved.',
               ),
               backgroundColor: Colors.red,
             ),
@@ -287,24 +292,11 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           return false;
         }
       } else {
-        String errorMsg = 'Seat reserve server error';
-        try {
-          final errorJson = json.decode(response.body);
-          if (errorJson['message'] != null) {
-            errorMsg = errorJson['message'];
-          } else if (errorJson['error'] != null) {
-            errorMsg = errorJson['error'];
-          } else {
-            errorMsg = 'HTTP ${response.statusCode}: ${response.body}';
-          }
-        } catch (_) {
-          errorMsg = 'HTTP ${response.statusCode}: ${response.body}';
-        }
-
+        // Detaylı backend mesajını göstermeden genel İngilizce hata
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${seat.displayName} could not be reserved: $errorMsg',
+              'Seat ${seat.displayName} could not be reserved due to a server error.',
             ),
             backgroundColor: Colors.red,
           ),
@@ -344,11 +336,10 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           );
           return true;
         } else {
-          String message = jsonResponse['message'] ?? 'Unknown error!';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '${seat.displayName} could not be released: $message',
+                'Seat ${seat.displayName} could not be released.',
               ),
               backgroundColor: Colors.red,
             ),
@@ -356,24 +347,10 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           return false;
         }
       } else {
-        String errorMsg = 'Server error! Could not be released';
-        try {
-          final errorJson = json.decode(response.body);
-          if (errorJson['message'] != null) {
-            errorMsg = errorJson['message'];
-          } else if (errorJson['error'] != null) {
-            errorMsg = errorJson['error'];
-          } else {
-            errorMsg = 'HTTP ${response.statusCode}: ${response.body}';
-          }
-        } catch (_) {
-          errorMsg = 'HTTP ${response.statusCode}: ${response.body}';
-        }
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${seat.displayName} could not be released: $errorMsg',
+              'Seat ${seat.displayName} could not be released due to a server error.',
             ),
             backgroundColor: Colors.red,
           ),
@@ -513,6 +490,25 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
     return Column(
       children: [
+        // Screen (üstte)
+        Container(
+          width: double.infinity,
+          height: 30,
+          margin: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColorStyle.appBarColor,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Center(
+            child: Text(
+              'SCREEN',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColorStyle.textPrimary,
+              ),
+            ),
+          ),
+        ),
         // Seat Map
         Expanded(
           child: SingleChildScrollView(
@@ -554,25 +550,6 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                   );
                 }),
               ],
-            ),
-          ),
-        ),
-        // Screen (en altta)
-        Container(
-          width: double.infinity,
-          height: 30,
-          margin: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColorStyle.appBarColor,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Center(
-            child: Text(
-              'SCREEN',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColorStyle.textPrimary,
-              ),
             ),
           ),
         ),
@@ -633,8 +610,26 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       totalPrice += detail['totalPrice'] as double;
     }
 
-    final isSelectionComplete =
-        selectedSeats.length == widget.totalTicketsToSelect;
+    final int requiredSeats = widget.totalTicketsToSelect;
+    final int selectedCount = selectedSeats.length;
+    final bool isSelectionComplete = selectedCount == requiredSeats;
+
+    String primaryText;
+    String secondaryText;
+
+    if (selectedCount == 0) {
+      primaryText = 'No seats selected';
+      secondaryText = 'Please select $requiredSeats seats.';
+    } else if (selectedCount < requiredSeats) {
+      final selectedCodes = selectedSeats.map((s) => s.displayName).join(', ');
+      final remaining = requiredSeats - selectedCount;
+      primaryText = '$selectedCount seats selected: $selectedCodes';
+      secondaryText = 'Select $remaining more seats to continue.';
+    } else {
+      final selectedCodes = selectedSeats.map((s) => s.displayName).join(', ');
+      primaryText = '$selectedCount seats selected: $selectedCodes';
+      secondaryText = 'Great! Ticket and seat counts match.';
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -663,7 +658,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Selected Seats: ${selectedSeats.map((s) => s.displayName).join(', ')}',
+                        primaryText,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColorStyle.textPrimary,
@@ -671,34 +666,16 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (selectedSeats.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            'Total Selected: ${selectedSeats.length}',
-                            style: TextStyle(
-                              color: AppColorStyle.textSecondary,
-                            ),
-                          ),
-                        ),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4.0),
                         child: Text(
-                          'Seats Remaining: ${widget.totalTicketsToSelect - selectedSeats.length} more to select',
+                          secondaryText,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: isSelectionComplete
                                 ? Colors.green
-                                : Colors.orange,
+                                : AppColorStyle.textSecondary,
                           ),
-                        ),
-                      ),
-                      Text(
-                        'Subtotal Amount: ${totalPrice.toStringAsFixed(2)} ₺',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: AppColorStyle.primaryAccent,
                         ),
                       ),
                     ],
@@ -757,6 +734,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColorStyle.scaffoldBackground,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text(
           'Select Seat',
@@ -813,31 +791,31 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                     ),
                   )
                 : errorMessage != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Error: $errorMessage',
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => loadSeats(isManualRefresh: true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColorStyle.primaryAccent,
-                            foregroundColor: AppColorStyle.textPrimary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Error: $errorMessage',
+                              style: const TextStyle(color: Colors.red),
+                              textAlign: TextAlign.center,
                             ),
-                          ),
-                          child: const Text('Try again'),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => loadSeats(isManualRefresh: true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColorStyle.primaryAccent,
+                                foregroundColor: AppColorStyle.textPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Try again'),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
-                : buildSeatMap(),
+                      )
+                    : buildSeatMap(),
           ),
         ],
       ),

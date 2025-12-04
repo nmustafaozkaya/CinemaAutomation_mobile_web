@@ -410,7 +410,7 @@
                                 <div class="flex gap-2">
                                     <button onclick="showMovieDetails(${movie.id})" 
                                             class="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
-                                        <i class="fas fa-info-circle mr-1"></i>Detay
+                                        <i class="fas fa-info-circle mr-1"></i>Details
                                     </button>
                                 </div>
                             </div>

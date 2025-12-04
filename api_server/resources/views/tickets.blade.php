@@ -7,7 +7,7 @@
             <div class="flex items-center justify-between mb-8">
                 <h2 class="text-3xl font-bold text-white flex items-center">
                     <i class="fas fa-ticket-alt mr-3 text-emerald-400"></i>
-                    Bilet Al
+                    Buy Tickets
                 </h2>
                 <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>Geri
@@ -42,6 +42,27 @@
             // Load movies automatically
             if (window.movieSelection) {
                 window.movieSelection.loadMovies();
+            }
+            // If opened with ?movie=<id>, auto-select that movie and jump to cinema selection
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const preselectMovieId = params.get('movie');
+                if (preselectMovieId) {
+                    (async () => {
+                        try {
+                            const resp = await axios.get(`/api/movies/${preselectMovieId}`);
+                            const movie = resp.data.data;
+                            if (movie && movie.id) {
+                                // Use selectMovieForTicket to set selectedMovie and move to step 2 (cinema selection)
+                                await selectMovieForTicket(movie.id, movie.title || movie.name || 'Film');
+                            }
+                        } catch (err) {
+                            console.error('Failed to preload movie for ticket flow:', err);
+                        }
+                    })();
+                }
+            } catch (e) {
+                console.error('Error parsing preselect movie param:', e);
             }
         });
 
@@ -274,44 +295,72 @@
         }
 
         async function selectShowtimeForTicket(showtimeId, startTime, hallName, price) {
-            selectedShowtime = { id: showtimeId, startTime: startTime, hall: hallName, price: price };
+            // Normalize and format startTime for display
+            let displayStartTime = startTime;
+            let isoStart = startTime;
+            try {
+                const parsed = new Date(startTime);
+                if (!isNaN(parsed.getTime())) {
+                    const dateStr = parsed.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const hours = String(parsed.getUTCHours()).padStart(2, '0');
+                    const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
+                    displayStartTime = `${dateStr} ${hours}:${minutes}`;
+                    isoStart = parsed.toISOString();
+                }
+            } catch (e) {
+                console.error('Failed to parse showtime startTime:', e);
+            }
+
+            selectedShowtime = { id: showtimeId, startTimeISO: isoStart, startTime: displayStartTime, hall: hallName, price: price };
             currentTicketStep = 4;
             updateTicketSteps();
 
-            if (window.seatMap) {
-                window.seatMap.reset();
+            // Reset seats if available
+            selectedSeats = [];
+            if (typeof updateSelectedSeatsInfo === 'function') {
+                updateSelectedSeatsInfo();
             }
 
-            // Show selected showtime info
+            // Show selected showtime info (use formatted startTime)
             document.getElementById('selectedShowtimeInfo').innerHTML = `
-                                                                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                                                    <div class="flex items-center space-x-3">
-                                                                                        <i class="fas fa-film text-yellow-400 text-lg"></i>
-                                                                                        <div>
-                                                                                            <h6 class="text-white font-medium text-sm">Film</h6>
-                                                                                            <p class="text-purple-300 text-xs">${selectedMovie.title}</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div class="flex items-center space-x-3">
-                                                                                        <i class="fas fa-building text-blue-400 text-lg"></i>
-                                                                                        <div>
-                                                                                            <h6 class="text-white font-medium text-sm">Sinema</h6>
-                                                                                            <p class="text-blue-300 text-xs">${selectedCinema.name}</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div class="flex items-center space-x-3">
-                                                                                        <i class="fas fa-clock text-purple-400 text-lg"></i>
-                                                                                        <div>
-                                                                                            <h6 class="text-white font-medium text-sm">Seans</h6>
-                                                                                            <p class="text-emerald-400 text-xs">${startTime} - ${hallName}</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            `;
+                                                                                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                                                        <div class="flex items-center space-x-3">
+                                                                                                            <i class="fas fa-film text-yellow-400 text-lg"></i>
+                                                                                                            <div>
+                                                                                                                <h6 class="text-white font-medium text-sm">Movie</h6>
+                                                                                                                <p class="text-purple-300 text-xs">${selectedMovie.title}</p>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div class="flex items-center space-x-3">
+                                                                                                            <i class="fas fa-building text-blue-400 text-lg"></i>
+                                                                                                            <div>
+                                                                                                                <h6 class="text-white font-medium text-sm">Cinema</h6>
+                                                                                                                <p class="text-blue-300 text-xs">${selectedCinema.name}</p>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div class="flex items-center space-x-3">
+                                                                                                            <i class="fas fa-clock text-purple-400 text-lg"></i>
+                                                                                                            <div>
+                                                                                                                <h6 class="text-white font-medium text-sm">Showtime</h6>
+                                                                                                                <p class="text-emerald-400 text-xs">${displayStartTime} - ${hallName}</p>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                `;
 
-            if (window.paymentForm) {
-                window.paymentForm.reset();
-                await window.paymentForm.loadTicketTypes(showtimeId);
+            // Ticket tipleri / fiyatları PaymentForm üzerinden yüklenir
+            try {
+                if (window.paymentForm && typeof window.paymentForm.loadTicketTypes === 'function') {
+                    await window.paymentForm.loadTicketTypes(showtimeId);
+                    // Bilet tipleri yüklendikten sonra toplam ve hizmet bedeli önizlemelerini güncelle
+                    if (typeof window.paymentForm.updateTotalPrice === 'function') {
+                        await window.paymentForm.updateTotalPrice();
+                    }
+                } else {
+                    console.warn('[tickets] PaymentForm instance not available for loading ticket types');
+                }
+            } catch (e) {
+                console.error('[tickets] Failed to load ticket types via PaymentForm:', e);
             }
         }
 
