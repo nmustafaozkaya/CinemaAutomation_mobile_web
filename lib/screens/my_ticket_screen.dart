@@ -4,7 +4,6 @@ import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'dart:convert';
 import "package:sinema_uygulamasi/components/mytickets.dart";
 import 'package:sinema_uygulamasi/components/user_preferences.dart';
-import 'package:sinema_uygulamasi/screens/login_screen.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 
 class MyTicketsPage extends StatefulWidget {
@@ -58,12 +57,14 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
         hasError = false;
       });
 
+      // Token kontrolü - eğer yoksa login ekranına yönlendir
       if (_userToken == null || _userToken!.isEmpty) {
+        if (!mounted) return;
         setState(() {
-          hasError = true;
-          errorMessage =
-              'No active user session found. Please sign in again.';
+          tickets = [];
           isLoading = false;
+          hasError = true;
+          errorMessage = 'Please sign in to view your tickets.';
         });
         return;
       }
@@ -76,6 +77,8 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
         },
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         if (response.body.trim().startsWith('{') ||
             response.body.trim().startsWith('[')) {
@@ -86,61 +89,51 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
             setState(() {
               tickets = ticketsResponse.data.tickets;
               isLoading = false;
+              hasError = false;
             });
           } catch (jsonError) {
+            // JSON parse error - show empty list
             setState(() {
-              hasError = true;
-              errorMessage = 'JSON parse error: $jsonError';
+              tickets = [];
               isLoading = false;
+              hasError = false; // Parse hatası durumunda boş liste göster
             });
           }
         } else {
-          // Sunucudan gelen cevabı debug için kısaltarak göster
-          final bodyPreview =
-              response.body.length > 300 ? '${response.body.substring(0, 300)}...' : response.body;
-
+          // Non-JSON response - show empty list
           setState(() {
-            hasError = true;
-            errorMessage =
-                'The server returned an unexpected (non-JSON) response.\n'
-                'Status: ${response.statusCode}\n'
-                'Body: $bodyPreview';
+            tickets = [];
             isLoading = false;
+            hasError = false;
           });
         }
       } else if (response.statusCode == 401) {
-        // Token geçersiz / süresi dolmuş olabilir: veriyi temizle ve login'e yönlendir
+        // Token expired or invalid (401) - clear data and show login message
         await UserPreferences.removeData();
-
-        if (!mounted) return;
-
         setState(() {
-          hasError = true;
-          errorMessage = 'Your session has expired. Please sign in again.';
+          tickets = [];
           isLoading = false;
-        });
-
-        // Kısa bir gecikmeden sonra login ekranına yönlendir
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (!mounted) return;
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-            (route) => false,
-          );
+          hasError = true;
+          errorMessage = 'Session expired. Please sign in again.';
+          currentUser = null;
+          _userToken = null;
         });
       } else {
+        // Error loading tickets
         setState(() {
-          hasError = true;
-          errorMessage =
-              'Unable to load tickets. Code: ${response.statusCode}\nMessage: ${response.body}';
+          tickets = [];
           isLoading = false;
+          hasError = false;
         });
       }
     } catch (e) {
+      // Connection error
+      if (!mounted) return;
       setState(() {
-        hasError = true;
-        errorMessage = 'Connection error: $e';
+        tickets = [];
         isLoading = false;
+        hasError = true;
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
       });
     }
   }
@@ -172,34 +165,92 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
     }
 
     if (hasError) {
+      // Check if this is a session expiry error
+      bool isSessionExpired = errorMessage.toLowerCase().contains('session') || 
+                             errorMessage.toLowerCase().contains('expired') ||
+                             errorMessage.toLowerCase().contains('sign in');
+      
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColorStyle.errorColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              errorMessage,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColorStyle.textPrimary,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSessionExpired 
+                      ? Colors.orange.withValues(alpha: 0.2)
+                      : AppColorStyle.errorColor.withValues(alpha: 0.2),
+                ),
+                child: Icon(
+                  isSessionExpired ? Icons.lock_clock : Icons.error_outline,
+                  size: 48,
+                  color: isSessionExpired ? Colors.orange : AppColorStyle.errorColor,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: fetchMyTickets,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColorStyle.primaryAccent,
-                foregroundColor: AppColorStyle.textPrimary,
+              const SizedBox(height: 24),
+              Text(
+                isSessionExpired ? 'Session Expired' : 'Error',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColorStyle.textPrimary,
+                ),
               ),
-              child: const Text('Try Again'),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                errorMessage,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppColorStyle.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              if (isSessionExpired) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/login',
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColorStyle.primaryAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.login),
+                    label: const Text(
+                      'Sign In',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                ElevatedButton(
+                  onPressed: fetchMyTickets,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColorStyle.primaryAccent,
+                    foregroundColor: AppColorStyle.textPrimary,
+                  ),
+                  child: const Text('Try Again'),
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
@@ -248,194 +299,348 @@ class TicketCard extends StatelessWidget {
 
   const TicketCard({super.key, required this.ticket});
 
+  // Bilet tarihinin geçip geçmediğini kontrol et
+  bool get isExpired {
+    final now = DateTime.now();
+    final showtimeDateTime = DateTime(
+      ticket.showtime.date.year,
+      ticket.showtime.date.month,
+      ticket.showtime.date.day,
+      ticket.showtime.startTime.hour,
+      ticket.showtime.startTime.minute,
+    );
+    return showtimeDateTime.isBefore(now);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Renkleri duruma göre belirle
+    final Color borderColor = isExpired
+        ? const Color(0xFFE53935) // Kırmızı
+        : const Color(0xFF4CAF50); // Yeşil
+
+    final Color gradientColor = isExpired
+        ? const Color(0xFFE53935) // Kırmızı
+        : const Color(0xFF4CAF50); // Yeşil
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 4,
       color: AppColorStyle.appBarColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: borderColor.withValues(alpha: 0.6), width: 2.5),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColorStyle.appBarColor,
+              gradientColor.withValues(alpha: 0.15),
+            ],
+          ),
+        ),
+        child: Stack(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Otomatik Film Posteri
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    ApiConnection.resolveMediaUrl(
-                      ticket.showtime.movie.posterUrl,
-                    ),
-                    width: 60,
-                    height: 90,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 60,
-                        height: 90,
-                        color: AppColorStyle.secondaryAccent,
-                        child: const Icon(
-                          Icons.movie,
-                          color: AppColorStyle.textSecondary,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ticket.showtime.movie.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColorStyle.textPrimary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ticket.showtime.hall.cinema.name,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColorStyle.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ticket.showtime.hall.name,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColorStyle.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Fiyat
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColorStyle.primaryAccent,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '₺${ticket.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColorStyle.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColorStyle.scaffoldBackground,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColorStyle.primaryAccent),
-              ),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDetailItem(
-                        'Date',
-                        _formatDate(ticket.showtime.date),
+                      // Otomatik Film Posteri
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: ColorFiltered(
+                              colorFilter: isExpired
+                                  ? const ColorFilter.mode(
+                                      Colors.grey,
+                                      BlendMode.saturation,
+                                    )
+                                  : const ColorFilter.mode(
+                                      Colors.transparent,
+                                      BlendMode.multiply,
+                                    ),
+                              child: Image.network(
+                                ApiConnection.resolveMediaUrl(
+                                  ticket.showtime.movie.posterUrl,
+                                ),
+                                width: 60,
+                                height: 90,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 60,
+                                    height: 90,
+                                    color: AppColorStyle.secondaryAccent,
+                                    child: const Icon(
+                                      Icons.movie,
+                                      color: AppColorStyle.textSecondary,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      _buildDetailItem(
-                        'Time',
-                        _formatTime(ticket.showtime.startTime),
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ticket.showtime.movie.title,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isExpired
+                                    ? AppColorStyle.textSecondary
+                                    : AppColorStyle.textPrimary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              ticket.showtime.hall.cinema.name,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColorStyle.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              ticket.showtime.hall.name,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColorStyle.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Fiyat
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isExpired
+                              ? Colors.grey
+                              : AppColorStyle.primaryAccent,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '₺${ticket.price.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColorStyle.textPrimary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: 16),
+
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColorStyle.scaffoldBackground,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isExpired
+                            ? Colors.grey
+                            : AppColorStyle.primaryAccent,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildDetailItem(
+                              'Date',
+                              _formatDate(ticket.showtime.date),
+                            ),
+                            _buildDetailItem(
+                              'Time',
+                              _formatTime(ticket.showtime.startTime),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildDetailItem(
+                              'Seat',
+                              '${ticket.seat.row}${ticket.seat.number}',
+                            ),
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: _buildDetailItem(
+                                  'Ticket Type',
+                                  _getCustomerTypeText(ticket.customerType),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (ticket.discountRate >= 0) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildDetailItem(
+                                'Discount',
+                                '%${ticket.discountRate.toStringAsFixed(0)}',
+                              ),
+                              _buildDetailItem(
+                                'Original Price',
+                                '      ₺${ticket.showtime.price.toStringAsFixed(2)}',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Purchase Date
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 14,
+                        color: AppColorStyle.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Purchase Date: ${_formatDate(ticket.createdAt)} ${_formatTime(ticket.createdAt)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColorStyle.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+
                   const SizedBox(height: 8),
+
+                  // Status + Payment Method
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildDetailItem(
-                        'Seat',
-                        '${ticket.seat.row}${ticket.seat.number}',
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(ticket.status),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getStatusColor(
+                                ticket.status,
+                              ).withValues(alpha: 0.5),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isExpired ? Icons.cancel : Icons.check_circle,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _getStatusText(ticket.status),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 15, height: 15),
-                      _buildDetailItem(
-                        'Ticket Type',
-                        _getCustomerTypeText(ticket.customerType),
-                      ),
+                      if (ticket.paymentMethod != null)
+                        Text(
+                          'Payment: ${_getPaymentMethodText(ticket.paymentMethod!)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColorStyle.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                     ],
                   ),
-                  if (ticket.discountRate >= 0) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildDetailItem(
-                          'Discount',
-                          '%${ticket.discountRate.toStringAsFixed(0)}',
-                        ),
-                        _buildDetailItem(
-                          'Original Price',
-                          '      ₺${ticket.showtime.price.toStringAsFixed(2)}',
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            // Status + Payment Method
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(ticket.status),
-                    borderRadius: BorderRadius.circular(4),
+            // "EXPIRED" badge overlay for past tickets
+            if (isExpired)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                  child: Text(
-                    _getStatusText(ticket.status),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColorStyle.textPrimary,
-                    ),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withValues(alpha: 0.5),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.block, size: 14, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'EXPIRED',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                if (ticket.paymentMethod != null)
-                  Text(
-                    'Payment: ${_getPaymentMethodText(ticket.paymentMethod!)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColorStyle.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-              ],
-            ),
+              ),
           ],
         ),
       ),
@@ -491,10 +696,14 @@ class TicketCard extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
+      case 'active':
+        return const Color(0xFF4CAF50); // Parlak yeşil
+      case 'deactive':
+        return const Color(0xFFE53935); // Parlak kırmızı
       case 'sold':
-        return Colors.green;
+        return const Color(0xFF4CAF50); // Parlak yeşil
       case 'cancelled':
-        return AppColorStyle.errorColor;
+        return const Color(0xFFE53935); // Parlak kırmızı
       case 'pending':
         return Colors.orange;
       default:
@@ -504,14 +713,18 @@ class TicketCard extends StatelessWidget {
 
   String _getStatusText(String status) {
     switch (status.toLowerCase()) {
+      case 'active':
+        return 'ACTIVE';
+      case 'deactive':
+        return 'DEACTIVE';
       case 'sold':
-        return 'Sold';
+        return 'ACTIVE';
       case 'cancelled':
-        return 'Cancelled';
+        return 'CANCELLED';
       case 'pending':
-        return 'Pending';
+        return 'PENDING';
       default:
-        return status;
+        return status.toUpperCase();
     }
   }
 

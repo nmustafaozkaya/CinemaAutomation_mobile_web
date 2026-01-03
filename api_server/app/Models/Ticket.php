@@ -83,6 +83,8 @@ class Ticket extends Model
     public function getStatusBadgeClass(): string
     {
         return match($this->status) {
+            'active' => 'bg-green-100 text-green-800',
+            'deactive' => 'bg-red-100 text-red-800',
             'sold' => 'bg-green-100 text-green-800',
             'cancelled' => 'bg-red-100 text-red-800',
             'refunded' => 'bg-yellow-100 text-yellow-800',
@@ -94,6 +96,8 @@ class Ticket extends Model
     public function getStatusLabel(): string
     {
         return match($this->status) {
+            'active' => 'Active',
+            'deactive' => 'Deactive',
             'sold' => 'Satıldı',
             'cancelled' => 'İptal Edildi',
             'refunded' => 'İade Edildi',

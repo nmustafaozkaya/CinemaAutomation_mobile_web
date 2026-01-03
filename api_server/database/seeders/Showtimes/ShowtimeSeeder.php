@@ -35,15 +35,15 @@ class ShowtimeSeeder extends Seeder
         $showtimes = [];
         $totalShowtimes = 0;
 
-        // Önümüzdeki 7 gün için seanslar
-        for ($day = 0; $day < 7; $day++) {
+        // Önümüzdeki 14 gün için seanslar (7 günden 14 güne çıkarıldı)
+        for ($day = 0; $day < 14; $day++) {
             $date = Carbon::now()->addDays($day);
             
             foreach ($halls as $hall) {
-                // Her salon için günde 3 seans (rastgele seçilmiş)
-                $times = collect(['11:00', '14:00', '17:30', '20:30'])
+                // Her salon için günde 4-5 seans (daha fazla seans için)
+                $times = collect(['10:00', '11:30', '14:00', '16:30', '19:00', '21:30'])
                             ->shuffle()
-                            ->take(3)
+                            ->take(rand(4, 5))
                             ->sort()
                             ->values()
                             ->toArray();

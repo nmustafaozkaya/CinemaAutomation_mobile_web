@@ -62,6 +62,10 @@ Route::get('/buy-tickets', function () {
     return view('tickets');  // Aynı sayfayı kullan
 })->middleware('auth');
 
+Route::get('/profile', function() {
+    return view('profile');
+})->middleware('auth');
+
 Route::get('/test-data', function() {
     return response()->json([
         'movies_count' => \App\Models\Movie::count(),

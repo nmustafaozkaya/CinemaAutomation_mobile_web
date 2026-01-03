@@ -13,15 +13,23 @@
     </div>
     
     <div class="mb-8">
-        <!-- Search -->
+        <!-- Search and City Filter -->
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
                 <input type="text" id="movieSearch" placeholder="Search by movie name..." 
                        onkeypress="if(event.key === 'Enter') searchMovies()"
                        class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all">
             </div>
+            <div class="w-full md:w-64">
+                <select id="cityFilter" onchange="filterByCity(this.value)"
+                        class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-green-400 transition-all"
+                        style="color: white; background-color: rgba(255, 255, 255, 0.1);">
+                    <option value="" style="background-color: #1f2937; color: white;">All Cities</option>
+                    <!-- Cities will be loaded here -->
+                </select>
+            </div>
             <button onclick="searchMovies()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold transition-all">
-                <i class="fas fa-search mr-2"></i>Ara
+                <i class="fas fa-search mr-2"></i>Search
             </button>
         </div>
     </div>
@@ -33,18 +41,51 @@
 
 <script>
 let currentSearch = '';
+let currentCityId = '';
 
 document.addEventListener('DOMContentLoaded', function() {
+    loadCities();
     loadMovies();
 });
 
-async function loadMovies(search = '') {
+async function loadCities() {
     try {
+        const response = await axios.get('/api/cities');
+        const cities = response.data.data || [];
+        
+        const cityFilter = document.getElementById('cityFilter');
+        if (cityFilter) {
+            let html = '<option value="" style="background-color: #1f2937; color: white;">All Cities</option>';
+            cities.forEach(city => {
+                html += `<option value="${city.id}" style="background-color: #1f2937; color: white;">${city.name}</option>`;
+            });
+            cityFilter.innerHTML = html;
+        }
+    } catch (error) {
+        console.error('Cities could not be loaded:', error);
+    }
+}
+
+function filterByCity(cityId) {
+    currentCityId = cityId;
+    loadMovies(currentSearch, cityId);
+}
+
+async function loadMovies(search = '', cityId = '') {
+    try {
+        // Use cityId from parameter or current state
+        const selectedCityId = cityId || currentCityId || '';
+        
         // Arama varsa normal API'leri kullan
         if (search) {
             let urlNowShowing = '/api/movies';
             let urlComingSoon = '/api/future-movies';
-            const params = `?search=${encodeURIComponent(search)}`;
+            let params = `?search=${encodeURIComponent(search)}`;
+            
+            // Add city filter if selected
+            if (selectedCityId && selectedCityId !== '') {
+                params += `&city_id=${selectedCityId}`;
+            }
             
             urlNowShowing += params;
             urlComingSoon += params;
@@ -62,7 +103,12 @@ async function loadMovies(search = '') {
         }
         
         // If there is no search, use the distributed endpoint - distributes 100 movies by date
-        const url = '/api/movies/distributed';
+        let url = '/api/movies/distributed';
+        
+        // Add city filter if selected
+        if (selectedCityId && selectedCityId !== '') {
+            url += `?city_id=${selectedCityId}`;
+        }
         
         console.log('Movies - Distributed API çağrısı:', url);
         
@@ -197,12 +243,11 @@ function renderMovieCard(movie, isNowShowing) {
 
 function searchMovies() {
     currentSearch = document.getElementById('movieSearch').value;
-    loadMovies(currentSearch);
+    loadMovies(currentSearch, currentCityId);
 }
 
 async function showMovieDetails(movieId, isNowShowing = true) {
     try {
-        // Try /api/movies first, then /api/future-movies if not found
         let response;
         try {
             response = await axios.get(`/api/movies/${movieId}`);

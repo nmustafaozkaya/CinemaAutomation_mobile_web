@@ -3,6 +3,8 @@ class User {
   final String name;
   final String email;
   final String? phone;
+  final String? birthDate;
+  final String? gender;
   final DateTime? emailVerifiedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -17,6 +19,8 @@ class User {
     required this.name,
     required this.email,
     this.phone,
+    this.birthDate,
+    this.gender,
     this.emailVerifiedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -33,6 +37,8 @@ class User {
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String?,
+      birthDate: json['birth_date'] as String?,
+      gender: json['gender'] as String?,
       emailVerifiedAt: json['email_verified_at'] != null
           ? DateTime.parse(json['email_verified_at'])
           : null,
@@ -52,6 +58,8 @@ class User {
       'name': name,
       'email': email,
       'phone': phone,
+      'birth_date': birthDate,
+      'gender': gender,
       'email_verified_at': emailVerifiedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),

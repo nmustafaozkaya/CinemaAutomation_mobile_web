@@ -4,16 +4,11 @@ class ApiConnection {
   static String resolveMediaUrl(String url) {
     if (url.isEmpty) return url;
 
-    // Tam URL ise (http/https ile başlıyorsa) olduğu gibi döndür
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-
-    // Relative path ise base URL ile birleştir
-    // Eğer / ile başlamıyorsa ekle
     final normalized = url.startsWith('/') ? url : '/$url';
 
-    // Base URL'den /api kısmını çıkar (media dosyaları için)
     final baseUrl = hostConnection.replaceAll('/api', '');
     return '$baseUrl$normalized';
   }
@@ -25,8 +20,7 @@ class ApiConnection {
 
   static const movies = '$hostConnection/movies';
   static const futureMovies = '$hostConnection/future-movies';
-  static const distributedMovies =
-      '$hostConnection/movies/distributed'; // Toplam 100 filmi tarihe göre dağıt
+  static const distributedMovies = '$hostConnection/movies/distributed';
 
   static const showtimes = "$hostConnection/showtimes";
   static const halls = "$hostConnection/halls";
@@ -46,4 +40,7 @@ class ApiConnection {
   static String taxes = "$hostConnection/taxes";
   static String buyTicket = "$hostConnection/tickets";
   static String myTickets = '$hostConnection/my-tickets';
+  
+  static String updateProfile = '$hostConnection/profile';
+  static String changePassword = '$hostConnection/change-password';
 }

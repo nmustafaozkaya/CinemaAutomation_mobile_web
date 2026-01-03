@@ -40,12 +40,17 @@ class CinemaSeeder extends Seeder
                 ];
             }
             
-            // Her şehirde 2 sinema oluştur
+            // Her şehirde sinemalar oluştur
             foreach ($cinemas as $cinemaData) {
                 $chain = $cinemaData['chain'];
                 $mall = $cinemaData['mall'];
                 
-                $cinemaName = "{$chain} {$mall} {$cityName}";
+                // Özel format kontrolü (Gaziantep için Avşar Sinema)
+                if ($cityName === 'Gaziantep' && $chain === 'Avşar Sinema' && $mall === 'Sanko Park') {
+                    $cinemaName = "{$chain} / {$cityName} {$mall}";
+                } else {
+                    $cinemaName = "{$chain} {$mall} {$cityName}";
+                }
                 
                 Cinema::firstOrCreate([
                     'name' => $cinemaName,
@@ -123,8 +128,9 @@ class CinemaSeeder extends Seeder
             
             // Güneydoğu Anadolu
             'Gaziantep' => [
-                ['chain' => 'Cinemaximum', 'mall' => 'Forum'],
-                ['chain' => 'Avşar Sinemaları', 'mall' => 'Primemall']
+                ['chain' => 'Paribu Cineverse', 'mall' => 'Forum'],
+                ['chain' => 'Avşar Sinema', 'mall' => 'Sanko Park'],
+                ['chain' => 'Paribu Cineverse', 'mall' => 'Forum']
             ],
             'Şanlıurfa' => [
                 ['chain' => 'Cinemaximum', 'mall' => 'Forum'],

@@ -18,10 +18,11 @@ class Movies2025Seeder extends Seeder
         $this->command->info('🎬 Loading 2025 movies from TMDB (English)...');
 
         $movies = [];
-        $page = 1;
-        $maxPages = 10; // 10 pages ≈ 200 movies
         $totalAdded = 0;
-
+        
+        $page = 1;
+        $maxPages = 10; // 10 sayfa ≈ 200 film
+        
         while ($page <= $maxPages) {
             $this->command->info("📄 Loading page {$page}...");
 
@@ -31,9 +32,9 @@ class Movies2025Seeder extends Seeder
                     'primary_release_year' => 2025,
                     'sort_by' => 'popularity.desc',
                     'page' => $page,
-                    // Fetch movies in English worldwide
+                    // İngilizce bilgilerle al
                     'language' => 'en-US',
-                    'region' => 'US'
+                    'vote_count.gte' => 10, // En az 10 oy almış filmler
                 ]);
 
                 if (!$response->successful()) {
@@ -96,7 +97,7 @@ class Movies2025Seeder extends Seeder
                     try {
                         Movie::create($movie);
                         $totalAdded++;
-                        $this->command->info("✅ {$movie['title']} added");
+                        $this->command->info("✅ {$movie['title']} (2025) added - IMDB: {$movie['imdb_raiting']}");
                     } catch (\Exception $e) {
                         $this->command->warn("⚠️ {$movie['title']} could not be added: " . $e->getMessage());
                     }
@@ -107,12 +108,12 @@ class Movies2025Seeder extends Seeder
                 $page++;
 
             } catch (\Exception $e) {
-                $this->command->error("❌ Error while loading page {$page}: " . $e->getMessage());
+                $this->command->error("❌ Error loading page {$page}: " . $e->getMessage());
                 break;
             }
         }
 
-        $this->command->info("\n🎉 2025 movie loading completed!");
+        $this->command->info("\n🎉 2025 movies loading completed!");
         $this->command->info("📊 Total added: {$totalAdded} movies");
     }
 
@@ -124,7 +125,7 @@ class Movies2025Seeder extends Seeder
             try {
                 $response = Http::timeout(10)->get("{$this->tmdbBaseUrl}/genre/movie/list", [
                     'api_key' => $this->tmdbApiKey,
-                    // Get genre names in English
+                    // İngilizce tür isimlerini al
                     'language' => 'en-US'
                 ]);
 

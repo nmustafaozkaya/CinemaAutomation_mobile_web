@@ -124,7 +124,7 @@
             }
         }
 
-        function goBackToStep(stepNumber) {
+        async function goBackToStep(stepNumber) {
             document.querySelectorAll('.ticket-step').forEach(step => {
                 step.classList.add('hidden');
             });
@@ -153,6 +153,19 @@
                 selectedTicketTypes = {};
             } else if (stepNumber === 5) {
                 selectedTicketTypes = {};
+                // Reload seats when going back to step 5
+                if (selectedShowtime && selectedShowtime.id) {
+                    const totalTickets = getTotalTicketCount();
+                    if (window.seatMap && typeof window.seatMap.setSeatLimit === 'function') {
+                        await window.seatMap.setSeatLimit(totalTickets);
+                        window.seatMap.setShowtime(selectedShowtime);
+                    }
+                    if (window.seatMap && typeof window.seatMap.loadSeats === 'function') {
+                        await window.seatMap.loadSeats(selectedShowtime.id);
+                    } else {
+                        renderCurrentSeatMap();
+                    }
+                }
             }
         }
 
@@ -863,22 +876,6 @@
             }
         }
 
-        function renderCurrentSeatMap() {
-            // Mevcut koltuk haritasını yeniden render et
-            if (selectedShowtime && selectedShowtime.id) {
-                axios.get(`/api/showtimes/${selectedShowtime.id}/available-seats`)
-                    .then(response => {
-                        const seatData = response.data.data;
-                        renderSeatMap(seatData);
-                    })
-                    .catch(error => {
-                        renderMockSeatMap();
-                    });
-            } else {
-                renderMockSeatMap();
-            }
-        }
-
         function updateSelectedSeatsInfo() {
             const info = document.getElementById('selectedSeatsInfo');
             const requirementInfo = document.getElementById('seatRequirementInfo');
@@ -956,9 +953,22 @@
                 return;
             }
 
+            // Use SeatMap class if available
+            if (window.seatMap && typeof window.seatMap.setSeatLimit === 'function') {
+                await window.seatMap.setSeatLimit(totalTickets);
+                window.seatMap.setShowtime(selectedShowtime);
+            }
+
             currentTicketStep = 5;
             updateTicketSteps();
-            renderCurrentSeatMap();
+            
+            // Load seats using SeatMap class if available, otherwise use legacy method
+            if (window.seatMap && typeof window.seatMap.loadSeats === 'function') {
+                await window.seatMap.loadSeats(selectedShowtime.id);
+            } else {
+                renderCurrentSeatMap();
+            }
+            
             updateSelectedSeatsInfo();
         }
 

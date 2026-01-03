@@ -162,7 +162,7 @@
                         @if(auth()->user()->isCustomer())
                             <!-- Customer can only buy tickets -->
                             <a href="/buy-tickets" class="nav-link text-white hover:text-green-300 transition-colors">
-                                <i class="fas fa-ticket-alt mr-2"></i>Buy Ticket
+                                <i class="fas fa-building mr-2"></i>Cinema and Halls
                             </a>
                             <a href="/my-tickets" class="nav-link text-white hover:text-green-300 transition-colors">
                                 <i class="fas fa-history mr-2"></i>My Tickets
@@ -177,9 +177,9 @@
                             </a>
                         @endif
 
-                        <!-- Logout -->
-                        <a href="/logout" class="nav-link text-white hover:text-green-300 transition-colors">
-                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        <!-- Profile -->
+                        <a href="/profile" class="nav-link text-white hover:text-green-300 transition-colors">
+                            <i class="fas fa-user mr-2"></i>Profile
                         </a>
                     @else
                         <!-- Guest (not authenticated) users -->
@@ -271,6 +271,33 @@
                 phone: null
             @endauth
         };
+
+        // ✅ Axios interceptor for handling token expiration globally
+        axios.interceptors.response.use(
+            response => response,
+            error => {
+                // Handle 401 (Unauthorized) errors - token expired or invalid
+                if (error.response && error.response.status === 401) {
+                    // Check if we're not already on the login page to avoid infinite loops
+                    if (!window.location.pathname.includes('/login')) {
+                        console.warn('⚠️ Token expired or invalid. Redirecting to login...');
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        
+                        // Show a brief notification before redirect
+                        if (typeof showMessage === 'function') {
+                            showMessage('Session expired. Please sign in again.', 'warning');
+                        }
+                        
+                        // Redirect to login after a short delay
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 1500);
+                    }
+                }
+                return Promise.reject(error);
+            }
+        );
 
     </script>
 </body>

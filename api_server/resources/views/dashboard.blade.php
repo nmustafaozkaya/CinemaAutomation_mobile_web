@@ -549,7 +549,7 @@
             // Check user login state
             const isLoggedIn = window.userPermissions && window.userPermissions.isLoggedIn;
             
-            // "Buy Ticket" button - only for logged-in users
+            // "" button - only for logged-in users
             let buyTicketButton = '';
             if (isLoggedIn) {
                 buyTicketButton = `

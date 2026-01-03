@@ -11,7 +11,7 @@ import 'package:sinema_uygulamasi/components/showtimes.dart';
 import 'package:sinema_uygulamasi/components/taxes.dart';
 import 'package:sinema_uygulamasi/components/user.dart';
 import 'package:sinema_uygulamasi/components/user_preferences.dart';
-import 'package:sinema_uygulamasi/screens/home.dart';
+import 'package:sinema_uygulamasi/screens/ticket_success_screen.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -54,7 +54,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   User? currentUser;
   String? _userToken;
-  String _paymentMethod = 'cash';
+  String _paymentMethod = 'card';
   String _onlineProvider = 'paypal';
   bool _isLoading = false;
   bool _isFirstPurchase = false;
@@ -110,22 +110,51 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     // Auto-format card number as 4-4-4-4 while typing
     _cardNumberController.addListener(() {
-      final digits = _cardNumberController.text.replaceAll(RegExp(r'\\s+'), '');
+      final currentText = _cardNumberController.text;
+      final digits = currentText.replaceAll(RegExp(r'\s+'), '');
+      
       if (digits.isEmpty) return;
+      
+      // Limit to 16 digits
+      final limitedDigits = digits.length > 16 ? digits.substring(0, 16) : digits;
 
       final buffer = StringBuffer();
-      for (var i = 0; i < digits.length && i < 16; i++) {
+      for (var i = 0; i < limitedDigits.length; i++) {
         if (i > 0 && i % 4 == 0) {
           buffer.write(' ');
         }
-        buffer.write(digits[i]);
+        buffer.write(limitedDigits[i]);
       }
       final formatted = buffer.toString();
 
-      if (_cardNumberController.text != formatted) {
+      if (currentText != formatted) {
+        // Preserve cursor position
+        final oldSelection = _cardNumberController.selection;
+        final oldOffset = oldSelection.baseOffset;
+        
+        // Calculate new cursor position
+        int newOffset = formatted.length;
+        if (oldOffset <= currentText.length) {
+          // Count digits before cursor in old text
+          final textBeforeCursor = currentText.substring(0, oldOffset);
+          final digitsBeforeCursor = textBeforeCursor.replaceAll(RegExp(r'\s+'), '').length;
+          
+          // Find position in new formatted text
+          int digitCount = 0;
+          for (int i = 0; i < formatted.length; i++) {
+            if (formatted[i] != ' ') {
+              digitCount++;
+              if (digitCount >= digitsBeforeCursor) {
+                newOffset = i + 1;
+                break;
+              }
+            }
+          }
+        }
+        
         _cardNumberController.value = TextEditingValue(
           text: formatted,
-          selection: TextSelection.collapsed(offset: formatted.length),
+          selection: TextSelection.collapsed(offset: newOffset.clamp(0, formatted.length)),
         );
       }
     });
@@ -346,10 +375,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
       "payment_method": _paymentMethod,
       "payment_details": {
         "type": _paymentMethod,
-        if (_paymentMethod == 'cash') ...{
-          "note":
-              "Customer will pay at cinema box office / concession / ticket counter.",
-        },
         if (_paymentMethod == 'card') ...{
           "card_name": _cardNameController.text.trim(),
           "last4": _cardNumberController.text.trim().isNotEmpty
@@ -378,17 +403,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Payment completed successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          // Prepare ticket type summary
+          Map<String, int> ticketTypeCounts = {};
+          for (var detail in widget.selectedTicketDetails) {
+            String type = detail['customer_type'] ?? 'adult';
+            int count = detail['count'] as int;
+            ticketTypeCounts[type] = (ticketTypeCounts[type] ?? 0) + count;
+          }
+          
+          String ticketTypesText = ticketTypeCounts.entries.map((e) {
+            String typeLabel = e.key == 'adult' ? 'Adult' :
+                              e.key == 'student' ? 'Student' :
+                              e.key == 'child' ? 'Child' :
+                              e.key == 'senior' ? 'Senior' : e.key;
+            return '${e.value} $typeLabel${e.value > 1 ? 's' : ''}';
+          }).join(', ');
+          
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  HomePage(currentUser: currentUser!, initialIndex: 3),
+              builder: (_) => TicketSuccessScreen(
+                totalAmount: _effectiveFinalTotal,
+                ticketCount: widget.selectedSeats.length,
+                seatNumbers: widget.selectedSeats.map((s) => s.displayName).toList(),
+                ticketTypes: ticketTypesText,
+                currentUser: currentUser!,
+              ),
             ),
             (route) => false,
           );
@@ -660,12 +700,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ? Column(
                         children: [
                           _buildPaymentMethodTile(
-                            value: 'cash',
-                            icon: Icons.payments_outlined,
-                            label: 'Cash',
-                          ),
-                          const SizedBox(height: 12),
-                          _buildPaymentMethodTile(
                             value: 'card',
                             icon: Icons.credit_card,
                             label: 'Credit Card',
@@ -683,20 +717,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildPaymentMethodTile(
-                              value: 'cash',
-                              icon: Icons.payments_outlined,
-                              label: 'Cash',
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildPaymentMethodTile(
                               value: 'card',
                               icon: Icons.credit_card,
                               label: 'Credit Card',
                             ),
                           ),
-
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildPaymentMethodTile(
@@ -717,23 +742,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_paymentMethod == 'cash') ...[
-                      Text(
-                        'Cash Payment',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColorStyle.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Please pay for your tickets at the cinema box office, concession stand, or ticket counter before the showtime.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColorStyle.textSecondary,
-                        ),
-                      ),
-                    ] else if (_paymentMethod == 'card') ...[
+                    if (_paymentMethod == 'card') ...[
                       Text(
                         'Card Details',
                         style: TextStyle(
@@ -787,7 +796,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           keyboardType: TextInputType.number,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(16),
+            LengthLimitingTextInputFormatter(19), // 16 digits + 3 spaces
           ],
           validator: (val) {
             if (val == null || val.trim().isEmpty) {

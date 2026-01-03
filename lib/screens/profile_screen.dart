@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sinema_uygulamasi/components/user.dart';
 import 'package:sinema_uygulamasi/components/user_preferences.dart';
 import 'package:sinema_uygulamasi/screens/login_screen.dart';
+import 'package:sinema_uygulamasi/screens/edit_profile_screen.dart';
+import 'package:sinema_uygulamasi/screens/change_password_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:sinema_uygulamasi/screens/my_ticket_screen.dart';
@@ -101,14 +103,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Icons.arrow_forward_ios,
                 color: AppColorStyle.textSecondary,
               ),
-              onTap: () {
-                // Snackbar placeholder until settings implemented
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Edit details is coming soon"),
-                    duration: Duration(seconds: 2), // Short display duration
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfileScreen(
+                      currentUser: widget.currentUser,
+                    ),
                   ),
                 );
+                
+                // If profile was updated, just show a message
+                // The EditProfileScreen already pops back
+                if (result == true && mounted) {
+                  // Optionally reload user data in background
+                  UserPreferences.readData();
+                }
               },
             ),
             ListTile(
@@ -125,10 +135,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColorStyle.textSecondary,
               ),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Password change is coming soon"),
-                    duration: Duration(seconds: 2),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChangePasswordScreen(),
                   ),
                 );
               },

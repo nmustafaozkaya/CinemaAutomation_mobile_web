@@ -204,6 +204,22 @@ class TicketController extends Controller
 
             $tickets = $query->orderBy('created_at', 'desc')->paginate(20);
 
+            // Her bilet için tarih kontrolü yapıp durumu güncelle
+            $tickets->getCollection()->transform(function ($ticket) {
+                $now = now();
+                $showtimeDateTime = \Carbon\Carbon::parse($ticket->showtime->date)
+                    ->setTimeFrom($ticket->showtime->start_time);
+                
+                // Eğer gösterim zamanı geçmişse 'deactive', değilse 'active'
+                if ($showtimeDateTime->isPast()) {
+                    $ticket->status = 'deactive';
+                } else {
+                    $ticket->status = 'active';
+                }
+                
+                return $ticket;
+            });
+
             return response()->json([
                 'success' => true,
                 'data' => $tickets
@@ -226,6 +242,17 @@ class TicketController extends Controller
                 'user',
                 'sale'
             ])->findOrFail($id);
+
+            // Bilet durumunu tarih kontrolü ile güncelle
+            $now = now();
+            $showtimeDateTime = \Carbon\Carbon::parse($ticket->showtime->date)
+                ->setTimeFrom($ticket->showtime->start_time);
+            
+            if ($showtimeDateTime->isPast()) {
+                $ticket->status = 'deactive';
+            } else {
+                $ticket->status = 'active';
+            }
 
             return response()->json([
                 'success' => true,
@@ -251,6 +278,22 @@ class TicketController extends Controller
                 ->where('user_id', Auth::id())
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
+
+            // Her bilet için tarih kontrolü yapıp durumu güncelle
+            $tickets->getCollection()->transform(function ($ticket) {
+                $now = now();
+                $showtimeDateTime = \Carbon\Carbon::parse($ticket->showtime->date)
+                    ->setTimeFrom($ticket->showtime->start_time);
+                
+                // Eğer gösterim zamanı geçmişse 'deactive', değilse 'active'
+                if ($showtimeDateTime->isPast()) {
+                    $ticket->status = 'deactive';
+                } else {
+                    $ticket->status = 'active';
+                }
+                
+                return $ticket;
+            });
 
             return response()->json([
                 'success' => true,

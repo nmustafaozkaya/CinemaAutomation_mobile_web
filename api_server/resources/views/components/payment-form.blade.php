@@ -144,17 +144,9 @@
                     </label>
                     <select id="paymentMethod"
                         class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/20 focus:border-emerald-400 transition-all">
-                        <option value="cash">💰 Cash</option>
                         <option value="card">💳 Credit Card</option>
                         <option value="online">🌐 Online Payment</option>
                     </select>
-                </div>
-
-                <!-- Cash Info -->
-                <div id="cashInfo" class="mt-4 bg-yellow-500/10 border border-yellow-500/40 text-yellow-100 text-sm p-4 rounded-lg hidden">
-                    <p>
-                        Please pay for your tickets at the cinema box office, concession stand, or ticket counter before the showtime.
-                    </p>
                 </div>
 
                 <!-- Card Details -->
@@ -173,7 +165,7 @@
                         <input type="tel" id="cardNumber" placeholder="XXXX XXXX XXXX XXXX" maxlength="19"
                                inputmode="numeric" pattern="[0-9 ]*"
                                oninput="formatCardNumber(this)"
-                               class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                            class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -183,7 +175,7 @@
                             <input type="tel" id="cardExpiry" placeholder="MM/YY" maxlength="5"
                                    inputmode="numeric" pattern="[0-9/]*"
                                    oninput="formatCardExpiry(this)"
-                                   class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
                         </div>
                         <div>
                             <label class="block text-white text-sm font-medium mb-1">
@@ -192,7 +184,7 @@
                             <input type="password" id="cardCvv" placeholder="CVV" maxlength="4"
                                    inputmode="numeric" pattern="[0-9]*"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4);"
-                                   class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
+                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/20 focus:border-emerald-400 transition-all">
                         </div>
                     </div>
                 </div>
@@ -851,12 +843,7 @@
                 const paymentMethod = document.getElementById('paymentMethod').value;
                 let paymentDetails = {};
 
-                if (paymentMethod === 'cash') {
-                    paymentDetails = {
-                        type: 'cash',
-                        note: 'Customer will pay at cinema box office / ticket counter.'
-                    };
-                } else if (paymentMethod === 'card') {
+                if (paymentMethod === 'card') {
                     paymentDetails = {
                         type: 'card',
                         card_name: document.getElementById('cardName').value || null,
@@ -1064,19 +1051,15 @@
 
         // Payment method UI behavior
         const paymentSelect = document.getElementById('paymentMethod');
-        const cashInfo = document.getElementById('cashInfo');
         const cardDetails = document.getElementById('cardDetails');
         const onlineProviders = document.getElementById('onlineProviders');
 
         function updatePaymentMethodUI() {
             const value = paymentSelect.value;
-            cashInfo.classList.add('hidden');
             cardDetails.classList.add('hidden');
             onlineProviders.classList.add('hidden');
 
-            if (value === 'cash') {
-                cashInfo.classList.remove('hidden');
-            } else if (value === 'card') {
+            if (value === 'card') {
                 cardDetails.classList.remove('hidden');
             } else if (value === 'online') {
                 onlineProviders.classList.remove('hidden');
