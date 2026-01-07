@@ -15,27 +15,32 @@ class Movies2025Seeder extends Seeder
 
     public function run(): void
     {
-        $this->command->info('🎬 Loading 2025 movies from TMDB (English)...');
+        $this->command->info('🎬 Loading 2025-2026 movies from TMDB (English)...');
 
         $movies = [];
         $totalAdded = 0;
         
-        $page = 1;
-        $maxPages = 10; // 10 sayfa ≈ 200 film
+        // 2025 ve 2026 yıllarını kapsamak için tarih aralığı kullan
+        $years = [2025, 2026];
         
-        while ($page <= $maxPages) {
-            $this->command->info("📄 Loading page {$page}...");
+        foreach ($years as $year) {
+            $this->command->info("📅 Loading {$year} movies...");
+            $page = 1;
+            $maxPages = 10; // Her yıl için 10 sayfa ≈ 200 film
+            
+            while ($page <= $maxPages) {
+                $this->command->info("📄 Loading page {$page} for {$year}...");
 
-            try {
-                $response = Http::timeout(15)->get("{$this->tmdbBaseUrl}/discover/movie", [
-                    'api_key' => $this->tmdbApiKey,
-                    'primary_release_year' => 2025,
-                    'sort_by' => 'popularity.desc',
-                    'page' => $page,
-                    // İngilizce bilgilerle al
-                    'language' => 'en-US',
-                    'vote_count.gte' => 10, // En az 10 oy almış filmler
-                ]);
+                try {
+                    $response = Http::timeout(15)->get("{$this->tmdbBaseUrl}/discover/movie", [
+                        'api_key' => $this->tmdbApiKey,
+                        'primary_release_year' => $year,
+                        'sort_by' => 'popularity.desc',
+                        'page' => $page,
+                        // İngilizce bilgilerle al
+                        'language' => 'en-US',
+                        'vote_count.gte' => 10, // En az 10 oy almış filmler
+                    ]);
 
                 if (!$response->successful()) {
                     $this->command->error("❌ TMDB API error: " . $response->status());
@@ -97,23 +102,25 @@ class Movies2025Seeder extends Seeder
                     try {
                         Movie::create($movie);
                         $totalAdded++;
-                        $this->command->info("✅ {$movie['title']} (2025) added - IMDB: {$movie['imdb_raiting']}");
+                        $releaseYear = date('Y', strtotime($releaseDate));
+                        $this->command->info("✅ {$movie['title']} ({$releaseYear}) added - IMDB: {$movie['imdb_raiting']}");
                     } catch (\Exception $e) {
                         $this->command->warn("⚠️ {$movie['title']} could not be added: " . $e->getMessage());
                     }
                 }
 
-                // Rate limiting
-                usleep(500000); // wait 0.5 seconds
-                $page++;
+                    // Rate limiting
+                    usleep(500000); // wait 0.5 seconds
+                    $page++;
 
-            } catch (\Exception $e) {
-                $this->command->error("❌ Error loading page {$page}: " . $e->getMessage());
-                break;
+                } catch (\Exception $e) {
+                    $this->command->error("❌ Error loading page {$page} for {$year}: " . $e->getMessage());
+                    break;
+                }
             }
         }
 
-        $this->command->info("\n🎉 2025 movies loading completed!");
+        $this->command->info("\n🎉 2025-2026 movies loading completed!");
         $this->command->info("📊 Total added: {$totalAdded} movies");
     }
 

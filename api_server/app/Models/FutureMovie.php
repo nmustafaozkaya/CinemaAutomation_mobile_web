@@ -48,12 +48,14 @@ class FutureMovie extends Model
     }
 
     /**
-     * Scope: Yakında çıkacak filmler (30 gün içinde)
+     * Scope: Yakında çıkacak filmler (30 gün içinde, bugünden SONRA)
      */
     public function scopeComingSoon($query)
     {
-        $thirtyDaysLater = Carbon::now()->addDays(30);
-        return $query->where('release_date', '<=', $thirtyDaysLater);
+        $today = Carbon::now()->startOfDay();
+        $thirtyDaysLater = Carbon::now()->addDays(30)->endOfDay();
+        return $query->whereDate('release_date', '>', $today)
+                     ->whereDate('release_date', '<=', $thirtyDaysLater);
     }
 
     /**

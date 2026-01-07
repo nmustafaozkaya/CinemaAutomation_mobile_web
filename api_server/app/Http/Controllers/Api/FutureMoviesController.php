@@ -22,13 +22,8 @@ class FutureMoviesController extends Controller
             $today = now()->startOfDay();
             
             // DATE tipi Carbon'a cast edildiği için whereDate direkt çalışır
-            // Ayrıca string formatında saklanan tarihler için de STR_TO_DATE kontrolü ekliyoruz
-            $query->where(function($q) use ($today) {
-                // Carbon date cast için (DATE tipi)
-                $q->whereDate('release_date', '>', $today)
-                  // Eğer string formatında saklanıyorsa (d-m-Y formatı)
-                  ->orWhereRaw("STR_TO_DATE(release_date, '%d-%m-%Y') > ?", [$today->format('Y-m-d')]);
-            });
+            // Sadece gelecekteki tarihleri göster (bugünden SONRA)
+            $query->whereDate('release_date', '>', $today);
 
             // Arama
             if ($request->has('search') && !empty($request->search)) {
@@ -150,8 +145,9 @@ class FutureMoviesController extends Controller
         try {
             $perPage = min($request->get('per_page', 10), 20);
             
+            // comingSoon scope zaten bugünden sonraki 30 gün içindeki filmleri filtreler
             $movies = FutureMovie::comingSoon()
-                ->orderByRaw("STR_TO_DATE(release_date, '%d-%m-%Y') ASC")
+                ->orderBy('release_date', 'asc')
                 ->paginate($perPage);
 
             $movies->getCollection()->transform(function ($movie) {

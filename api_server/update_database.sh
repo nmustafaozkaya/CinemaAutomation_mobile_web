@@ -7,7 +7,16 @@ echo "========================================"
 echo ""
 
 echo "[1/3] Migrating new tables (if any)..."
+# Ensure migrations table exists (silently fails if already exists)
+php artisan migrate:install >/dev/null 2>&1
+# Run migrations
 php artisan migrate
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "HATA: Migration basarisiz oldu!"
+    echo "Veritabani tamamen bos ise first_setup.sh kullanin."
+    exit 1
+fi
 echo ""
 
 echo "[2/3] Loading 2024-2025 movies from TMDB..."

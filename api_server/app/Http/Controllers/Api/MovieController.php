@@ -141,20 +141,20 @@ class MovieController extends Controller
     {
         try {
             $today = now()->startOfDay();
-            $totalLimit = 100; // Toplam 100 film
+            $sixMonthsAgo = now()->subMonths(6)->startOfDay(); // Son 6 ay - çok eski filmleri hariç tut
+            $nowShowingLimit = 70; // Now Showing için 70 film
+            $comingSoonLimit = 50; // Coming Soon için 50 film
             
             // Şehir filtresi
             $cityId = $request->filled('city_id') && $request->city_id != '0' ? (int)$request->city_id : null;
             
-            // ✅ NOW SHOWING: release_date <= bugün (bugün dahil veya geçmiş)
-            // Sadece movies tablosundan çek - tarihi geçen filmler burada
+            // ✅ NOW SHOWING: release_date <= bugün VE >= 6 ay önce (çok eski filmleri hariç tut)
+            // Sadece movies tablosundan çek - yakın tarihli filmler (son 6 ay)
             $nowShowingQuery = Movie::where('status', 'active')
-                ->where(function($q) use ($today) {
-                    // DATE tipi Carbon cast için
-                    $q->whereDate('release_date', '<=', $today)
-                      // String formatı (d-m-Y)
-                      ->orWhereRaw("STR_TO_DATE(release_date, '%d-%m-%Y') <= STR_TO_DATE(?, '%Y-%m-%d')", [$today->format('Y-m-d')])
-                      // NULL değerler - bunlar Now Showing olarak kabul edilir
+                ->where(function($q) use ($today, $sixMonthsAgo) {
+                    // Son 6 ay içindeki filmler (bugün dahil, 6 ay öncesinden sonra)
+                    $q->whereBetween('release_date', [$sixMonthsAgo, $today])
+                      // NULL değerler - bunlar Now Showing olarak kabul edilir (yakın tarihli sayılır)
                       ->orWhereNull('release_date');
                 });
             
@@ -205,52 +205,21 @@ class MovieController extends Controller
             $comingSoonCount = $comingSoonQuery->count();
             $futureMoviesFromMoviesCount = $futureMoviesFromMoviesTable->count();
             $totalComingSoon = $comingSoonCount + $futureMoviesFromMoviesCount;
-            $totalAvailable = $nowShowingCount + $totalComingSoon;
             
-            // Toplam 100 filme kadar dağıt - Dinamik oranlar
-            if ($totalAvailable <= $totalLimit) {
-                // Toplam 100'den az varsa hepsini al
-                $nowShowingLimit = $nowShowingCount;
-                $comingSoonLimit = $totalComingSoon;
-            } else {
-                // Dinamik oranlar - mevcut film sayısına göre dağıt
-                // Eğer Coming Soon filmleri çoksa, daha fazla Coming Soon al
-                // Eğer azsa, daha az Coming Soon al
-                if ($totalComingSoon >= 50) {
-                    // Coming Soon çoksa: %40 Now Showing, %60 Coming Soon
-                    $nowShowingLimit = min(floor($totalLimit * 0.4), $nowShowingCount);
-                    $comingSoonLimit = min($totalLimit - $nowShowingLimit, $totalComingSoon);
-                } elseif ($totalComingSoon >= 30) {
-                    // Orta seviye: %50-50
-                    $nowShowingLimit = min(floor($totalLimit * 0.5), $nowShowingCount);
-                    $comingSoonLimit = min($totalLimit - $nowShowingLimit, $totalComingSoon);
-                } else {
-                    // Coming Soon azsa: %60-70 Now Showing, %30-40 Coming Soon
-                    $nowShowingLimit = min(floor($totalLimit * 0.65), $nowShowingCount);
-                    $comingSoonLimit = min($totalLimit - $nowShowingLimit, $totalComingSoon);
-                }
-                
-                // Minimum garantisi
-                if ($comingSoonLimit < 5 && $totalComingSoon >= 5 && $nowShowingLimit > 60) {
-                    $comingSoonLimit = min(5, $totalComingSoon);
-                    $nowShowingLimit = $totalLimit - $comingSoonLimit;
-                }
-                if ($nowShowingLimit < 10 && $nowShowingCount >= 10 && $comingSoonLimit > 80) {
-                    $nowShowingLimit = min(10, $nowShowingCount);
-                    $comingSoonLimit = $totalLimit - $nowShowingLimit;
-                }
-            }
+            // Limitleri uygula - Now Showing 70, Coming Soon 50
+            $finalNowShowingLimit = min($nowShowingLimit, $nowShowingCount);
+            $finalComingSoonLimit = min($comingSoonLimit, $totalComingSoon);
             
-            // Now Showing filmlerini çek - sadece release_date <= bugün olanlar (tarihi geçen veya bugün olanlar)
+            // Now Showing filmlerini çek - son 6 ay içindeki filmler (yeni tarihli olanlar)
             $nowShowingMovies = $nowShowingQuery
                 ->orderByRaw("STR_TO_DATE(release_date, '%Y-%m-%d') DESC, STR_TO_DATE(release_date, '%d-%m-%Y') DESC")
-                ->limit($nowShowingLimit)
+                ->limit($finalNowShowingLimit)
                 ->get();
             
             // Coming Soon filmlerini çek - hem FutureMovie hem Movie tablosundan, KESİNLİKLE gelecekteki filmler
             // Önce FutureMovie'den, sonra Movie'den
-            $comingSoonLimitFromFuture = min($comingSoonLimit, $comingSoonCount);
-            $comingSoonLimitFromMovies = $comingSoonLimit - $comingSoonLimitFromFuture;
+            $comingSoonLimitFromFuture = min($finalComingSoonLimit, $comingSoonCount);
+            $comingSoonLimitFromMovies = $finalComingSoonLimit - $comingSoonLimitFromFuture;
             
             $comingSoonMoviesFromFuture = $comingSoonQuery
                 ->orderByRaw("STR_TO_DATE(release_date, '%Y-%m-%d') ASC, STR_TO_DATE(release_date, '%d-%m-%Y') ASC")

@@ -6,10 +6,23 @@ echo ========================================
 echo.
 
 echo [1/3] Migrating new tables (if any)...
-php artisan migrate
+REM Ensure migrations table exists (silently fails if already exists)
+php artisan migrate:install >nul 2>&1
+REM Run migrations - this will create all tables if database is empty
+php artisan migrate --force
+if errorlevel 1 (
+    echo.
+    echo HATA: Migration basarisiz oldu!
+    echo.
+    echo Eger veritabani tamamen bos ise, once first_setup.bat calistirin.
+    echo first_setup.bat tum tablolari olusturur ve test verilerini ekler.
+    echo.
+    pause
+    exit /b 1
+)
 echo.
 
-echo [2/3] Loading 2024-2025 movies from TMDB...
+echo [2/3] Loading 2025-2026 movies from TMDB...
 php artisan db:seed --class=Database\Seeders\Movies\Movies2025Seeder
 echo.
 
