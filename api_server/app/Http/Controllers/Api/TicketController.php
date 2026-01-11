@@ -307,6 +307,85 @@ class TicketController extends Controller
         }
     }
 
+    public function update(Request $request, $id): JsonResponse
+    {
+        try {
+            $ticket = Ticket::findOrFail($id);
+
+            $validated = $request->validate([
+                'status' => 'required|in:active,deactive,sold,cancelled,refunded',
+            ]);
+
+            return DB::transaction(function () use ($ticket, $validated) {
+                // Eğer bilet deactive yapılıyorsa koltağı available yap
+                if ($validated['status'] === 'deactive' && $ticket->status !== 'deactive') {
+                    $seat = $ticket->seat;
+                    $seat->update([
+                        'status' => Seat::STATUS_AVAILABLE,
+                        'reserved_at' => null,
+                        'reserved_until' => null
+                    ]);
+
+                    Log::info("Ticket {$ticket->id} deactivated. Seat {$seat->row}{$seat->number} marked as available");
+                }
+
+                // Bilet durumunu güncelle
+                $ticket->update(['status' => $validated['status']]);
+
+                $ticket->load([
+                    'showtime.movie',
+                    'showtime.hall.cinema',
+                    'seat',
+                    'user',
+                    'sale'
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $ticket,
+                    'message' => 'Bilet başarıyla güncellendi'
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bilet güncellenirken hata oluştu: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        try {
+            $ticket = Ticket::findOrFail($id);
+
+            return DB::transaction(function () use ($ticket) {
+                // Koltağı available yap
+                $seat = $ticket->seat;
+                $seat->update([
+                    'status' => Seat::STATUS_AVAILABLE,
+                    'reserved_at' => null,
+                    'reserved_until' => null
+                ]);
+
+                Log::info("Ticket {$ticket->id} deleted. Seat {$seat->row}{$seat->number} marked as available");
+
+                // Bileti sil
+                $ticket->delete();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Bilet başarıyla silindi'
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bilet silinirken hata oluştu: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getTicketPrices($showtimeId): JsonResponse
     {
         try {

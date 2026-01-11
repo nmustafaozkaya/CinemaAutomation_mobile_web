@@ -41,6 +41,12 @@ class ApiConnection {
   static String buyTicket = "$hostConnection/tickets";
   static String myTickets = '$hostConnection/my-tickets';
   
+  static String updateTicketUrl(int ticketId) =>
+      "$hostConnection/tickets/$ticketId";
+
+  static String deleteTicketUrl(int ticketId) =>
+      "$hostConnection/tickets/$ticketId";
+  
   static String updateProfile = '$hostConnection/profile';
   static String changePassword = '$hostConnection/change-password';
 }

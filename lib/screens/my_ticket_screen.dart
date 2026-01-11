@@ -84,6 +84,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
             response.body.trim().startsWith('[')) {
           try {
             final jsonData = json.decode(response.body);
+            print('🔍 API Response: $jsonData'); // Debug log
             final ticketsResponse = MyTicketsResponse.fromJson(jsonData);
 
             setState(() {
@@ -91,20 +92,26 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
               isLoading = false;
               hasError = false;
             });
+            print('✅ Tickets loaded: ${tickets.length}'); // Debug log
           } catch (jsonError) {
-            // JSON parse error - show empty list
+            // JSON parse error - show error with details
+            print('❌ JSON Parse Error: $jsonError'); // Debug log
+            print('Response body: ${response.body}'); // Debug log
             setState(() {
               tickets = [];
               isLoading = false;
-              hasError = false; // Parse hatası durumunda boş liste göster
+              hasError = true;
+              errorMessage = 'Error loading tickets: $jsonError';
             });
           }
         } else {
-          // Non-JSON response - show empty list
+          // Non-JSON response
+          print('⚠️ Non-JSON response: ${response.body}'); // Debug log
           setState(() {
             tickets = [];
             isLoading = false;
-            hasError = false;
+            hasError = true;
+            errorMessage = 'Invalid response from server';
           });
         }
       } else if (response.statusCode == 401) {
@@ -133,7 +140,8 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
         tickets = [];
         isLoading = false;
         hasError = true;
-        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection.';
       });
     }
   }
@@ -166,10 +174,11 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
 
     if (hasError) {
       // Check if this is a session expiry error
-      bool isSessionExpired = errorMessage.toLowerCase().contains('session') || 
-                             errorMessage.toLowerCase().contains('expired') ||
-                             errorMessage.toLowerCase().contains('sign in');
-      
+      bool isSessionExpired =
+          errorMessage.toLowerCase().contains('session') ||
+          errorMessage.toLowerCase().contains('expired') ||
+          errorMessage.toLowerCase().contains('sign in');
+
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -181,14 +190,16 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isSessionExpired 
+                  color: isSessionExpired
                       ? Colors.orange.withValues(alpha: 0.2)
                       : AppColorStyle.errorColor.withValues(alpha: 0.2),
                 ),
                 child: Icon(
                   isSessionExpired ? Icons.lock_clock : Icons.error_outline,
                   size: 48,
-                  color: isSessionExpired ? Colors.orange : AppColorStyle.errorColor,
+                  color: isSessionExpired
+                      ? Colors.orange
+                      : AppColorStyle.errorColor,
                 ),
               ),
               const SizedBox(height: 24),
@@ -294,26 +305,32 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
   }
 }
 
-class TicketCard extends StatelessWidget {
+class TicketCard extends StatefulWidget {
   final Ticket ticket;
 
   const TicketCard({super.key, required this.ticket});
 
+  @override
+  State<TicketCard> createState() => _TicketCardState();
+}
+
+class _TicketCardState extends State<TicketCard> {
   // Bilet tarihinin geçip geçmediğini kontrol et
   bool get isExpired {
     final now = DateTime.now();
     final showtimeDateTime = DateTime(
-      ticket.showtime.date.year,
-      ticket.showtime.date.month,
-      ticket.showtime.date.day,
-      ticket.showtime.startTime.hour,
-      ticket.showtime.startTime.minute,
+      widget.ticket.showtime.date.year,
+      widget.ticket.showtime.date.month,
+      widget.ticket.showtime.date.day,
+      widget.ticket.showtime.startTime.hour,
+      widget.ticket.showtime.startTime.minute,
     );
     return showtimeDateTime.isBefore(now);
   }
 
   @override
   Widget build(BuildContext context) {
+    final Ticket ticket = widget.ticket;
     // Renkleri duruma göre belirle
     final Color borderColor = isExpired
         ? const Color(0xFFE53935) // Kırmızı
@@ -599,6 +616,8 @@ class TicketCard extends StatelessWidget {
                         ),
                     ],
                   ),
+
+                  const SizedBox(height: 12),
                 ],
               ),
             ),

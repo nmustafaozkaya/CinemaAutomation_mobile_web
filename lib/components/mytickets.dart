@@ -77,22 +77,28 @@ class Ticket {
   });
 
   factory Ticket.fromJson(Map<String, dynamic> json) {
-    return Ticket(
-      id: json['id'],
-      showtimeId: json['showtime_id'],
-      seatId: json['seat_id'],
-      userId: json['user_id'],
-      saleId: json['sale_id'],
-      price: double.parse(json['price'].toString()),
-      customerType: json['customer_type'],
-      discountRate: double.parse(json['discount_rate'].toString()),
-      status: json['status'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      showtime: Showtime.fromJson(json['showtime']),
-      seat: Seat.fromJson(json['seat']),
-      paymentMethod: json['sale'] != null ? json['sale']['payment_method'] as String? : null,
-    );
+    try {
+      return Ticket(
+        id: json['id'] ?? 0,
+        showtimeId: json['showtime_id'] ?? 0,
+        seatId: json['seat_id'] ?? 0,
+        userId: json['user_id'] ?? 0,
+        saleId: json['sale_id'] ?? 0,
+        price: double.parse((json['price'] ?? 0).toString()),
+        customerType: json['customer_type'] ?? 'adult',
+        discountRate: double.parse((json['discount_rate'] ?? 0).toString()),
+        status: json['status'] ?? 'sold',
+        createdAt: DateTime.parse(json['created_at']),
+        updatedAt: DateTime.parse(json['updated_at']),
+        showtime: Showtime.fromJson(json['showtime']),
+        seat: Seat.fromJson(json['seat']),
+        paymentMethod: json['sale'] != null ? json['sale']['payment_method'] as String? : null,
+      );
+    } catch (e) {
+      print('❌ Error parsing ticket: $e');
+      print('JSON: $json');
+      rethrow;
+    }
   }
 }
 
@@ -122,18 +128,24 @@ class Showtime {
   });
 
   factory Showtime.fromJson(Map<String, dynamic> json) {
-    return Showtime(
-      id: json['id'],
-      movieId: json['movie_id'],
-      hallId: json['hall_id'],
-      price: double.parse(json['price'].toString()),
-      startTime: DateTime.parse(json['start_time']),
-      endTime: DateTime.parse(json['end_time']),
-      date: DateTime.parse(json['date']),
-      status: json['status'],
-      movie: Movie.fromJson(json['movie']),
-      hall: Hall.fromJson(json['hall']),
-    );
+    try {
+      return Showtime(
+        id: json['id'] ?? 0,
+        movieId: json['movie_id'] ?? 0,
+        hallId: json['hall_id'] ?? 0,
+        price: double.parse((json['price'] ?? 0).toString()),
+        startTime: DateTime.parse(json['start_time']),
+        endTime: DateTime.parse(json['end_time']),
+        date: DateTime.parse(json['date']),
+        status: json['status'] ?? 'active',
+        movie: Movie.fromJson(json['movie']),
+        hall: Hall.fromJson(json['hall']),
+      );
+    } catch (e) {
+      print('❌ Error parsing showtime: $e');
+      print('JSON: $json');
+      rethrow;
+    }
   }
 }
 
@@ -163,18 +175,24 @@ class Movie {
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
-    return Movie(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      duration: json['duration'],
-      language: json['language'],
-      releaseDate: json['release_date'],
-      genre: json['genre'],
-      posterUrl: json['poster_url'],
-      imdbRating: json['imdb_raiting'],
-      status: json['status'],
-    );
+    try {
+      return Movie(
+        id: json['id'] ?? 0,
+        title: json['title'] ?? 'Unknown Movie',
+        description: json['description'] ?? '',
+        duration: json['duration'] ?? 0,
+        language: json['language'] ?? 'en',
+        releaseDate: json['release_date'] ?? '',
+        genre: json['genre'] ?? '',
+        posterUrl: json['poster_url'] ?? '',
+        imdbRating: (json['imdb_raiting'] ?? json['imdb_rating'] ?? '0.0').toString(),
+        status: json['status'] ?? 'active',
+      );
+    } catch (e) {
+      print('❌ Error parsing movie: $e');
+      print('JSON: $json');
+      rethrow;
+    }
   }
 }
 
@@ -196,14 +214,20 @@ class Hall {
   });
 
   factory Hall.fromJson(Map<String, dynamic> json) {
-    return Hall(
-      id: json['id'],
-      name: json['name'],
-      cinemaId: json['cinema_id'],
-      capacity: json['capacity'],
-      status: json['status'],
-      cinema: Cinema.fromJson(json['cinema']),
-    );
+    try {
+      return Hall(
+        id: json['id'] ?? 0,
+        name: json['name'] ?? 'Unknown Hall',
+        cinemaId: json['cinema_id'] ?? 0,
+        capacity: json['capacity'] ?? 0,
+        status: json['status'] ?? 'active',
+        cinema: Cinema.fromJson(json['cinema']),
+      );
+    } catch (e) {
+      print('❌ Error parsing hall: $e');
+      print('JSON: $json');
+      rethrow;
+    }
   }
 }
 
@@ -225,14 +249,20 @@ class Cinema {
   });
 
   factory Cinema.fromJson(Map<String, dynamic> json) {
-    return Cinema(
-      id: json['id'],
-      name: json['name'],
-      address: json['address'],
-      phone: json['phone'],
-      email: json['email'],
-      cityId: json['city_id'],
-    );
+    try {
+      return Cinema(
+        id: json['id'] ?? 0,
+        name: json['name'] ?? 'Unknown Cinema',
+        address: json['address'] ?? '',
+        phone: json['phone'] ?? '',
+        email: json['email'] ?? '',
+        cityId: json['city_id'] ?? 0,
+      );
+    } catch (e) {
+      print('❌ Error parsing cinema: $e');
+      print('JSON: $json');
+      rethrow;
+    }
   }
 }
 
@@ -256,18 +286,24 @@ class Seat {
   });
 
   factory Seat.fromJson(Map<String, dynamic> json) {
-    return Seat(
-      id: json['id'],
-      hallId: json['hall_id'],
-      row: json['row'],
-      number: json['number'],
-      status: json['status'],
-      reservedAt: json['reserved_at'] != null
-          ? DateTime.parse(json['reserved_at'])
-          : null,
-      reservedUntil: json['reserved_until'] != null
-          ? DateTime.parse(json['reserved_until'])
-          : null,
-    );
+    try {
+      return Seat(
+        id: json['id'] ?? 0,
+        hallId: json['hall_id'] ?? 0,
+        row: json['row'] ?? 'A',
+        number: json['number'] ?? 1,
+        status: json['status'] ?? 'Blank',
+        reservedAt: json['reserved_at'] != null
+            ? DateTime.parse(json['reserved_at'])
+            : null,
+        reservedUntil: json['reserved_until'] != null
+            ? DateTime.parse(json['reserved_until'])
+            : null,
+      );
+    } catch (e) {
+      print('❌ Error parsing seat: $e');
+      print('JSON: $json');
+      rethrow;
+    }
   }
 }

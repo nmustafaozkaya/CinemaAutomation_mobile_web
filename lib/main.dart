@@ -29,6 +29,7 @@ class MyApp extends StatelessWidget {
       home: currentUser != null
           ? HomePage(currentUser: currentUser!)
           : const LoginScreen(),
+      routes: {'/login': (context) => const LoginScreen()},
     );
   }
 }
