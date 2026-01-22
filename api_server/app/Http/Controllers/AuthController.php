@@ -253,7 +253,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Token yenilendi',
+            'message' => 'Token refreshed',
             'data' => [
                 'token' => $token,
                 'token_type' => 'Bearer'

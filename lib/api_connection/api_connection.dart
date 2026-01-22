@@ -1,5 +1,6 @@
 class ApiConnection {
-  static const hostConnection = 'http://10.0.2.2:8000/api';
+  static const String localUrl = 'http://10.0.2.2:8000/api';
+  static const hostConnection = localUrl;
 
   static String resolveMediaUrl(String url) {
     if (url.isEmpty) return url;
@@ -40,13 +41,31 @@ class ApiConnection {
   static String taxes = "$hostConnection/taxes";
   static String buyTicket = "$hostConnection/tickets";
   static String myTickets = '$hostConnection/my-tickets';
-  
+
   static String updateTicketUrl(int ticketId) =>
       "$hostConnection/tickets/$ticketId";
 
   static String deleteTicketUrl(int ticketId) =>
       "$hostConnection/tickets/$ticketId";
-  
+
   static String updateProfile = '$hostConnection/profile';
   static String changePassword = '$hostConnection/change-password';
+
+  // Payment Methods
+  static String paymentMethods = '$hostConnection/payment-methods';
+  static String addPaymentMethod = '$hostConnection/payment-methods';
+  static String updatePaymentMethodUrl(int id) =>
+      '$hostConnection/payment-methods/$id';
+  static String deletePaymentMethodUrl(int id) =>
+      '$hostConnection/payment-methods/$id';
+  static String setDefaultPaymentMethodUrl(int id) =>
+      '$hostConnection/payment-methods/$id/set-default';
+
+  // Favorite Movies
+  static String favoriteMovies = '$hostConnection/favorite-movies';
+  static String toggleFavoriteMovie = '$hostConnection/favorite-movies/toggle';
+  static String checkFavoriteMovieUrl(int movieId) =>
+      '$hostConnection/favorite-movies/$movieId/check';
+  static String removeFavoriteMovieUrl(int movieId) =>
+      '$hostConnection/favorite-movies/$movieId';
 }

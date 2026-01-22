@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sinema_uygulamasi/api_connection/api_connection.dart';
 import 'package:sinema_uygulamasi/components/movies.dart';
 import 'package:sinema_uygulamasi/components/city_filter_provider.dart';
+import 'package:sinema_uygulamasi/components/favorite_button.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:sinema_uygulamasi/constant/app_text_style.dart';
 import 'package:sinema_uygulamasi/screens/movie_details.dart';
@@ -169,9 +170,22 @@ Widget _buildMovieGridSliver(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(
-                      child: ClipRRect(
+                      child: Stack(
+                        children: [
+                          ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: buildMoviePoster(movie.poster),
+                          ),
+                          // Favorite Button
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: FavoriteButton(
+                              movieId: movie.id,
+                              size: 20,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Padding(

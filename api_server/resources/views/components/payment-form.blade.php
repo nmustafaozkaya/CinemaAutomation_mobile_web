@@ -149,8 +149,22 @@
                     </select>
                 </div>
 
+                <!-- Saved Cards Section -->
+                <div id="savedCardsSection" class="mt-4 hidden">
+                    <h4 class="text-white font-semibold mb-3">
+                        <i class="fas fa-bookmark mr-2"></i>Saved Cards
+                    </h4>
+                    <div id="savedCardsList" class="space-y-2 mb-4">
+                        <!-- Saved cards will be loaded here -->
+                    </div>
+                    <div class="border-t border-white/20 my-4"></div>
+                </div>
+
                 <!-- Card Details -->
                 <div id="cardDetails" class="mt-4 space-y-3 hidden">
+                    <h4 id="cardDetailsTitle" class="text-white font-semibold mb-3">
+                        <i class="fas fa-credit-card mr-2"></i><span id="cardDetailsTitleText">Enter Card Details</span>
+                    </h4>
                     <div>
                         <label class="block text-white text-sm font-medium mb-1">
                             <i class="fas fa-id-card mr-1"></i>Name on Card
@@ -617,8 +631,19 @@
                     return;
                 }
 
-                // Assign derived or provided types
-                this.customerTypes = types;
+                // Assign derived or provided types - duplicate'leri önle
+                this.customerTypes = [];
+                if (Array.isArray(types) && types.length > 0) {
+                    // Duplicate'leri code'a göre filtrele
+                    const seen = new Set();
+                    this.customerTypes = types.filter(type => {
+                        if (seen.has(type.code)) {
+                            return false; // Duplicate, atla
+                        }
+                        seen.add(type.code);
+                        return true;
+                    });
+                }
                 console.log('[PaymentForm] Customer types assigned:', this.customerTypes);
 
                 // Process prices; if prices missing, attempt to use selectedShowtime price or fallback value
@@ -685,8 +710,14 @@
         }
 
         renderTicketTypes() {
+            // Container'ı temizle (duplicate'leri önlemek için)
+            if (this.typesContainer) {
+                this.typesContainer.innerHTML = '';
+            }
+            
             let html = '';
 
+            // Her type'ı sadece bir kez ekle
             this.customerTypes.forEach(type => {
                 html += `
                 <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all">
@@ -709,7 +740,9 @@
             `;
             });
 
-            this.typesContainer.innerHTML = html;
+            if (this.typesContainer) {
+                this.typesContainer.innerHTML = html;
+            }
         }
 
         renderPriceInfo() {
@@ -1049,18 +1082,111 @@
         window.paymentForm = new PaymentForm();
         prefillCustomerInfo();
 
+        // Load saved payment methods
+        let savedCards = [];
+        let selectedSavedCardId = null;
+
+        async function loadSavedCards() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch('http://127.0.0.1:8000/api/payment-methods', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success && data.data && data.data.length > 0) {
+                    savedCards = data.data;
+                    displaySavedCards();
+                }
+            } catch (e) {
+                console.error('Error loading saved cards:', e);
+            }
+        }
+
+        function displaySavedCards() {
+            const savedCardsSection = document.getElementById('savedCardsSection');
+            const savedCardsList = document.getElementById('savedCardsList');
+
+            if (savedCards.length === 0) return;
+
+            savedCardsList.innerHTML = savedCards.map(card => `
+                <div class="saved-card-item ${selectedSavedCardId === card.id ? 'ring-2 ring-emerald-400' : ''}" 
+                     data-card-id="${card.id}"
+                     onclick="selectSavedCard(${card.id})"
+                     style="cursor: pointer; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-credit-card text-2xl ${getCardColorClass(card.card_type)}"></i>
+                        <div class="flex-1">
+                            <p class="text-white font-semibold">${card.card_holder_name}</p>
+                            <p class="text-gray-300 text-sm">**** **** **** ${card.card_last_four}</p>
+                            <p class="text-gray-400 text-xs">Expires: ${card.expiry_month}/${card.expiry_year}</p>
+                        </div>
+                        ${card.is_default ? '<span class="bg-green-500 text-white text-xs px-2 py-1 rounded">DEFAULT</span>' : ''}
+                        ${selectedSavedCardId === card.id ? '<i class="fas fa-check-circle text-emerald-400 text-xl"></i>' : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            savedCardsSection.classList.remove('hidden');
+        }
+
+        function getCardColorClass(cardType) {
+            const colors = {
+                'visa': 'text-blue-400',
+                'mastercard': 'text-orange-400',
+                'amex': 'text-green-400'
+            };
+            return colors[cardType] || 'text-gray-400';
+        }
+
+        window.selectSavedCard = function(cardId) {
+            const card = savedCards.find(c => c.id === cardId);
+            if (!card) return;
+
+            if (selectedSavedCardId === cardId) {
+                // Deselect
+                selectedSavedCardId = null;
+                document.getElementById('cardName').value = '';
+                document.getElementById('cardNumber').value = '';
+                document.getElementById('cardExpiry').value = '';
+                document.getElementById('cardDetailsTitleText').textContent = 'Enter Card Details';
+            } else {
+                // Select
+                selectedSavedCardId = cardId;
+                document.getElementById('cardName').value = card.card_holder_name;
+                document.getElementById('cardNumber').value = `**** **** **** ${card.card_last_four}`;
+                document.getElementById('cardExpiry').value = `${card.expiry_month}/${card.expiry_year}`;
+                document.getElementById('cardDetailsTitleText').textContent = 'Or Enter New Card';
+            }
+
+            displaySavedCards();
+        };
+
+        // Load saved cards on page load
+        loadSavedCards();
+
         // Payment method UI behavior
         const paymentSelect = document.getElementById('paymentMethod');
         const cardDetails = document.getElementById('cardDetails');
         const onlineProviders = document.getElementById('onlineProviders');
+        const savedCardsSection = document.getElementById('savedCardsSection');
 
         function updatePaymentMethodUI() {
             const value = paymentSelect.value;
             cardDetails.classList.add('hidden');
             onlineProviders.classList.add('hidden');
+            savedCardsSection.classList.add('hidden');
 
             if (value === 'card') {
                 cardDetails.classList.remove('hidden');
+                if (savedCards.length > 0) {
+                    savedCardsSection.classList.remove('hidden');
+                }
             } else if (value === 'online') {
                 onlineProviders.classList.remove('hidden');
             }

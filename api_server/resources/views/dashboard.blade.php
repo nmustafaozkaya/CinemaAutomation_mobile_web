@@ -1,6 +1,34 @@
 @extends('layout')
 
 @section('content')
+    <div class="mb-8 flex items-start justify-start">
+        <div class="bg-white/10 backdrop-blur-lg p-4 rounded-xl shadow-lg border border-white/20">
+            <div class="flex items-center space-x-4">
+                <!-- QR Code -->
+                <div class="bg-white p-3 rounded-lg">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://drive.google.com/drive/folders/1EtxdhhhYOw42DuhCKGgYr6XnJ6Tch0K_?usp=sharing" 
+                         alt="QR Code for Android App" 
+                         class="w-32 h-32"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Crect fill=%27%23fff%27 width=%27200%27 height=%27200%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dy=%27.3em%27 font-family=%27Arial%27 font-size=%2714%27%3EQR Code%3C/text%3E%3C/svg%3E'">
+                </div>
+                <!-- Info -->
+                <div class="flex flex-col">
+                    <div class="flex items-center mb-2">
+                        <i class="fab fa-android text-green-400 text-2xl mr-2"></i>
+                        <h3 class="text-lg font-bold text-white">Mobile App</h3>
+                    </div>
+                    <p class="text-gray-300 text-sm mb-3">Scan to download Android app</p>
+                    <a href="https://drive.google.com/drive/folders/1EtxdhhhYOw42DuhCKGgYr6XnJ6Tch0K_?usp=sharing" 
+                       target="_blank" 
+                       class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-all duration-300 inline-flex items-center justify-center">
+                        <i class="fab fa-android mr-2"></i>
+                        Download APK
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @auth
         @if(auth()->user()->isCustomer())
             <!-- CUSTOMER DASHBOARD -->
@@ -31,18 +59,14 @@
                     <i class="fas fa-th-large mr-3 text-blue-400"></i>Movie Categories
                 </h2>
                 
-                <!-- Loading State - Hidden by default -->
                 <div id="movieLoadingState" style="display: none !important; visibility: hidden !important;">
                     <div class="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto mb-4 animate-spin"></div>
                     <p class="text-white">Loading movies...</p>
                 </div>
                 
-                <!-- Categories Container -->
                 <div id="categoriesContainer" class="space-y-12">
-                    <!-- Categories will be loaded here via JavaScript -->
                 </div>
                 
-                <!-- Empty State -->
                 <div id="movieEmptyState" class="text-center py-12 hidden">
                     <div class="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-film text-gray-400 text-3xl"></i>
@@ -53,7 +77,6 @@
             </div>
 
         @else
-            <!-- ADMIN DASHBOARD -->
             <div class="text-center mb-12">
                 <div class="floating-animation inline-block mb-6">
                     <div
@@ -114,7 +137,6 @@
                 </div>
             </div>
 
-            <!-- Admin Quick Actions -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="glass-effect p-8 rounded-2xl text-center card-hover">
                     <div
@@ -180,7 +202,7 @@
             </div>
 
             <!-- Guest Actions -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="glass-effect p-8 rounded-2xl text-center card-hover">
                     <div
                         class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
@@ -204,6 +226,33 @@
                     <a href="/login"
                         class="w-full inline-block bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300">
                         Login
+                    </a>
+                </div>
+
+                <!-- Mobile App Download -->
+                <div class="glass-effect p-8 rounded-2xl text-center card-hover">
+                    <div class="flex items-center justify-center mb-4">
+                        <i class="fab fa-android text-4xl text-green-400 mr-2"></i>
+                        <h3 class="text-xl font-bold text-white">Mobile App</h3>
+                    </div>
+                    <p class="text-gray-300 mb-4 text-sm">Download our Android app</p>
+                    
+                    <!-- QR Code -->
+                    <div class="flex justify-center mb-4">
+                        <div class="bg-white p-4 rounded-lg">
+                            <img id="qrCodeImage" 
+                                 src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://drive.google.com/drive/folders/1EtxdhhhYOw42DuhCKGgYr6XnJ6Tch0K_?usp=sharing" 
+                                 alt="QR Code" 
+                                 class="w-48 h-48"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Crect fill=%27%23fff%27 width=%27200%27 height=%27200%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dy=%27.3em%27 font-family=%27Arial%27 font-size=%2714%27%3EQR Code%3C/text%3E%3C/svg%3E'">
+                        </div>
+                    </div>
+                    
+                    <a href="https://drive.google.com/drive/folders/1EtxdhhhYOw42DuhCKGgYr6XnJ6Tch0K_?usp=sharing" 
+                       target="_blank"
+                       class="inline-flex items-center justify-center w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
+                        <i class="fab fa-android mr-2"></i>
+                        Download APK
                     </a>
                 </div>
             </div>

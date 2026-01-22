@@ -211,10 +211,11 @@ function renderMoviesByCategory(nowShowingMovies, comingSoonMovies) {
 
 function renderMovieCard(movie, isNowShowing) {
     const posterUrl = movie.poster_url && movie.poster_url.trim() !== '' ? movie.poster_url : null;
+    const isFavorite = movie.is_favorite || false;
     
     return `
         <div class="glass-effect rounded-2xl overflow-hidden card-hover">
-            <div class="h-64 bg-gradient-to-br ${isNowShowing ? 'from-green-600 to-emerald-600' : 'from-blue-600 to-blue-800'} flex items-center justify-center relative overflow-hidden">
+            <div class="h-64 bg-gradient-to-br ${isNowShowing ? 'from-green-600 to-emerald-600' : 'from-blue-600 to-blue-800'} flex items-center justify-center relative overflow-hidden group">
                 ${posterUrl ? `
                     <img src="${posterUrl}" alt="${movie.title}" 
                          class="w-full h-full object-cover"
@@ -226,6 +227,14 @@ function renderMovieCard(movie, isNowShowing) {
                     <i class="fas fa-film text-white text-6xl opacity-50"></i>
                 `}
                 <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+                
+                <!-- Favorite Button -->
+                <button onclick="toggleFavorite(${movie.id}, event)" 
+                        id="fav-btn-${movie.id}"
+                        class="absolute top-3 right-3 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all z-10 opacity-0 group-hover:opacity-100"
+                        title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                    <i class="${isFavorite ? 'fas' : 'far'} fa-heart text-xl ${isFavorite ? 'text-red-500' : 'text-white'}"></i>
+                </button>
             </div>
             <div class="p-6">
                 <h3 class="text-xl font-bold text-white mb-2">${movie.title}</h3>
@@ -469,5 +478,118 @@ document.getElementById('movieSearch')?.addEventListener('keypress', function(e)
 document.addEventListener('DOMContentLoaded', function() {
     loadMovies();
 });
+
+// Favorite Movies Functionality
+async function toggleFavorite(movieId, event) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Please login to add favorites');
+        window.location.href = '/login';
+        return;
+    }
+    
+    const button = document.getElementById(`fav-btn-${movieId}`);
+    const icon = button.querySelector('i');
+    
+    try {
+        const response = await axios.post('/api/favorite-movies/toggle', 
+            { movie_id: movieId },
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        if (response.data.success) {
+            const isFavorite = response.data.is_favorite;
+            
+            // Update icon
+            if (isFavorite) {
+                icon.classList.remove('far');
+                icon.classList.add('fas', 'text-red-500');
+                icon.classList.remove('text-white');
+                
+                // Show notification
+                showNotification('❤️ Added to favorites!', 'success');
+            } else {
+                icon.classList.remove('fas', 'text-red-500');
+                icon.classList.add('far', 'text-white');
+                
+                // Show notification
+                showNotification('Removed from favorites', 'info');
+            }
+        }
+    } catch (error) {
+        console.error('Error toggling favorite:', error);
+        alert('Error updating favorites');
+    }
+}
+
+// Show notification
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all ${
+        type === 'success' ? 'bg-green-600' : 
+        type === 'error' ? 'bg-red-600' : 
+        'bg-blue-600'
+    } text-white font-semibold`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateY(0)';
+    }, 10);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateY(-100px)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Load favorite status for all movies
+async function loadFavoriteStatus() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        const response = await axios.get('/api/favorite-movies', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (response.data.success) {
+            const favoriteMovieIds = response.data.data.map(movie => movie.id);
+            
+            // Update all favorite buttons
+            favoriteMovieIds.forEach(movieId => {
+                const button = document.getElementById(`fav-btn-${movieId}`);
+                if (button) {
+                    const icon = button.querySelector('i');
+                    icon.classList.remove('far', 'text-white');
+                    icon.classList.add('fas', 'text-red-500');
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading favorites:', error);
+    }
+}
+
+// Call loadFavoriteStatus after movies are loaded
+const originalLoadMovies = loadMovies;
+loadMovies = async function(...args) {
+    await originalLoadMovies(...args);
+    await loadFavoriteStatus();
+};
 </script>
 @endsection

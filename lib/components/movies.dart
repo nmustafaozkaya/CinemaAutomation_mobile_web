@@ -43,12 +43,9 @@ class Movie {
         }
       }
 
-      // Pre-order özelliği kaldırıldı - artık kullanılmıyor
-      // API'den gelen değerler varsa al ama UI'da kullanma
       bool isPreOrder = false;
       int? daysUntilRelease;
 
-      // Duration kontrolü - null veya geçersiz değerler için varsayılan
       String runtime = '';
       if (json['duration'] != null) {
         if (json['duration'] is int || json['duration'] is num) {
@@ -125,7 +122,6 @@ Future<List<Movie>> fetchMovies(
   int maxRetries = 3,
 }) async {
   try {
-    // Web'le aynı endpoint kullan - basit ve temiz JSON döndürür
     final response = await http
         .get(
           Uri.parse(url),
@@ -192,7 +188,6 @@ Future<List<Movie>> fetchMovies(
       return [];
     }
 
-    // JSON parse - temizlenmiş JSON'u kullan
     Map<String, dynamic> data;
     try {
       data = jsonDecode(cleanedJson) as Map<String, dynamic>;
@@ -514,7 +509,6 @@ String sanitizeJsonString(String input) {
     },
   );
 
-  // Yinelenen çift tırnakları tek tırnak haline getir (ama sadece yan yana olanları)
   // ""key" şeklindeki durumları düzelt
   result = result.replaceAllMapped(RegExp(r'""([a-zA-Z_][a-zA-Z0-9_]*)'), (
     match,

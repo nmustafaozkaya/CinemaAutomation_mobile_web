@@ -288,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Padding(
               padding: EdgeInsets.only(left: 10.0),
               child: Text(
-                'Vizyondaki Filmler',
+                'Now Showing',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -309,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Padding(
                 padding: EdgeInsets.only(right: 20.0),
                 child: Text(
-                  'Tümü',
+                  'See All',
                   style: TextStyle(
                     fontSize: 20,
                     decoration: TextDecoration.underline,
@@ -338,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Hata: ${snapshot.error}",
+                      "Error: ${snapshot.error}",
                       style: const TextStyle(
                         color: AppColorStyle.textSecondary,
                       ),
@@ -351,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
+                      label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
@@ -366,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Film bulunamadı.",
+                      "No movies found.",
                       style: TextStyle(color: AppColorStyle.textSecondary),
                     ),
                     const SizedBox(height: 10),
@@ -377,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
+                      label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
@@ -437,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Padding(
               padding: EdgeInsets.only(left: 10.0),
               child: Text(
-                'Yakında Gelecek Filmler',
+                'Coming Soon',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -458,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Padding(
                 padding: EdgeInsets.only(right: 20.0),
                 child: Text(
-                  'Tümü',
+                  'See All',
                   style: TextStyle(
                     fontSize: 20,
                     decoration: TextDecoration.underline,
@@ -487,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Hata: ${snapshot.error}",
+                      "Error: ${snapshot.error}",
                       style: const TextStyle(
                         color: AppColorStyle.textSecondary,
                       ),
@@ -500,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
+                      label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
@@ -515,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Film bulunamadı.",
+                      "No movies found.",
                       style: TextStyle(color: AppColorStyle.textSecondary),
                     ),
                     const SizedBox(height: 10),
@@ -526,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
+                      label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorStyle.primaryAccent,
                       ),
@@ -585,7 +585,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Padding(
               padding: EdgeInsets.only(left: 10.0),
               child: Text(
-                'Kampanyalar',
+                'Promotions',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -605,7 +605,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Padding(
                 padding: EdgeInsets.only(right: 20.0),
                 child: Text(
-                  'Tümü',
+                  'See All',
                   style: TextStyle(
                     fontSize: 20,
                     decoration: TextDecoration.underline,
@@ -687,7 +687,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Align(
               alignment: Alignment.bottomLeft,
               child: Text(
-                'Filmleri Keşfet',
+                'Discover Movies',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -747,25 +747,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                     child: ListTile(
                       leading: const Icon(FontAwesomeIcons.gift),
-                      title: const Text('Kampanyalar'),
+                      title: const Text('Promotions'),
                       trailing: const Icon(Icons.arrow_right),
                     ),
                   ),
                   ExpansionTile(
                     leading: const Icon(Icons.adjust),
-                    title: const Text('Hakkımızda'),
+                    title: const Text('About Us'),
                     trailing: const Icon(Icons.arrow_drop_down),
                     children: [
                       ListTile(
-                        title: const Text('Biz Kimiz?'),
+                        title: const Text('Who We Are?'),
                         onTap: () => Navigator.pop(context),
                       ),
                       ListTile(
-                        title: const Text('Sertifikalarımız'),
+                        title: const Text('Our Certificates'),
                         onTap: () => Navigator.pop(context),
                       ),
                       ListTile(
-                        title: const Text('Misyonumuz'),
+                        title: const Text('Our Mission'),
                         onTap: () => Navigator.pop(context),
                       ),
                     ],

@@ -58,6 +58,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String _onlineProvider = 'paypal';
   bool _isLoading = false;
   bool _isFirstPurchase = false;
+  
+  // Saved payment methods
+  List<PaymentMethod> _savedPaymentMethods = [];
+  int? _selectedSavedCardId;
 
   // Mobil platform kontrolü (sadece Android / iOS için ilk alışveriş indirimi)
   bool get _isMobilePlatform =>
@@ -84,6 +88,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void initState() {
     super.initState();
     _loadUserDataAndToken();
+    _loadSavedPaymentMethods();
 
     // Auto-format expiry field as MM/YY while typing
     _cardExpiryController.addListener(() {
@@ -181,6 +186,43 @@ class _PaymentScreenState extends State<PaymentScreen> {
     // Kullanıcının daha önce bileti var mı kontrol et (ilk alışveriş indirimi için)
     if (fetchedToken != null && fetchedToken.isNotEmpty) {
       await _checkFirstPurchase(fetchedToken);
+    }
+  }
+
+  /// Load saved payment methods from API
+  Future<void> _loadSavedPaymentMethods() async {
+    try {
+      // Token'ı state'ten al, yoksa SharedPreferences'tan yükle
+      String? token = _userToken;
+      if (token == null || token.isEmpty) {
+        token = await UserPreferences.getToken();
+        if (token != null && mounted) {
+          setState(() => _userToken = token);
+        }
+      }
+      
+      if (token == null || token.isEmpty) return;
+
+      final response = await http.get(
+        Uri.parse(ApiConnection.paymentMethods),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200 && mounted) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          setState(() {
+            _savedPaymentMethods = (data['data'] as List)
+                .map((item) => PaymentMethod.fromJson(item))
+                .toList();
+          });
+        }
+      }
+    } catch (e) {
+      // Silently fail - saved cards are optional
     }
   }
 
@@ -352,7 +394,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
     }
 
-    if (_userToken == null || _userToken!.isEmpty) {
+    // Token'ı her zaman yeniden yükle (güncel olsun)
+    await _loadUserDataAndToken();
+    
+    // Token'ı cache'ten al, yoksa SharedPreferences'tan yükle
+    String? token = _userToken;
+    if (token == null || token.isEmpty) {
+      token = await UserPreferences.getToken();
+      if (token != null && mounted) {
+        setState(() => _userToken = token);
+      }
+    }
+    
+    if (token == null || token.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -396,7 +450,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': 'Bearer $_userToken',
+          'Authorization': 'Bearer $token', // Güncel token kullan
         },
         body: json.encode(requestBody),
       );
@@ -434,13 +488,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
           );
         }
       } else if (response.statusCode == 401) {
-        if (mounted) {
+        // Token expire olmuş - token'ı yeniden yükle ve tekrar dene
+        await _loadUserDataAndToken();
+        
+        if (_userToken != null && _userToken!.isNotEmpty && mounted) {
+          // Token var ama expire olmuş - kullanıcıya bilgi ver
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Authorization error. Please sign in again.'),
+              content: Text('Session expired. Please try again or sign in again.'),
               backgroundColor: Colors.orange,
+              duration: Duration(seconds: 5),
             ),
           );
+        } else {
+          // Token yok - login ekranına yönlendir
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please sign in to complete payment.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
         }
       } else {
         if (mounted) {
@@ -743,8 +813,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_paymentMethod == 'card') ...[
+                      if (_savedPaymentMethods.isNotEmpty) ...[
+                        Text(
+                          'Saved Cards',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColorStyle.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSavedCards(),
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                      ],
                       Text(
-                        'Card Details',
+                        _selectedSavedCardId != null ? 'Or Enter New Card' : 'Card Details',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColorStyle.textPrimary,
@@ -771,6 +855,108 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildSavedCards() {
+    return Column(
+      children: _savedPaymentMethods.map((card) {
+        final isSelected = _selectedSavedCardId == card.id;
+        return Card(
+          color: isSelected ? AppColorStyle.secondaryAccent : AppColorStyle.appBarColor,
+          margin: const EdgeInsets.only(bottom: 8),
+          child: InkWell(
+            onTap: () {
+              setState(() {
+                if (_selectedSavedCardId == card.id) {
+                  // Deselect
+                  _selectedSavedCardId = null;
+                  _cardNameController.clear();
+                  _cardNumberController.clear();
+                  _cardExpiryController.clear();
+                } else {
+                  // Select this card
+                  _selectedSavedCardId = card.id;
+                  _cardNameController.text = card.cardHolderName;
+                  _cardNumberController.text = '**** **** **** ${card.cardLastFour}';
+                  _cardExpiryController.text = '${card.expiryMonth}/${card.expiryYear}';
+                }
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.credit_card,
+                    color: _getCardColor(card.cardType),
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.cardHolderName,
+                          style: const TextStyle(
+                            color: AppColorStyle.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '**** **** **** ${card.cardLastFour}',
+                          style: const TextStyle(
+                            color: AppColorStyle.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          'Expires: ${card.expiryMonth}/${card.expiryYear}',
+                          style: const TextStyle(
+                            color: AppColorStyle.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (card.isDefault)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'DEFAULT',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  if (isSelected)
+                    const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Color _getCardColor(String cardType) {
+    switch (cardType.toLowerCase()) {
+      case 'visa':
+        return AppColorStyle.primaryAccent; // Mavimsi yerine primary accent
+      case 'mastercard':
+        return Colors.orange;
+      case 'amex':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildCardFields() {
@@ -992,6 +1178,39 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 style: const TextStyle(fontSize: 16),
               ),
       ),
+    );
+  }
+}
+
+// Payment Method Model
+class PaymentMethod {
+  final int id;
+  final String cardHolderName;
+  final String cardLastFour;
+  final String cardType;
+  final String expiryMonth;
+  final String expiryYear;
+  final bool isDefault;
+
+  PaymentMethod({
+    required this.id,
+    required this.cardHolderName,
+    required this.cardLastFour,
+    required this.cardType,
+    required this.expiryMonth,
+    required this.expiryYear,
+    required this.isDefault,
+  });
+
+  factory PaymentMethod.fromJson(Map<String, dynamic> json) {
+    return PaymentMethod(
+      id: json['id'],
+      cardHolderName: json['card_holder_name'],
+      cardLastFour: json['card_last_four'],
+      cardType: json['card_type'],
+      expiryMonth: json['expiry_month'],
+      expiryYear: json['expiry_year'],
+      isDefault: json['is_default'] ?? false,
     );
   }
 }

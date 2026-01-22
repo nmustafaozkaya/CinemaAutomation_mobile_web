@@ -28,7 +28,7 @@ class Movie extends Model
 
     public function getReleaseDateAttribute($value)
     {
-        return Carbon::parse($value)->format('d-m-Y');  // Burada istediğiniz formatı belirtiyoruz
+        return Carbon::parse($value)->format('d-m-Y');
     }
 
     public function showtimes()

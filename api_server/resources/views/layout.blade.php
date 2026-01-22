@@ -192,9 +192,57 @@
                     @endauth
                 </div>
 
-                <button class="md:hidden text-white">
-                    <i class="fas fa-bars"></i>
+                <button id="mobileMenuButton" onclick="toggleMobileMenu()" class="md:hidden text-white p-2 hover:bg-white/10 rounded-lg transition">
+                    <i class="fas fa-bars text-xl"></i>
                 </button>
+            </div>
+            
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden md:hidden border-t border-white/20">
+                <div class="px-4 py-4 space-y-2">
+                    <a href="/" class="block text-white hover:text-green-300 transition-colors py-2">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <a href="/movies" class="block text-white hover:text-green-300 transition-colors py-2">
+                        <i class="fas fa-play mr-2"></i>Movies
+                    </a>
+                    @auth
+                        @if(auth()->user()->isCustomer())
+                            <a href="/buy-tickets" class="block text-white hover:text-green-300 transition-colors py-2">
+                                <i class="fas fa-building mr-2"></i>Cinema and Halls
+                            </a>
+                            <a href="/my-tickets" class="block text-white hover:text-green-300 transition-colors py-2">
+                                <i class="fas fa-history mr-2"></i>My Tickets
+                            </a>
+                            <a href="/payment-methods" class="block text-white hover:text-green-300 transition-colors py-2">
+                                <i class="fas fa-credit-card mr-2"></i>Payment Methods
+                            </a>
+                            <a href="/favorite-movies" class="block text-white hover:text-green-300 transition-colors py-2">
+                                <i class="fas fa-heart mr-2"></i>Favorite Movies
+                            </a>
+                        @else
+                            <a href="/tickets" class="block text-white hover:text-green-300 transition-colors py-2">
+                                <i class="fas fa-ticket-alt mr-2"></i>Ticket Sales
+                            </a>
+                            <a href="/admin" class="block text-white hover:text-green-300 transition-colors py-2">
+                                <i class="fas fa-cog mr-2"></i>Management
+                            </a>
+                        @endif
+                        <a href="/profile" class="block text-white hover:text-green-300 transition-colors py-2">
+                            <i class="fas fa-user mr-2"></i>Profile
+                        </a>
+                        <a href="/logout" class="block text-red-400 hover:text-red-300 transition-colors py-2">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </a>
+                    @else
+                        <a href="/login" class="block text-white hover:text-green-300 transition-colors py-2">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </a>
+                        <a href="/register" class="block text-white hover:text-green-300 transition-colors py-2">
+                            <i class="fas fa-user-plus mr-2"></i>Register
+                        </a>
+                    @endauth
+                </div>
             </div>
         </div>
     </nav>
@@ -229,6 +277,38 @@
     </div>
 
     <script>
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuButton = document.getElementById('mobileMenuButton');
+            const icon = menuButton.querySelector('i');
+            
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                mobileMenu.classList.add('hidden');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuButton = document.getElementById('mobileMenuButton');
+            
+            if (!mobileMenu.contains(event.target) && !menuButton.contains(event.target)) {
+                if (!mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                    const icon = menuButton.querySelector('i');
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            }
+        });
+
         // Global functions for modals
         function showSuccessModal(message) {
             document.getElementById('successMessage').textContent = message;
@@ -272,24 +352,19 @@
             @endauth
         };
 
-        // ✅ Axios interceptor for handling token expiration globally
         axios.interceptors.response.use(
             response => response,
             error => {
-                // Handle 401 (Unauthorized) errors - token expired or invalid
                 if (error.response && error.response.status === 401) {
-                    // Check if we're not already on the login page to avoid infinite loops
                     if (!window.location.pathname.includes('/login')) {
                         console.warn('⚠️ Token expired or invalid. Redirecting to login...');
                         localStorage.removeItem('token');
                         localStorage.removeItem('user');
                         
-                        // Show a brief notification before redirect
                         if (typeof showMessage === 'function') {
                             showMessage('Session expired. Please sign in again.', 'warning');
                         }
                         
-                        // Redirect to login after a short delay
                         setTimeout(() => {
                             window.location.href = '/login';
                         }, 1500);

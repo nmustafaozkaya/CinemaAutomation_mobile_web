@@ -24,6 +24,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   bool rememberMe = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedUser();
+  }
+
+  Future<void> _loadRememberedUser() async {
+    final savedRememberMe = await UserPreferences.getRememberMe();
+    if (savedRememberMe) {
+      final user = await UserPreferences.readData();
+      if (user != null && mounted) {
+        setState(() {
+          emailController.text = user.email;
+          rememberMe = true;
+        });
+      }
+    }
+  }
+
   Future<void> loginUserNow() async {
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
       Fluttertoast.showToast(msg: 'Email and password cannot be empty');
@@ -73,16 +92,23 @@ class _LoginScreenState extends State<LoginScreen> {
           await UserPreferences.saveToken(resBody['data']['token']);
           await UserPreferences.setRememberMe(rememberMe);
 
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => HomePage(currentUser: user),
-                ),
-              );
-            }
-          });
+          // Eğer başka bir ekrandan geldiyse (örneğin My Tickets), geri dön
+          if (!mounted) return;
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context, true); // true = login başarılı
+          } else {
+            // Ana ekrandan geldiyse HomePage'e git
+            Future.delayed(const Duration(seconds: 1), () {
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(currentUser: user),
+                  ),
+                );
+              }
+            });
+          }
         } else {
           Fluttertoast.showToast(
             msg: resBody['message'] ?? 'Login failed',

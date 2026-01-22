@@ -9,10 +9,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR', null);
 
-  final rememberMe = await UserPreferences.getRememberMe();
-  final currentUser = rememberMe ? await UserPreferences.readData() : null;
+  final currentUser = await UserPreferences.readData();
+  final token = await UserPreferences.getToken();
 
-  runApp(MyApp(currentUser: currentUser));
+  final isLoggedIn = currentUser != null && token != null && token.isNotEmpty;
+
+  runApp(MyApp(currentUser: isLoggedIn ? currentUser : null));
 }
 
 class MyApp extends StatelessWidget {

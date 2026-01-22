@@ -127,14 +127,16 @@ class _CinemaScreenState extends State<CinemaScreen> {
           }
         }
 
-        setState(() {
-          _allCinemas = cinemas;
-          _filteredCinemas = cinemas;
-          _cities = ['All', ...cityNames];
-          _cityNameToIdMap = cityNameToIdMap;
-          _isLoading = false;
-          _error = null;
-        });
+        if (mounted) {
+          setState(() {
+            _allCinemas = cinemas;
+            _filteredCinemas = cinemas;
+            _cities = ['All', ...cityNames];
+            _cityNameToIdMap = cityNameToIdMap;
+            _isLoading = false;
+            _error = null;
+          });
+        }
       } else {
         throw Exception(
           'Unexpected API response format. '
@@ -143,24 +145,32 @@ class _CinemaScreenState extends State<CinemaScreen> {
         );
       }
     } on http.ClientException catch (e) {
-      setState(() {
-        _error = 'Connection error: ${e.message}';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Connection error: ${e.message}';
+          _isLoading = false;
+        });
+      }
     } on FormatException catch (e) {
-      setState(() {
-        _error = 'Data format error: ${e.message}';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Data format error: ${e.message}';
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = 'Error: ${e.toString()}';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Error: ${e.toString()}';
+          _isLoading = false;
+        });
+      }
     }
   }
 
   void _filterCinemas(String query) {
+    if (!mounted) return;
+
     final searchLower = query.toLowerCase();
 
     final filtered = _allCinemas.where((cinema) {
@@ -173,9 +183,17 @@ class _CinemaScreenState extends State<CinemaScreen> {
       return matchesSearch && matchesCity;
     }).toList();
 
-    setState(() {
-      _filteredCinemas = filtered;
-    });
+    if (mounted) {
+      setState(() {
+        _filteredCinemas = filtered;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -238,7 +256,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
                         )
                         .toList(),
                     onChanged: (value) {
-                      if (value != null) {
+                      if (value != null && mounted) {
                         setState(() => _selectedCity = value);
                         _filterCinemas(_searchController.text);
 

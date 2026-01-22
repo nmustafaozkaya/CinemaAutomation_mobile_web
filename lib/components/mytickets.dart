@@ -92,11 +92,11 @@ class Ticket {
         updatedAt: DateTime.parse(json['updated_at']),
         showtime: Showtime.fromJson(json['showtime']),
         seat: Seat.fromJson(json['seat']),
-        paymentMethod: json['sale'] != null ? json['sale']['payment_method'] as String? : null,
+        paymentMethod: json['sale'] != null
+            ? json['sale']['payment_method'] as String?
+            : null,
       );
     } catch (e) {
-      print('❌ Error parsing ticket: $e');
-      print('JSON: $json');
       rethrow;
     }
   }
@@ -142,8 +142,6 @@ class Showtime {
         hall: Hall.fromJson(json['hall']),
       );
     } catch (e) {
-      print('❌ Error parsing showtime: $e');
-      print('JSON: $json');
       rethrow;
     }
   }
@@ -185,12 +183,11 @@ class Movie {
         releaseDate: json['release_date'] ?? '',
         genre: json['genre'] ?? '',
         posterUrl: json['poster_url'] ?? '',
-        imdbRating: (json['imdb_raiting'] ?? json['imdb_rating'] ?? '0.0').toString(),
+        imdbRating: (json['imdb_raiting'] ?? json['imdb_rating'] ?? '0.0')
+            .toString(),
         status: json['status'] ?? 'active',
       );
     } catch (e) {
-      print('❌ Error parsing movie: $e');
-      print('JSON: $json');
       rethrow;
     }
   }
@@ -224,8 +221,6 @@ class Hall {
         cinema: Cinema.fromJson(json['cinema']),
       );
     } catch (e) {
-      print('❌ Error parsing hall: $e');
-      print('JSON: $json');
       rethrow;
     }
   }
@@ -259,8 +254,6 @@ class Cinema {
         cityId: json['city_id'] ?? 0,
       );
     } catch (e) {
-      print('❌ Error parsing cinema: $e');
-      print('JSON: $json');
       rethrow;
     }
   }
@@ -301,8 +294,6 @@ class Seat {
             : null,
       );
     } catch (e) {
-      print('❌ Error parsing seat: $e');
-      print('JSON: $json');
       rethrow;
     }
   }

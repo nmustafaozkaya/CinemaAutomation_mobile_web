@@ -29,25 +29,20 @@
         let currentTicketStep = 1;
 
         document.addEventListener('DOMContentLoaded', async function () {
-            // URL'den film ID'sini al
             const urlParams = new URLSearchParams(window.location.search);
             const movieId = urlParams.get('movie');
             
             if (movieId) {
                 console.log('URL\'de film ID bulundu:', movieId);
                 
-                // Eğer URL'de film ID varsa, step 1'i direkt gizle
                 const step1Element = document.getElementById('ticketStep1');
                 if (step1Element) {
                     step1Element.classList.add('hidden');
                     console.log('Step 1 gizlendi');
                 }
                 
-                // currentTicketStep'i 2 yap (step 1'i atla)
                 currentTicketStep = 2;
                 
-                // Step 1'i gizledikten sonra film seçimini yap
-                // Biraz daha uzun gecikme ile çağır (sayfa ve component'ler tamamen yüklensin)
                 setTimeout(async () => {
                     console.log('URL\'den film ID alındı, otomatik seçim yapılıyor:', movieId);
                     try {
@@ -57,7 +52,6 @@
                     }
                 }, 800);
             } else {
-                // Eğer URL'de film ID yoksa, step 1'i göster
                 currentTicketStep = 1;
                 updateTicketSteps();
             }
@@ -65,7 +59,6 @@
         
         async function selectMovieFromUrl(movieId) {
             try {
-                // Önce /api/movies'ten dene, bulunamazsa /api/future-movies'ten dene
                 let response;
                 let isNowShowing = true;
                 try {
@@ -82,7 +75,6 @@
                 const movie = response.data.data;
                 
                 if (movie) {
-                    // Film seçili olarak gelirse, direkt step 2'ye geç (Select Cinema)
                     await selectMovieForTicket(movieId, movie.title, isNowShowing);
                     console.log('Film otomatik seçildi ve step 2\'ye geçildi:', movie.title);
                 }
@@ -107,7 +99,6 @@
             try {
                 console.log('Seanslar yükleniyor...', cinemaId);
                 const response = await axios.get(`/api/showtimes?movie_id=${selectedMovie.id}&cinema_id=${cinemaId}`);
-                // Response format: { success: true, data: [...] } veya { success: true, data: { data: [...] } }
                 let showtimes = [];
                 if (response.data.success && response.data.data) {
                     if (Array.isArray(response.data.data)) {

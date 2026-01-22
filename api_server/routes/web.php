@@ -23,7 +23,6 @@ Route::get('/tickets', function () {
     return view('tickets');
 })->name('tickets');
 
-// ✅ Admin sayfasını koruyalım
 Route::get('/admin', function () {
     return view('admin');
 })->middleware('admin')->name('admin');
@@ -59,12 +58,20 @@ Route::get('/my-tickets', function() {
 })->middleware('auth');
 
 Route::get('/buy-tickets', function () {
-    return view('tickets');  // Aynı sayfayı kullan
+    return view('tickets');  
 })->middleware('auth');
 
 Route::get('/profile', function() {
     return view('profile');
 })->middleware('auth');
+
+Route::get('/payment-methods', function() {
+    return view('payment-methods');
+})->middleware('auth')->name('payment-methods');
+
+Route::get('/favorite-movies', function() {
+    return view('favorite-movies');
+})->middleware('auth')->name('favorite-movies');
 
 Route::get('/test-data', function() {
     return response()->json([

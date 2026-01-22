@@ -5,6 +5,7 @@ import 'dart:convert';
 import "package:sinema_uygulamasi/components/mytickets.dart";
 import 'package:sinema_uygulamasi/components/user_preferences.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
+import 'package:sinema_uygulamasi/screens/login_screen.dart';
 
 class MyTicketsPage extends StatefulWidget {
   const MyTicketsPage({super.key});
@@ -57,17 +58,28 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
         hasError = false;
       });
 
-      // Token kontrolü - eğer yoksa login ekranına yönlendir
+      // Token'ı her zaman yeniden yükle (güncel olsun)
+      await _loadUserDataAndToken();
+
+      // Token kontrolü - eğer yoksa ama kullanıcı bilgileri varsa, token expire olmuş demektir
       if (_userToken == null || _userToken!.isEmpty) {
         if (!mounted) return;
         setState(() {
           tickets = [];
           isLoading = false;
           hasError = true;
-          errorMessage = 'Please sign in to view your tickets.';
+          // Kullanıcı bilgileri varsa, token expire olmuş veya kaybolmuş demektir
+          if (currentUser != null) {
+            errorMessage =
+                'Your session has expired. Please sign in again to refresh your session.';
+          } else {
+            errorMessage = 'Please sign in to view your tickets.';
+          }
         });
         return;
       }
+
+      // Token var ama geçersiz olabilir - API'yi dene
 
       final response = await http.get(
         Uri.parse(ApiConnection.myTickets),
@@ -84,7 +96,6 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
             response.body.trim().startsWith('[')) {
           try {
             final jsonData = json.decode(response.body);
-            print('🔍 API Response: $jsonData'); // Debug log
             final ticketsResponse = MyTicketsResponse.fromJson(jsonData);
 
             setState(() {
@@ -92,11 +103,8 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
               isLoading = false;
               hasError = false;
             });
-            print('✅ Tickets loaded: ${tickets.length}'); // Debug log
           } catch (jsonError) {
             // JSON parse error - show error with details
-            print('❌ JSON Parse Error: $jsonError'); // Debug log
-            print('Response body: ${response.body}'); // Debug log
             setState(() {
               tickets = [];
               isLoading = false;
@@ -106,7 +114,6 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
           }
         } else {
           // Non-JSON response
-          print('⚠️ Non-JSON response: ${response.body}'); // Debug log
           setState(() {
             tickets = [];
             isLoading = false;
@@ -115,15 +122,22 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
           });
         }
       } else if (response.statusCode == 401) {
-        // Token expired or invalid (401) - clear data and show login message
-        await UserPreferences.removeData();
+        // Token expired or invalid (401)
+        // Eğer kullanıcı bilgileri varsa, token expire olmuş demektir
+        // Token'ı temizleme, sadece hata göster
+        if (!mounted) return;
         setState(() {
           tickets = [];
           isLoading = false;
           hasError = true;
-          errorMessage = 'Session expired. Please sign in again.';
-          currentUser = null;
-          _userToken = null;
+          // Kullanıcı bilgileri varsa daha açıklayıcı mesaj
+          if (currentUser != null) {
+            errorMessage =
+                'Your session has expired. Please sign in again to refresh your session.';
+          } else {
+            errorMessage = 'Please sign in to view your tickets.';
+          }
+          // Token'ı koru, temizleme
         });
       } else {
         // Error loading tickets
@@ -226,12 +240,20 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamedAndRemoveUntil(
+                    onPressed: () async {
+                      // Login ekranına git ve geri dönüş için await
+                      final result = await Navigator.push(
                         context,
-                        '/login',
-                        (route) => false,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
                       );
+
+                      // Login başarılı olduysa (result == true), biletleri yeniden yükle
+                      if (result == true && mounted) {
+                        await _loadUserDataAndToken();
+                        await fetchMyTickets();
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColorStyle.primaryAccent,

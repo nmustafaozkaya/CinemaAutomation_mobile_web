@@ -1,3 +1,4 @@
+//Encapsulation
 class Cinema {
   final int cityId;
   final String cityName;
@@ -6,7 +7,7 @@ class Cinema {
   final String cinemaAddress;
   final String cinemaPhone;
   final String cinemaEmail;
-
+  //constructor
   Cinema({
     required this.cityId,
     required this.cityName,
@@ -16,7 +17,7 @@ class Cinema {
     required this.cinemaPhone,
     required this.cinemaEmail,
   });
-
+  //fromjson methodu JSON verisini Cinema nesnesine dönüştürür
   factory Cinema.fromJson(Map<String, dynamic> json) {
     final cityData = json['city'];
 
@@ -47,7 +48,9 @@ class Cinema {
     return Cinema(
       cityId: parsedCityId,
       cityName: parsedCityName,
-      cinemaId: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
+      cinemaId: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse('${json['id']}') ?? 0,
       cinemaName: json['name']?.toString() ?? 'Sinema',
       cinemaAddress: json['address']?.toString() ?? '',
       cinemaPhone: json['phone']?.toString() ?? '',

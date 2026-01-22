@@ -22,6 +22,13 @@ class UserPreferences {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('currentUser');
     await prefs.remove('token');
+    await prefs.remove('rememberMe');
+  }
+
+  // Sadece token'ı sil, kullanıcı bilgilerini koru (Remember Me için)
+  static Future<void> removeToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
   }
 
   // Token için ayrı fonksiyonlar

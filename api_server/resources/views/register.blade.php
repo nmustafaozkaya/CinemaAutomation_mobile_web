@@ -16,46 +16,46 @@
 
                 <form id="registerForm" class="space-y-6">
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="name" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-user mr-2"></i>Full Name
                         </label>
-                        <input type="text" id="name"
+                        <input type="text" id="name" name="name" autocomplete="name"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
                             placeholder="Full name" required>
                     </div>
 
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="email" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-envelope mr-2"></i>Email
                         </label>
-                        <input type="email" id="email"
+                        <input type="email" id="email" name="email" autocomplete="email"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
                             placeholder="Email" required>
                     </div>
 
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="phone" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-phone mr-2"></i>Phone
                         </label>
-                        <input type="tel" id="phone"
+                        <input type="tel" id="phone" name="phone" autocomplete="tel"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
                             placeholder="Phone number">
                     </div>
 
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="birth_date" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-calendar mr-2"></i>Date of Birth
                         </label>
-                        <input type="date" id="birth_date"
+                        <input type="date" id="birth_date" name="birth_date" autocomplete="bday"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
                             max="{{ date('Y-m-d', strtotime('-1 day')) }}">
                     </div>
 
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="gender" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-venus-mars mr-2"></i>Gender
                         </label>
-                        <select id="gender"
+                        <select id="gender" name="gender" autocomplete="sex"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all">
                             <option value="">Select</option>
                             <option value="male">Male</option>
@@ -65,19 +65,19 @@
                     </div>
 
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="password" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-lock mr-2"></i>Password
                         </label>
-                        <input type="password" id="password"
+                        <input type="password" id="password" name="password" autocomplete="new-password"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
                             placeholder="Password" required>
                     </div>
 
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="password_confirmation" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-lock mr-2"></i>Confirm Password
                         </label>
-                        <input type="password" id="password_confirmation"
+                        <input type="password" id="password_confirmation" name="password_confirmation" autocomplete="new-password"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-emerald-400 transition-all"
                             placeholder="Confirm password" required>
                     </div>

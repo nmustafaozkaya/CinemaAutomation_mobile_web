@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sinema_uygulamasi/components/user.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
-import 'package:sinema_uygulamasi/screens/my_ticket_screen.dart';
 import 'package:sinema_uygulamasi/screens/home.dart';
 
 class TicketSuccessScreen extends StatelessWidget {
@@ -120,9 +119,15 @@ class TicketSuccessScreen extends StatelessWidget {
                 height: 56,
                 child: ElevatedButton.icon(
                   onPressed: () {
+                    // HomePage'e git ve Profile tab'ını aç (index 3)
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => const MyTicketsPage()),
+                      MaterialPageRoute(
+                        builder: (_) => HomePage(
+                          currentUser: currentUser,
+                          initialIndex: 3, // Profile tab
+                        ),
+                      ),
                       (route) => false,
                     );
                   },

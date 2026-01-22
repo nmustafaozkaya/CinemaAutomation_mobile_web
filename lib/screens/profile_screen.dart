@@ -7,6 +7,8 @@ import 'package:sinema_uygulamasi/screens/change_password_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:sinema_uygulamasi/constant/app_color_style.dart';
 import 'package:sinema_uygulamasi/screens/my_ticket_screen.dart';
+import 'package:sinema_uygulamasi/screens/payment_methods_screen.dart';
+import 'package:sinema_uygulamasi/screens/favorite_movies_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final User currentUser;
@@ -157,10 +159,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColorStyle.textSecondary,
               ),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Payment methods are coming soon"),
-                    duration: Duration(seconds: 2),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PaymentMethodsScreen(),
                   ),
                 );
               },
@@ -188,10 +190,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColorStyle.textSecondary,
               ),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Favorite movies are coming soon"),
-                    duration: Duration(seconds: 2),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoriteMoviesScreen(),
                   ),
                 );
               },

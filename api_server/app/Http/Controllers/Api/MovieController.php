@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Cinema;
 use App\Models\Movie;
 use App\Models\FutureMovie;
+use App\Models\FavoriteMovie;
 use App\Models\Showtime;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -102,10 +104,14 @@ class MovieController extends Controller
         // ve bu sayıya göre Now Showing ve Coming Soon'a dağıtılacak
         $totalMovies = $request->get('total_movies', null);
         
+        
         if ($totalMovies !== null) {
             // Toplam film sayısı belirtilmişse, sadece limit uygula (sayfalama yok)
             $limit = min((int)$totalMovies, 100);
             $movies = $query->limit($limit)->get();
+            
+            // Add favorite status
+            $movies = $this->addFavoriteStatus($movies);
             
             return response()->json([
                 'success' => true,
@@ -122,6 +128,11 @@ class MovieController extends Controller
             // Normal sayfalama
             $perPage = $request->get('per_page', 100);
             $movies = $query->paginate($perPage);
+            
+            // Add favorite status to paginated data
+            $movies->getCollection()->transform(function ($movie) {
+                return $this->addFavoriteStatusToMovie($movie);
+            });
 
             return response()->json([
                 'success' => true,
@@ -237,6 +248,10 @@ class MovieController extends Controller
             // ✅ Double-check classification to avoid swapped lists on mobile
             $nowShowingMovies = $this->filterMoviesByCategory($nowShowingMovies, $today, 'now_showing');
             $comingSoonMovies = $this->filterMoviesByCategory($comingSoonMovies, $today, 'coming_soon');
+            
+            // Add favorite status
+            $nowShowingMovies = $this->addFavoriteStatus($nowShowingMovies);
+            $comingSoonMovies = $this->addFavoriteStatus($comingSoonMovies);
             
             return response()->json([
                 'success' => true,
@@ -626,5 +641,46 @@ public function getShowtimesForMovie(string $movieId, Request $request): JsonRes
         }
 
         return $today->diffInDays($releaseDate);
+    }
+
+    /**
+     * Add favorite status to a collection of movies
+     */
+    private function addFavoriteStatus($movies)
+    {
+        if (!Auth::check()) {
+            return $movies->map(function ($movie) {
+                $movie->is_favorite = false;
+                return $movie;
+            });
+        }
+
+        $userId = Auth::id();
+        $favoriteMovieIds = FavoriteMovie::where('user_id', $userId)
+            ->pluck('movie_id')
+            ->toArray();
+
+        return $movies->map(function ($movie) use ($favoriteMovieIds) {
+            $movie->is_favorite = in_array($movie->id, $favoriteMovieIds);
+            return $movie;
+        });
+    }
+
+    /**
+     * Add favorite status to a single movie
+     */
+    private function addFavoriteStatusToMovie($movie)
+    {
+        if (!Auth::check()) {
+            $movie->is_favorite = false;
+            return $movie;
+        }
+
+        $userId = Auth::id();
+        $movie->is_favorite = FavoriteMovie::where('user_id', $userId)
+            ->where('movie_id', $movie->id)
+            ->exists();
+
+        return $movie;
     }
 }

@@ -52,7 +52,7 @@
         </div>
 
         <!-- Payment Methods -->
-        <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 cursor-pointer transition-all group" onclick="showComingSoon('Payment Methods')">
+        <a href="/payment-methods" class="block bg-white/5 hover:bg-white/10 rounded-xl p-4 cursor-pointer transition-all group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
                     <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mr-4">
@@ -65,7 +65,7 @@
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 group-hover:text-purple-400 transition-colors"></i>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- My Movies -->
@@ -77,7 +77,7 @@
         <div class="h-px bg-red-500/30 mb-4"></div>
         
         <!-- Favorite Movies -->
-        <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 cursor-pointer transition-all group" onclick="showComingSoon('Favorite Movies')">
+        <a href="/favorite-movies" class="block bg-white/5 hover:bg-white/10 rounded-xl p-4 cursor-pointer transition-all group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
                     <div class="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center mr-4">
@@ -90,7 +90,7 @@
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 group-hover:text-red-400 transition-colors"></i>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- My Tickets -->
@@ -142,24 +142,24 @@
         </div>
         <form id="editDetailsForm" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
             <div>
-                <label class="block text-white text-sm font-medium mb-2">Name</label>
-                <input type="text" id="editName" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500" placeholder="Your name" required>
+                <label for="editName" class="block text-white text-sm font-medium mb-2">Name</label>
+                <input type="text" id="editName" name="name" autocomplete="name" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500" placeholder="Your name" required>
             </div>
             <div>
-                <label class="block text-white text-sm font-medium mb-2">Email</label>
-                <input type="email" id="editEmail" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500" placeholder="your@email.com" required>
+                <label for="editEmail" class="block text-white text-sm font-medium mb-2">Email</label>
+                <input type="email" id="editEmail" name="email" autocomplete="email" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500" placeholder="your@email.com" required>
             </div>
             <div>
-                <label class="block text-white text-sm font-medium mb-2">Phone</label>
-                <input type="tel" id="editPhone" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500" placeholder="05XXXXXXXXX">
+                <label for="editPhone" class="block text-white text-sm font-medium mb-2">Phone</label>
+                <input type="tel" id="editPhone" name="phone" autocomplete="tel" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500" placeholder="05XXXXXXXXX">
             </div>
             <div>
-                <label class="block text-white text-sm font-medium mb-2">Date of Birth</label>
-                <input type="date" id="editBirthDate" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500">
+                <label for="editBirthDate" class="block text-white text-sm font-medium mb-2">Date of Birth</label>
+                <input type="date" id="editBirthDate" name="birth_date" autocomplete="bday" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500">
             </div>
             <div>
-                <label class="block text-white text-sm font-medium mb-2">Gender</label>
-                <select id="editGender" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500">
+                <label for="editGender" class="block text-white text-sm font-medium mb-2">Gender</label>
+                <select id="editGender" name="gender" autocomplete="sex" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500">
                     <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -189,16 +189,16 @@
         </div>
         <form id="changePasswordForm" class="space-y-4">
             <div>
-                <label class="block text-white text-sm font-medium mb-2">Current Password</label>
-                <input type="password" id="currentPassword" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="Enter current password">
+                <label for="currentPassword" class="block text-white text-sm font-medium mb-2">Current Password</label>
+                <input type="password" id="currentPassword" name="current_password" autocomplete="current-password" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="Enter current password">
             </div>
             <div>
-                <label class="block text-white text-sm font-medium mb-2">New Password</label>
-                <input type="password" id="newPassword" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="Enter new password">
+                <label for="newPassword" class="block text-white text-sm font-medium mb-2">New Password</label>
+                <input type="password" id="newPassword" name="new_password" autocomplete="new-password" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="Enter new password">
             </div>
             <div>
-                <label class="block text-white text-sm font-medium mb-2">Confirm New Password</label>
-                <input type="password" id="confirmPassword" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="Confirm new password">
+                <label for="confirmPassword" class="block text-white text-sm font-medium mb-2">Confirm New Password</label>
+                <input type="password" id="confirmPassword" name="password_confirmation" autocomplete="new-password" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="Confirm new password">
             </div>
             <div class="flex gap-3 mt-6">
                 <button type="button" onclick="closeChangePasswordModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-medium transition-colors">

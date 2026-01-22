@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\FutureMoviesController;
 use App\Http\Controllers\Api\HallController;
 use App\Http\Controllers\Api\SeatController;
 use App\Http\Controllers\Api\TaxController;
+use App\Http\Controllers\Api\PaymentMethodController;
+use App\Http\Controllers\Api\FavoriteMovieController;
 
 // Auth routes (PUBLIC)
 Route::post('login', [AuthController::class, 'login']);
@@ -19,7 +21,7 @@ Route::post('register', [AuthController::class, 'register']);
 
 // Public routes - Movies
 Route::get('movies', [MovieController::class, 'index']);
-Route::get('movies/distributed', [MovieController::class, 'distributed']); // Toplam 100 filmi tarihe göre dağıt
+Route::get('movies/distributed', [MovieController::class, 'distributed']); 
 Route::get('movies/{id}', [MovieController::class, 'show']);
 Route::get('movies/{movie}/cinemas', [MovieController::class, 'getCinemasForMovie']);
 Route::get('movies/{movie}/showtimes', [MovieController::class, 'getShowtimesForMovie']);
@@ -72,7 +74,7 @@ Route::prefix('future-movies')->group(function () {
     Route::get('/{id}', [FutureMoviesController::class, 'show']);
 });
 
-// Protected routes
+
 Route::middleware('auth:sanctum')->group(function () {
     
     // Auth routes
@@ -92,6 +94,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // Ticket operations - Customer da bilet alabilir
     Route::post('tickets', [TicketController::class, 'store']); // Herkes bilet alabilir
     Route::get('my-tickets', [TicketController::class, 'myTickets']); // Kendi biletlerini görebilir
+    
+    // Payment Methods - Kullanıcının ödeme yöntemleri
+    Route::get('payment-methods', [PaymentMethodController::class, 'index']);
+    Route::post('payment-methods', [PaymentMethodController::class, 'store']);
+    Route::put('payment-methods/{id}', [PaymentMethodController::class, 'update']);
+    Route::delete('payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
+    Route::post('payment-methods/{id}/set-default', [PaymentMethodController::class, 'setDefault']);
+    
+    // Favorite Movies - Kullanıcının favori filmleri
+    Route::get('favorite-movies', [FavoriteMovieController::class, 'index']);
+    Route::post('favorite-movies', [FavoriteMovieController::class, 'store']);
+    Route::delete('favorite-movies/{movieId}', [FavoriteMovieController::class, 'destroy']);
+    Route::get('favorite-movies/{movieId}/check', [FavoriteMovieController::class, 'check']);
+    Route::post('favorite-movies/toggle', [FavoriteMovieController::class, 'toggle']);
     
     // Admin-only operations
     Route::middleware(['admin'])->group(function () {

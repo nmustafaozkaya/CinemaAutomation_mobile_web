@@ -44,10 +44,8 @@ class Seat extends Model
         return $this->hasMany(Ticket::class);
     }
 
-    // Helper methods
     public function isAvailable(): bool
     {
-        // Eğer pending ise ve süresi dolmuşsa available say
         if ($this->status === self::STATUS_PENDING && $this->isReservationExpired()) {
             return true;
         }
@@ -62,17 +60,12 @@ class Seat extends Model
 
     public function isPending(): bool
     {
-        // Pending ama süresi dolmamışsa pending
         return $this->status === self::STATUS_PENDING && !$this->isReservationExpired();
     }
 
-    /**
-     * Rezervasyon süresi dolmuş mu kontrol et
-     */
     public function isReservationExpired(): bool
     {
         if (!$this->reserved_until) {
-            // reserved_until yoksa reserved_at + 10 dakika kontrol et
             return $this->reserved_at && $this->reserved_at->addMinutes(10)->isPast();
         }
         
@@ -158,9 +151,7 @@ class Seat extends Model
         };
     }
 
-    /**
-     * Scope: Süresi dolmuş pending koltukları
-     */
+
     public function scopeExpiredPending($query)
     {
         return $query->where('status', self::STATUS_PENDING)

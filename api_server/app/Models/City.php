@@ -19,7 +19,7 @@ class City extends Model
         'updated_at',
         'pivot'
     ];
-
+            //importent relation 1 city has many cinemas
     public function cinemas(): HasMany
     {
         return $this->hasMany(Cinema::class);

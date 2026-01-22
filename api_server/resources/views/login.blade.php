@@ -16,26 +16,26 @@
 
                 <form id="loginForm" class="space-y-6">
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="email" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-envelope mr-2"></i>Email
                         </label>
-                        <input type="email" id="email" value="customer@cinema.com"
+                        <input type="email" id="email" name="email" value="customer@cinema.com" autocomplete="email"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all"
-                            placeholder="Enter your email">
+                            placeholder="Enter your email" required>
                     </div>
 
                     <div>
-                        <label class="block text-white text-sm font-medium mb-2">
+                        <label for="password" class="block text-white text-sm font-medium mb-2">
                             <i class="fas fa-lock mr-2"></i>Password
                         </label>
-                        <input type="password" id="password" value="password"
+                        <input type="password" id="password" name="password" value="password" autocomplete="current-password"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:border-green-400 transition-all"
-                            placeholder="Enter your password">
+                            placeholder="Enter your password" required>
                     </div>
 
                     <div class="flex items-center justify-between">
-                        <label class="flex items-center">
-                            <input type="checkbox" class="w-4 h-4 text-green-600 bg-transparent border-white/20 rounded focus:ring-green-500">
+                        <label for="remember_me" class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="remember_me" name="remember_me" class="w-4 h-4 text-green-600 bg-transparent border-white/20 rounded focus:ring-green-500">
                             <span class="ml-2 text-sm text-gray-300">Remember me</span>
                             </label>
                             <a href="#" class="text-sm text-green-400 hover:text-green-300 transition-colors">
